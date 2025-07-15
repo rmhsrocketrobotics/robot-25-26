@@ -80,9 +80,9 @@ public final class MecanumDrive {
         public double maxAngAccel = Math.PI;
 
         // path controller gains
-        public double axialGain = 0.0;
-        public double lateralGain = 0.0;
-        public double headingGain = 0.0; // shared with turn
+        public double axialGain = 4.0;
+        public double lateralGain = 4.0;
+        public double headingGain = 4.0; // shared with turn
 
         public double axialVelGain = 0.0;
         public double lateralVelGain = 0.0;
@@ -91,8 +91,13 @@ public final class MecanumDrive {
 
     public static Params PARAMS = new Params();
 
+    // this is the original code:
+//    public final MecanumKinematics kinematics = new MecanumKinematics(
+//            PARAMS.inPerTick * PARAMS.trackWidthTicks, PARAMS.inPerTick / PARAMS.lateralInPerTick);
+
+    // replaced with this, trackWidth is manually set to 14.5 inches
     public final MecanumKinematics kinematics = new MecanumKinematics(
-            PARAMS.inPerTick * PARAMS.trackWidthTicks, PARAMS.inPerTick / PARAMS.lateralInPerTick);
+           14.5, PARAMS.inPerTick / PARAMS.lateralInPerTick);
 
     public final TurnConstraints defaultTurnConstraints = new TurnConstraints(
             PARAMS.maxAngVel, -PARAMS.maxAngAccel, PARAMS.maxAngAccel);
@@ -261,6 +266,18 @@ public final class MecanumDrive {
     }
 
     public final class FollowTrajectoryAction implements Action {
+        // this section of the code has been modified according to https://rr.brott.dev/docs/v1-0/guides/extra-correction/
+        // this means that we can make the robot take extra time to correct its position, even once it's done with the trajectory
+
+        // the robot will end it's path when it is within positionTolerance inches of its target AND
+        // within headingTolerance radians of its target AND
+        // going slower than velocityTolerance
+        // or it will be forced to end after maxExtraTime seconds
+        final double positionTolerance = 2;
+        final double headingTolerance = Math.PI / 32;
+        final double velocityTolerance = 0.5;
+        final double maxExtraTime = 1;
+
         public final TimeTrajectory timeTrajectory;
         private double beginTs = -1;
 
@@ -291,7 +308,19 @@ public final class MecanumDrive {
                 t = Actions.now() - beginTs;
             }
 
-            if (t >= timeTrajectory.duration) {
+
+            Pose2dDual<Time> txWorldTarget = timeTrajectory.get(t);
+            targetPoseWriter.write(new PoseMessage(txWorldTarget.value()));
+
+            PoseVelocity2d robotVelRobot = updatePoseEstimate();
+
+            Pose2d error = txWorldTarget.value().minusExp(localizer.getPose());
+
+            if ((t >= timeTrajectory.duration &&
+                    error.position.norm() < positionTolerance &&
+                    error.heading.toDouble() < headingTolerance &&
+                    robotVelRobot.linearVel.norm() < velocityTolerance)
+                    || t >= timeTrajectory.duration + maxExtraTime) {
                 leftFront.setPower(0);
                 leftBack.setPower(0);
                 rightBack.setPower(0);
@@ -300,10 +329,7 @@ public final class MecanumDrive {
                 return false;
             }
 
-            Pose2dDual<Time> txWorldTarget = timeTrajectory.get(t);
-            targetPoseWriter.write(new PoseMessage(txWorldTarget.value()));
 
-            PoseVelocity2d robotVelRobot = updatePoseEstimate();
 
             PoseVelocity2dDual<Time> command = new HolonomicController(
                     PARAMS.axialGain, PARAMS.lateralGain, PARAMS.headingGain,
@@ -334,7 +360,7 @@ public final class MecanumDrive {
             p.put("y", localizer.getPose().position.y);
             p.put("heading (deg)", Math.toDegrees(localizer.getPose().heading.toDouble()));
 
-            Pose2d error = txWorldTarget.value().minusExp(localizer.getPose());
+
             p.put("xError", error.position.x);
             p.put("yError", error.position.y);
             p.put("headingError (deg)", Math.toDegrees(error.heading.toDouble()));

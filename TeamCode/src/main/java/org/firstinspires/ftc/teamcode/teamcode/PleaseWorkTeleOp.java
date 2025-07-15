@@ -452,7 +452,7 @@ public class PleaseWorkTeleOp extends MecanumDrivetrain{
       telemetry.addData("armMotor.getCurrentPosition()", armMotor.getCurrentPosition());
       telemetry.addData("armMotor.getCurrentPosition() converted to degrees", motorUnitsToDegrees(armMotor.getCurrentPosition()));
       // telemetry.addData("armMotorTargetPosition", armMotorTargetPosition);
-      // telemetry.addData("robot rotation", getRobotHeading());
+      telemetry.addData("robot rotation", getRobotHeading());
       
       telemetry.addData("slideMotor.getCurrentPosition()", slideMotor.getCurrentPosition());
 
