@@ -25,49 +25,14 @@ public final class RRAuto extends LinearOpMode {
 
         Actions.runBlocking(
                 drive.actionBuilder(beginPose)
-                        // go to the bucket
-                        .waitSeconds(1)
-                        .setTangent(findLineToPointAngle(beginPose, bucketPose))
-                        .lineToXSplineHeading(bucketPose.position.x, bucketPose.heading)
-                        .setTangent(0)
-                        .waitSeconds(1) //depositing sample
-
-                        // go to left sample
-                        .splineToSplineHeading(leftBlockPose, 3*pi/2)
-                        .waitSeconds(1) //picking up sample
-
-                        // go to the bucket
-                        .setTangent(findLineToPointAngle(leftBlockPose, bucketPose))
-                        .lineToXSplineHeading(bucketPose.position.x, bucketPose.heading)
-                        .setTangent(0)
-                        .waitSeconds(1) //depositing sample
-
-                        // go to middle sample
-                        .setTangent(findLineToPointAngle(bucketPose, middleBlockPose))
-                        .lineToXSplineHeading(middleBlockPose.position.x, middleBlockPose.heading)
-                        .setTangent(0)
-                        .waitSeconds(1) //picking up sample
-
-                        // go to the bucket
-                        .setTangent(findLineToPointAngle(middleBlockPose, bucketPose))
-                        .lineToXSplineHeading(bucketPose.position.x, bucketPose.heading)
-                        .setTangent(0)
-                        .waitSeconds(1) //depositing sample
-
-                        .lineToSplineHeading(new Pose2d(50, 50, 3*pi/2))
-                        .splineToSplineHeading(new Pose2d(61, 10, 0), 0)
-                        .lineTo(new Vector2d(61, 45))
-                        .splineToConstantHeading(new Vector2d(40, 12), 0)
-                        .lineTo(new Vector2d(25, 12))
-
-                        .waitSeconds(2)
+                        // TODO type stuff: actually made this work
                         .build());
     }
 
-    public double findLineToPointAngle(Pose2d currentPose, Pose2d targetPose) {
-        double centeredX = targetPose.position.x - currentPose.position.x;
-        double centeredY = targetPose.position.y - currentPose.position.y;
+    public double angleBetweenPoints(Vector2d point1, Vector2d point2) {
+        double x = point2.x - point1.x;
+        double y = point2.y - point1.y;
 
-        return Math.atan(centeredY/centeredX) - currentPose.heading.toDouble();
+        return Math.atan2(y, x);
     }
 }
