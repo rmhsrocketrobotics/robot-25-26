@@ -371,7 +371,11 @@ public class PleaseWorkTeleOp extends MecanumDrivetrain{
         }
    
     } else {
-        //allows for the slow movement thing
+        gamepad1.right_stick_x = funnyPiecewiseFunction(gamepad1.right_stick_x);
+        gamepad1.right_stick_y = funnyPiecewiseFunction(gamepad1.right_stick_y);
+        gamepad1.left_stick_x = funnyPiecewiseFunction(gamepad1.left_stick_x);
+
+      //allows for the slow movement thing
         if (gamepad1.left_bumper){ //fast mode
         gamepad1.right_stick_x *= 1;
         gamepad1.right_stick_y *= 1;
@@ -462,6 +466,31 @@ public class PleaseWorkTeleOp extends MecanumDrivetrain{
       
       timer.reset();
     }
+  }
+  // alr bro like ts is hard to explain js look at this desmos graph imo https://www.desmos.com/calculator/2tmtqifqo3
+  public static double funnyPiecewiseFunction(double power){
+    double deadzone = 0.1;
+    double startPower = 0.3;
+
+    if (power > 1) {power = 1;}
+    else if (power < -1) {power = -1;}
+
+    if (power < -deadzone){
+      return lineBetweenPoints(-deadzone, -startPower, -1, -1, power);
+
+    } else if (power > deadzone) {
+      return lineBetweenPoints(deadzone, startPower, 1, 1, power);
+
+    } else {
+      return 0;
+    }
+  }
+
+  public static double lineBetweenPoints(double x1, double y1, double x2, double y2, double x){
+    double slope = (y1-y2)/(x1-x2);
+    double yIntercept = y1 - (slope * x1);
+
+    return (slope * x) + yIntercept;
   }
 }
 
