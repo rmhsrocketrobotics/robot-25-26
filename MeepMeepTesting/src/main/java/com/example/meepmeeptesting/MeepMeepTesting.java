@@ -101,7 +101,7 @@ public class MeepMeepTesting {
 
                         // push right sample
                         .setTangent(11*pi/8)
-                        .splineToSplineHeading(new Pose2d(49, 8), 0)
+                        .splineToSplineHeading(new Pose2d(49, 8, 0), 0)
                         .splineToConstantHeading(new Vector2d(61, 45), pi/2)
 
                         // level 1 hang

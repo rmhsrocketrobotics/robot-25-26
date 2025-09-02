@@ -19,13 +19,48 @@ public final class RRAuto extends LinearOpMode {
         Pose2d leftBlockPose = new Pose2d(48, 44, 3*pi/2);
         Pose2d middleBlockPose = new Pose2d(59, 44, 3*pi/2);
 
+        double bucketToLeftAngle = angleBetweenPoints(bucketPose.position, leftBlockPose.position);
+
         MecanumDrive drive = new MecanumDrive(hardwareMap, beginPose);
 
         waitForStart();
 
         Actions.runBlocking(
                 drive.actionBuilder(beginPose)
-                        // TODO type stuff: actually made this work
+                        // going to bucket
+                        .setTangent(-pi/4)
+                        .splineToLinearHeading(bucketPose, 0)
+                        .waitSeconds(1) //depositing sample
+
+                        // going to left sample
+                        .setTangent(bucketToLeftAngle)
+                        .splineToSplineHeading(leftBlockPose, bucketToLeftAngle)
+                        .waitSeconds(1) //picking up sample
+
+                        // going to bucket
+                        .setTangent(bucketToLeftAngle + pi)
+                        .splineToSplineHeading(bucketPose, bucketToLeftAngle + pi)
+                        .waitSeconds(1) //depositing sample
+
+                        // going to middle sample
+                        .setTangent(3*pi/2)
+                        .splineToSplineHeading(middleBlockPose, -pi/4)
+                        .waitSeconds(1) //picking up sample
+
+                        // going to bucket
+                        .setTangent(3*pi/4)
+                        .splineToSplineHeading(bucketPose, pi/2)
+                        .waitSeconds(1) //depositing sample
+
+                        // push right sample
+                        .setTangent(11*pi/8)
+                        .splineToSplineHeading(new Pose2d(49, 8, 0), 0)
+                        .splineToConstantHeading(new Vector2d(61, 45), pi/2)
+
+                        // level 1 hang
+                        .setTangent(5*pi/4)
+                        .splineToConstantHeading(new Vector2d(40, 12), pi)
+                        .splineToConstantHeading(new Vector2d(25, 12), pi)
                         .build());
     }
 

@@ -371,27 +371,27 @@ public class PleaseWorkTeleOp extends MecanumDrivetrain{
         }
    
     } else {
-        gamepad1.right_stick_x = funnyPiecewiseFunction(gamepad1.right_stick_x);
-        gamepad1.right_stick_y = funnyPiecewiseFunction(gamepad1.right_stick_y);
-        gamepad1.left_stick_x = funnyPiecewiseFunction(gamepad1.left_stick_x);
+        float right_stick_x = funnyPiecewiseFunction(gamepad1.right_stick_x);
+        float right_stick_y = funnyPiecewiseFunction(gamepad1.right_stick_y);
+        float left_stick_x = funnyPiecewiseFunction(gamepad1.left_stick_x);
 
       //allows for the slow movement thing
         if (gamepad1.left_bumper){ //fast mode
-        gamepad1.right_stick_x *= 1;
-        gamepad1.right_stick_y *= 1;
-        gamepad1.left_stick_x *= 1;
+        right_stick_x *= 1;
+        right_stick_y *= 1;
+        left_stick_x *= 1;
        
         } else if (gamepad1.right_bumper) { //slow mode
-        gamepad1.right_stick_x *= 0.3;
-        gamepad1.right_stick_y *= 0.3;
-        gamepad1.left_stick_x *= 0.3;
+        right_stick_x *= 0.3F;
+        right_stick_y *= 0.3F;
+        left_stick_x *= 0.3F;
        
         } else { //normal mode
-        gamepad1.right_stick_x *= 0.75;
-        gamepad1.right_stick_y *= 0.6;
-        gamepad1.left_stick_x *= 0.8;
+        right_stick_x *= 0.75F;
+        right_stick_y *= 0.6F;
+        left_stick_x *= 0.8F;
         }
-        setDrivetrainPowers(gamepad1.right_stick_x, -gamepad1.right_stick_y, gamepad1.left_stick_x);
+        setDrivetrainPowers(right_stick_x, -right_stick_y, left_stick_x);
     }
 }
 
@@ -468,9 +468,9 @@ public class PleaseWorkTeleOp extends MecanumDrivetrain{
     }
   }
   // alr bro like ts is hard to explain js look at this desmos graph imo https://www.desmos.com/calculator/2tmtqifqo3
-  public static double funnyPiecewiseFunction(double power){
-    double deadzone = 0.1;
-    double startPower = 0.3;
+  public static float funnyPiecewiseFunction(float power){
+    float deadzone = 0.1F;
+    float startPower = 0.3F;
 
     if (power > 1) {power = 1;}
     else if (power < -1) {power = -1;}
@@ -486,9 +486,9 @@ public class PleaseWorkTeleOp extends MecanumDrivetrain{
     }
   }
 
-  public static double lineBetweenPoints(double x1, double y1, double x2, double y2, double x){
-    double slope = (y1-y2)/(x1-x2);
-    double yIntercept = y1 - (slope * x1);
+  public static float lineBetweenPoints(float x1, float y1, float x2, float y2, float x){
+    float slope = (y1-y2)/(x1-x2);
+    float yIntercept = y1 - (slope * x1);
 
     return (slope * x) + yIntercept;
   }
