@@ -1,18 +1,16 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.LastYearExampleCode;
 
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.hardware.Servo;
 import java.util.Arrays;
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import org.firstinspires.ftc.robotcore.external.navigation.Rotation;
+
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.CRServo;
 
 @Disabled//@Autonomous
 
-public class PleaseWork3Sample extends MecanumDrivetrain{
+public class PleaseWorkAuto extends MecanumDrivetrain{
   final double PI = Math.PI;
   
   //put the definitions for the motors and stuff here:
@@ -177,7 +175,7 @@ public void move(double x, double y, int ticks, double speed) {
       armMotorTargetPosition = degreesToMotorUnits(7);
       
     } else if (armPosition == 2) {
-      armMotorTargetPosition = degreesToMotorUnits(25);
+      armMotorTargetPosition = degreesToMotorUnits(20);
       
     } else if (armPosition == 3) {
       armMotorTargetPosition = degreesToMotorUnits(80);
@@ -295,7 +293,7 @@ public void move(double x, double y, int ticks, double speed) {
     move(0, -1, 100, 0.5);
     slideIsUp = true;
     
-    move(1, 0, 1100, 0.3);
+    move(1, 0, 950, 0.3);
     
     armPosition = 4;
     
@@ -303,29 +301,28 @@ public void move(double x, double y, int ticks, double speed) {
   
     runOutakeServo(1.6);
     
-    updateSleep(0.5);
+    updateSleep(1.5);
     
     // first sample grab
-    move(-1, -1, 450, 1);
-    updateSleep(1);
-    move(1, 0, 50, 0.3);
-    
-    armPosition = 3;
+    move(-1, -1, 500, 1);
+ 
     updateSleep(0.3);
+    openClaw();
+    armPosition = 3;
     slideIsUp = false;
     
-    openClaw();
-    
+    updateSleep(2.5);
     turn(180);
-    updateSleep(0.5);
-    move(0, 1, 100, 0.2);
-    move(1, 0, 60, 0.2);
     
+    move(1, 0, -100, 0.3);
+    move(0, 1, 60, 0.2);
     updateSleep(0.5);
-    armPosition = 2;
+    //move(-1, 0, 50, 0.2);//jfioaskod
     updateSleep(1);
+    armPosition = 2;
+    updateSleep(1.5);
     armPosition = 1;
-    updateSleep(0.5);
+    updateSleep(1);
     closeClaw();
     
     // go to bucket
@@ -338,51 +335,115 @@ public void move(double x, double y, int ticks, double speed) {
     
     turn(0);
     
-    updateSleep(0.5);
+    updateSleep(1);
     armPosition = 3;
     
-    updateSleep(0.5);//move(0, 1, 300, 0.5);
+    updateSleep(2);//move(0, 1, 300, 0.5);
     slideIsUp = true;
     move(1, 1, 400, 0.6);
     updateSleep(1.5);
     
     armPosition = 4;
-    move(1, 1, 180, 0.3);
+    move(1, 1, 100, 0.3);
     updateSleep(2);
     runOutakeServo(1.475);
     
     updateSleep(1);
     
     
-    //backs away from bucket - copy and pasted code ._.
-    
-    move(-1, -1, 500, 1);
-    updateSleep(0.3);
-    openClaw();
-    armPosition = 3;
-    slideIsUp = false;
-    
-    updateSleep(1.5);
-    turn(180);
-    
-    move(0, 1, 100, 0.2);
-    move(-1, 0, 300, 0.2);
-    
-    updateSleep(0.5);
-    armPosition = 2;
-    updateSleep(1);
-    armPosition = 1;
-    updateSleep(0.5);
-    closeClaw();
-    
-    updateSleep(0.5);
-    armPosition = 4;
-    
     
     // end of code we actually care about
   }
 }
 
+class RotationController { //this code is so assssssss
+  
+  final double PI = Math.PI;
+  
+  public static final double[] DONE = {100, 100, 100};
+  
+  double tolerance = 10; //how close the motor has to get to its target to stop
+  double secondsToEnd = 0.07; //how long the motor has to be within the tolerance to stop
+
+  ElapsedTime secondsWithinTolerance;
+
+  double Kp;
+
+  double Ki; //integral term
+  double integralSum; //used for calculating the integral
+
+  double Kd; //derivative term
+  double lastError; //used for calculating the derivative
+  
+  ElapsedTime timer;
+  
+  private static double bound(double num, double lowerBound, double upperBound) {
+      return Math.max(Math.min(num, upperBound), lowerBound);
+    }
+  
+  RotationController(double Kp, double Ki, double Kd, double tolerance, double secondsToEnd) {
+    this.secondsWithinTolerance = new ElapsedTime();
+    
+    this.Kp = Kp;
+    this.Ki = Ki;
+    this.Kd = Kd;
+  
+    this.integralSum = 0;
+    this.lastError = 0;
+  
+    this.timer = new ElapsedTime();
+  
+    this.tolerance = tolerance;
+    this.secondsToEnd = secondsToEnd;
+  }
+  
+  
+  private double[] PIDController(double error) {
+    //the sum of change over time
+    integralSum += error * timer.seconds();
+    
+    integralSum = bound(integralSum, -0.2, 0.2);
+  
+    //the rate of change of the error
+    double derivative = (error - lastError) / timer.seconds();
+  
+    lastError = error;
+  
+    timer.reset();
+    double[] outputs = {(error * Kp), (integralSum * Ki), (derivative * Kd)};
+    return outputs;
+    //return bound((error * Kp) + (integralSum * Ki) + (derivative * Kd), -1, 1);
+  }
+  
+  public double[] updateMotor(double currentPosition, double reference) {
+    double actualError = reference - currentPosition;
+    double leastError = actualError;
+    
+    double[] errors = {actualError - (2 * PI), actualError + (2 * PI)};
+    
+    for (double error : errors) {
+      if (Math.abs(leastError) > Math.abs(error)) {
+        leastError = error;
+      }
+    }
+    
+    double[] output = PIDController(leastError);
+    
+    if (! (leastError < tolerance && leastError > -tolerance)) {
+      secondsWithinTolerance.reset();
+    }
+    if (secondsWithinTolerance.seconds() >= secondsToEnd) {
+      return DONE;
+    }
+    
+    return output;
+  }
+  
+  
+  public void resetIntegralSum(){
+    integralSum = 0;
+  }
+}
 
 
 

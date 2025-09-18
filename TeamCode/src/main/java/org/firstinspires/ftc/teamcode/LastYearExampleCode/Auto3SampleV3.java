@@ -1,18 +1,14 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.LastYearExampleCode;
 
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.hardware.Servo;
-import java.util.Arrays;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import org.firstinspires.ftc.robotcore.external.navigation.Rotation;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.CRServo;
 
-@Autonomous(name = "idle animation")
+@Autonomous
 
-public class Auto3SampleV3_Copy extends MecanumDrivetrain3{
+public class Auto3SampleV3 extends MecanumDrivetrain3{
   final double PI = Math.PI;
   
   //put the definitions for the motors and stuff here:
@@ -229,26 +225,20 @@ public class Auto3SampleV3_Copy extends MecanumDrivetrain3{
     
     openClaw();
     
-    armPosition = 3;
-    while (opModeIsActive()) {
-      updateSleep(1);
-      move(0, 500);
-      updateSleep(0.5);
-      turn(180);
-      updateSleep(1);
-      openClaw();
-      updateSleep(0.25);
-      closeClaw();
-      updateSleep(0.25);
-      openClaw();
-      updateSleep(0.25);
-      closeClaw();
-      updateSleep(0.25);
-      openClaw();
-      updateSleep(0.25);
-      closeClaw();
-      updateSleep(0.25);
-    }
+    // while (opModeIsActive()) {
+    //   armPosition = 4;
+    //   updateSleep(1);
+    //   openClaw();
+    //   updateSleep(1);
+    //   armPosition = 3;
+    //   updateSleep(2);
+    //   armPosition = 2;
+    //   updateSleep(2);
+    //   armPosition = 1;
+    //   updateSleep(2);
+    //   closeClaw();
+    //   updateSleep(1);
+    // }
     
     
     //>>>>CODE WE ACTUALLY CARE ABOUT:<<<<
@@ -273,7 +263,7 @@ public class Auto3SampleV3_Copy extends MecanumDrivetrain3{
     
     armPosition = 2;
     turn(180);
-    move(-50, 175);
+    move(0, 120);
     //updateSleep(0.5);
     
     
@@ -294,10 +284,10 @@ public class Auto3SampleV3_Copy extends MecanumDrivetrain3{
 
     
     slideIsUp = true;
-    move(250, 350);
+    move(250, 370);
     armPosition = 4;
     updateSleep(1.5);
-    move(120, 175);
+    move(100, 200);
     
     runOutakeServo(0.6);
     
@@ -306,12 +296,12 @@ public class Auto3SampleV3_Copy extends MecanumDrivetrain3{
     armPosition = 3;
     move(-80, -110);
     slideIsUp = false;
-    turn(180);
+    turn(190);
     
 
     
     armPosition = 2;
-    move(-200, 345); //!!
+    move(0, 355); //!!
     //move(-100, 0);
     
     updateSleep(0.5);
@@ -333,7 +323,7 @@ public class Auto3SampleV3_Copy extends MecanumDrivetrain3{
     slideIsUp = true;
     
     updateSleep(1.5);
-    move(350, 500);
+    move(370, 530);
     runOutakeServo(0.7);
     /*    
     
