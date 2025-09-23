@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.LastYearExampleCode;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import java.util.Arrays;
 import com.qualcomm.robotcore.hardware.Gamepad;
@@ -8,7 +9,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.CRServo;
 // (90, -333) and (0, -1566)
-@TeleOp
+@Disabled//@TeleOp
 
 public class PleaseWorkTeleOp extends MecanumDrivetrain{
   private Gamepad gamepad2Last = new Gamepad();

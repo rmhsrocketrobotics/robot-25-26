@@ -1,9 +1,10 @@
 package org.firstinspires.ftc.teamcode.LastYearExampleCode;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
-
+@Disabled
 public abstract class MecanumDrivetrain2 extends LinearOpMode {
     public PIDController xController; // controls left-right movement
     public PIDController yController; // controls backward-forward movement
