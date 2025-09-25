@@ -11,15 +11,25 @@ import org.rowlandhall.meepmeep.MeepMeep;
 import org.rowlandhall.meepmeep.roadrunner.DefaultBotBuilder;
 import org.rowlandhall.meepmeep.roadrunner.entity.RoadRunnerBotEntity;
 
+import java.awt.Image;
+import java.io.File;
+import java.io.IOException;
+
+import javax.imageio.ImageIO;
+
 public class MeepMeepTesting {
     static final double pi = Math.PI;
 
     public static void main(String[] args) {
         MeepMeep meepMeep = new MeepMeep(800);
 
-        RoadRunnerBotEntity myBot = autoV2(meepMeep);
+        RoadRunnerBotEntity myBot = autoV3(meepMeep);
 
-        meepMeep.setBackground(MeepMeep.Background.FIELD_INTOTHEDEEP_JUICE_DARK)
+        Image img = null;
+        try { img = ImageIO.read(new File("MeepMeepTesting/src/main/java/com/example/meepmeeptesting/decode webfield.png")); }
+        catch(IOException e) {}
+
+        meepMeep.setBackground(img)
                 .setDarkMode(true)
                 .setBackgroundAlpha(0.95f)
                 .addEntity(myBot)
@@ -109,6 +119,15 @@ public class MeepMeepTesting {
                         .splineToConstantHeading(new Vector2d(40, 12), pi)
                         .splineToConstantHeading(new Vector2d(25, 12), pi)
 
+                        .build());
+    }
+
+    public static RoadRunnerBotEntity autoV3(MeepMeep meepMeep) {
+        return new DefaultBotBuilder(meepMeep)
+                // Set bot constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
+                .setConstraints(40, 50, Math.toRadians(180), Math.toRadians(180), 14.5)
+                .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(38, 62, pi/2))
+                        .setTangent(3*pi/2).splineTo(new Vector2d(20, 20), pi)
                         .build());
     }
 
