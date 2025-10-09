@@ -21,9 +21,9 @@ public class MeepMeepTesting {
     static final double pi = Math.PI;
 
     public static void main(String[] args) {
-        MeepMeep meepMeep = new MeepMeep(800);
+        MeepMeep meepMeep = new MeepMeep(700);
 
-        RoadRunnerBotEntity myBot = autoV3(meepMeep);
+        RoadRunnerBotEntity myBot = testPath(meepMeep);
 
         Image img = null;
         try { img = ImageIO.read(new File("MeepMeepTesting/src/main/java/com/example/meepmeeptesting/decode webfield.png")); }
@@ -128,19 +128,30 @@ public class MeepMeepTesting {
                 .setConstraints(40, 50, Math.toRadians(180), Math.toRadians(180), 14.5)
                 .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(38, 62, pi/2))
                         .setTangent(3*pi/2).splineTo(new Vector2d(20, 20), pi)
+                        .splineTo(new Vector2d(0, 62), pi) //.setTangent(pi/2)
+                        .splineTo(new Vector2d(38, 62), pi) //.setTangent(pi/2).
                         .build());
     }
 
     public static RoadRunnerBotEntity testPath(MeepMeep meepMeep) {
+        double startToBall1Angle = angleBetweenPoints(new Vector2d(56, 0), new Vector2d(38, 46));
+        System.out.println(Math.toDegrees(startToBall1Angle));
+        double startToGoalAngle = angleBetweenPoints(new Vector2d(56, 0), new Vector2d(-66, 60));
+        System.out.println(Math.toDegrees(startToGoalAngle));
+        double startToBall2Angle = angleBetweenPoints(new Vector2d(56, 0), new Vector2d(13, 43));
+        System.out.println(Math.toDegrees(startToGoalAngle));
         return new DefaultBotBuilder(meepMeep)
                 // Set bot constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
                 .setConstraints(40, 50, Math.toRadians(180), Math.toRadians(180), 14.5)
-                .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(0, 0, pi/2))
+                .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(56, 0, startToGoalAngle+pi))
+                .waitSeconds(1)
+                .setTangent(startToBall1Angle).splineToLinearHeading(new Pose2d(38, 46, pi/2),pi/2)
+                //.waitSeconds(3)
+                .setTangent(startToBall1Angle+pi).splineToLinearHeading(new Pose2d(56, 0, startToGoalAngle+pi), startToGoalAngle+pi)
 
-                .setTangent(0).splineTo(new Vector2d(30, 30), pi/2)
-                .setTangent(5*pi/8).splineTo(new Vector2d(0, 0), 3*pi/2)
-
-                .waitSeconds(3)
+                .setTangent(startToBall2Angle).splineToLinearHeading(new Pose2d(13, 43, pi/2), pi/2)
+                //.waitSeconds(3)
+                .setTangent(startToBall2Angle+pi).splineToLinearHeading(new Pose2d(56, 0, startToGoalAngle+pi), startToGoalAngle+pi)
                 .build());
     }
 
