@@ -146,7 +146,7 @@ public class MeepMeepTesting {
                 .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(56, 0, startToGoalAngle+pi))
                 .waitSeconds(1)
                 .setTangent(startToBall1Angle).splineToLinearHeading(new Pose2d(38, 46, pi/2),pi/2)
-                //.waitSeconds(3) kyrie
+                //.waitSeconds(3)
                 .setTangent(startToBall1Angle+pi).splineToLinearHeading(new Pose2d(56, 0, startToGoalAngle+pi), startToGoalAngle+pi)
 
                 .setTangent(startToBall2Angle).splineToLinearHeading(new Pose2d(13, 43, pi/2), pi/2)
