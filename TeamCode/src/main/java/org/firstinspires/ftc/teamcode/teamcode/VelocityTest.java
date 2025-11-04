@@ -62,13 +62,13 @@ public class VelocityTest extends LinearOpMode{
 
             //gecko.setPower((-gamepad1.left_stick_y * 50) + 50);
              if (gamepad1.a) {
-                 gecko.setVelocity(metersToTicks(.05));
+                 gecko.setVelocity(metersToTicks(.5));
              } else {
                  gecko.setVelocity(0);
              }
 
              if (gamepad1.b) {
-                 gecko.setVelocity(metersToTicks(.1));
+                 gecko.setVelocity(metersToTicks(.25));
              } else {
                  gecko.setVelocity(0);
              }
