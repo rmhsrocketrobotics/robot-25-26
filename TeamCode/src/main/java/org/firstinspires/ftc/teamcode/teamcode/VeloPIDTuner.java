@@ -26,7 +26,7 @@ public class VeloPIDTuner extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         // Change my id
-        DcMotorEx myMotor = hardwareMap.get(DcMotorEx.class, "gecko");
+        DcMotorEx myMotor = hardwareMap.get(DcMotorEx.class, "launchMotor");
 
         // Reverse as appropriate
         // myMotor.setDirection(DcMotorSimple.Direction.REVERSE);

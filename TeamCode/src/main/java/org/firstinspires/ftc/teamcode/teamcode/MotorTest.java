@@ -18,7 +18,7 @@ public class MotorTest extends LinearOpMode{
 
     @Override
     public void runOpMode() {
-        gecko = hardwareMap.get(DcMotorEx.class, "gecko");
+        gecko = hardwareMap.get(DcMotorEx.class, "launchMotor");
 
         gecko.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
@@ -51,13 +51,17 @@ public class MotorTest extends LinearOpMode{
             }
 
 
-            //gecko.setPower((-gamepad1.left_stick_y * 50) + 50);
-            if (gamepad1.a) {
-                gecko.setPower(0.1);
-            } else if (gamepad1.b) {
-                gecko.setPower(0.05);
+            //gecko.setPower(-gamepad1.left_stick_y);
+            if (gamepad1.b) {
+                gecko.setPower(-1);
+            } else if (gamepad1.a) {
+                gecko.setPower(-0.75);
+            } else if (gamepad1.x) {
+                gecko.setPower(-0.5);
+            } else if (gamepad1.y) {
+                gecko.setPower(-0.25);
             } else {
-                gecko.setVelocity(0);
+                gecko.setPower(0);
             }
         }
     }

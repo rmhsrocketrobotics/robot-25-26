@@ -21,7 +21,7 @@ public class VelocityTest extends LinearOpMode{
 
     @Override
     public void runOpMode() {
-        gecko = hardwareMap.get(DcMotorEx.class, "gecko");
+        gecko = hardwareMap.get(DcMotorEx.class, "launchMotor");
 
         MotorConfigurationType motorConfigurationType = gecko.getMotorType().clone();
         motorConfigurationType.setAchieveableMaxRPMFraction(1.0);
