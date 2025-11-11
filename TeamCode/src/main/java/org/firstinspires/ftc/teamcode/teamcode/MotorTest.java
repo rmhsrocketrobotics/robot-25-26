@@ -18,7 +18,7 @@ public class MotorTest extends LinearOpMode{
 
     @Override
     public void runOpMode() {
-        gecko = hardwareMap.get(DcMotorEx.class, "launchMotor");
+        gecko = hardwareMap.get(DcMotorEx.class, "outtake");
 
         gecko.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
