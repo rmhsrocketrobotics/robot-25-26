@@ -86,10 +86,10 @@ public class BasicTeleop extends LinearOpMode{
             }
 
             //equations to move the robot
-//            flDrivetrain.setPower(yPower + xPower + rPower);
-//            frDrivetrain.setPower(yPower - xPower - rPower);
-//            blDrivetrain.setPower(yPower - xPower + rPower);
-//            brDrivetrain.setPower(yPower + xPower - rPower);
+            flDrivetrain.setPower(yPower + xPower + rPower);
+            frDrivetrain.setPower(yPower - xPower - rPower);
+            blDrivetrain.setPower(yPower - xPower + rPower);
+            brDrivetrain.setPower(yPower + xPower - rPower);
 
             outtake.setPower(-gamepad2.left_stick_y);
             intake.setPower(-gamepad2.right_stick_y);
@@ -103,32 +103,5 @@ public class BasicTeleop extends LinearOpMode{
             //keep track of what buttons were pressed last loop
             aPressedLast = gamepad1.a;
         }
-    }
-}
-
-class CustomMath {
-    public static double funnyPiecewiseFunction(double power){
-        double deadzone = 0.075;
-        double startPower = 0.3;
-
-        if (power > 1) {power = 1;}
-        else if (power < -1) {power = -1;}
-
-        if (power < -deadzone){
-            return lineBetweenPoints(-deadzone, -startPower, -1, -1, power);
-
-        } else if (power > deadzone) {
-            return lineBetweenPoints(deadzone, startPower, 1, 1, power);
-
-        } else {
-            return 0;
-        }
-    }
-
-    public static double lineBetweenPoints(double x1, double y1, double x2, double y2, double x){
-        double slope = (y1-y2)/(x1-x2);
-        double yIntercept = y1 - (slope * x1);
-
-        return (slope * x) + yIntercept;
     }
 }

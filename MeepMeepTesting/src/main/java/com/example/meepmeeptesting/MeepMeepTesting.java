@@ -145,11 +145,13 @@ public class MeepMeepTesting {
                 .setConstraints(40, 50, Math.toRadians(180), Math.toRadians(180), 14.5)
                 .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(56, 0, startToGoalAngle+pi))
                 .waitSeconds(1)
-                .setTangent(startToBall1Angle).splineToLinearHeading(new Pose2d(38, 46, pi/2),pi/2)
+                .setTangent(startToBall1Angle).splineToSplineHeading(new Pose2d(38, 30, pi/2),pi/2)
+                        .splineToLinearHeading(new Pose2d(38, 46, pi/2),pi/2)
                 //.waitSeconds(3)
                 .setTangent(startToBall1Angle+pi).splineToLinearHeading(new Pose2d(56, 0, startToGoalAngle+pi), startToGoalAngle+pi)
 
-                .setTangent(startToBall2Angle).splineToLinearHeading(new Pose2d(13, 43, pi/2), pi/2)
+                .setTangent(startToBall2Angle).splineToSplineHeading(new Pose2d(13, 30, pi/2), pi/2)
+                        .splineToLinearHeading(new Pose2d(13, 46, pi/2),pi/2)
                 //.waitSeconds(3)
                 .setTangent(startToBall2Angle+pi).splineToLinearHeading(new Pose2d(56, 0, startToGoalAngle+pi), startToGoalAngle+pi)
                 .build());
