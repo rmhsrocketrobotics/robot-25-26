@@ -140,20 +140,32 @@ public class MeepMeepTesting {
         System.out.println(Math.toDegrees(startToGoalAngle));
         double startToBall2Angle = angleBetweenPoints(new Vector2d(56, 0), new Vector2d(13, 43));
         System.out.println(Math.toDegrees(startToGoalAngle));
+        double startToBallLine = angleBetweenPoints(new Vector2d(56, 0), new Vector2d(46, 37));
+        System.out.println(Math.toDegrees(startToGoalAngle));
+
         return new DefaultBotBuilder(meepMeep)
                 // Set bot constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
                 .setConstraints(40, 50, Math.toRadians(180), Math.toRadians(180), 14.5)
                 .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(56, 0, startToGoalAngle+pi))
-                .waitSeconds(1)
-                .setTangent(startToBall1Angle).splineToSplineHeading(new Pose2d(38, 30, pi/2),pi/2)
-                        .splineToLinearHeading(new Pose2d(38, 46, pi/2),pi/2)
-                //.waitSeconds(3)
-                .setTangent(startToBall1Angle+pi).splineToLinearHeading(new Pose2d(56, 0, startToGoalAngle+pi), startToGoalAngle+pi)
+                .splineTo(new Vector2d(38, 35),pi/2)
+                .splineTo(new Vector2d(38, 46), pi/2)
 
-                .setTangent(startToBall2Angle).splineToSplineHeading(new Pose2d(13, 30, pi/2), pi/2)
-                        .splineToLinearHeading(new Pose2d(13, 46, pi/2),pi/2)
-                //.waitSeconds(3)
-                .setTangent(startToBall2Angle+pi).splineToLinearHeading(new Pose2d(56, 0, startToGoalAngle+pi), startToGoalAngle+pi)
+                .waitSeconds(3)
+
+                .splineTo(new Vector2d(56, 0), pi)
+                .splineTo(new Vector2d(13, 37), pi/2)
+                .splineTo(new Vector2d(13, 46), pi/2)
+
+                .waitSeconds(3)
+
+                .splineTo(new Vector2d(56, 0), startToGoalAngle+pi)
+//3rd retreive
+//                .setTangent(startToBall2Angle).splineToLinearHeading(new Pose2d(-12, 30, pi/2), pi/2)
+//
+//                .setTangent(startToBallLine).splineToLinearHeading(new Pose2d(-12, 46, pi/2), pi/2)
+//                //.waitSeconds(3)
+//                .setTangent(startToBall2Angle+pi).splineToLinearHeading(new Pose2d(56, 0, startToGoalAngle+pi), startToGoalAngle+pi)
+
                 .build());
     }
 
