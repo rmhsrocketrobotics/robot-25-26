@@ -11,26 +11,17 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 @TeleOp
 
-public class VelocityTest extends LinearOpMode{
+public class MotorTest extends LinearOpMode{
 
-    public static PIDFCoefficients MOTOR_VELO_PID = new PIDFCoefficients(2, 0, 3, 12);
-
-    private VoltageSensor batteryVoltageSensor;
     DcMotorEx gecko;
     ElapsedTime timer = new ElapsedTime();
 
     @Override
     public void runOpMode() {
-        gecko = hardwareMap.get(DcMotorEx.class, "launchMotor");
+        gecko = hardwareMap.get(DcMotorEx.class, "outtake");
 
-        MotorConfigurationType motorConfigurationType = gecko.getMotorType().clone();
-        motorConfigurationType.setAchieveableMaxRPMFraction(1.0);
-        gecko.setMotorType(motorConfigurationType);
+        gecko.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        gecko.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
-        batteryVoltageSensor = hardwareMap.voltageSensor.iterator().next();
-        setPIDFCoefficients(gecko, MOTOR_VELO_PID);
 
         waitForStart();
 
@@ -60,14 +51,18 @@ public class VelocityTest extends LinearOpMode{
             }
 
 
-            //gecko.setPower((-gamepad1.left_stick_y * 50) + 50);
-             if (gamepad1.a) {
-                 gecko.setVelocity(metersToTicks(.5));
-             } else if (gamepad1.b) {
-                 gecko.setVelocity(metersToTicks(.25));
-             } else {
-                 gecko.setVelocity(0);
-             }
+            //gecko.setPower(-gamepad1.left_stick_y);
+            if (gamepad1.b) {
+                gecko.setPower(-1);
+            } else if (gamepad1.a) {
+                gecko.setPower(-0.75);
+            } else if (gamepad1.x) {
+                gecko.setPower(-0.5);
+            } else if (gamepad1.y) {
+                gecko.setPower(-0.25);
+            } else {
+                gecko.setPower(0);
+            }
         }
     }
 
@@ -93,11 +88,5 @@ public class VelocityTest extends LinearOpMode{
         double metersPerMinute = metersPerSecond * 60;
         double RPM = metersPerMinute / (0.096 * Math.PI);
         return RPM;
-    }
-
-    private void setPIDFCoefficients(DcMotorEx motor, PIDFCoefficients coefficients) {
-        motor.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(
-                coefficients.p, coefficients.i, coefficients.d, coefficients.f * 12 / batteryVoltageSensor.getVoltage()
-        ));
     }
 }

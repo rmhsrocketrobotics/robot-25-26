@@ -22,6 +22,10 @@ public class BasicTeleop extends LinearOpMode{
         DcMotor blDrivetrain = hardwareMap.get(DcMotor.class, "bl");
         DcMotor brDrivetrain = hardwareMap.get(DcMotor.class, "br");
 
+        DcMotor intake = hardwareMap.get(DcMotor.class, "intake");
+        DcMotor outtake = hardwareMap.get(DcMotor.class, "outtake");
+        DcMotor flick = hardwareMap.get(DcMotor.class, "flick");
+
         // Servo leftClaw = hardwareMap.get(Servo.class, "lc");
         // Servo rightClaw = hardwareMap.get(Servo.class, "rc");
 
@@ -73,21 +77,22 @@ public class BasicTeleop extends LinearOpMode{
         boolean aPressedLast = false;
 
         while (opModeIsActive()) {
-            double yPower = CustomMath.funnyPiecewiseFunction(-gamepad1.right_stick_y) * 0.5;
-            double xPower = CustomMath.funnyPiecewiseFunction(gamepad1.right_stick_x) * 0.5;
-            double rPower = CustomMath.funnyPiecewiseFunction(gamepad1.left_stick_x) * 0.5;
+            double yPower = -gamepad1.right_stick_y;//CustomMath.funnyPiecewiseFunction(-gamepad1.right_stick_y) * 0.5;
+            double xPower = gamepad1.right_stick_x;//CustomMath.funnyPiecewiseFunction(gamepad1.right_stick_x) * 0.5;
+            double rPower = gamepad1.left_stick_x;//CustomMath.funnyPiecewiseFunction(gamepad1.left_stick_x) * 0.5;
 
             if (!aPressedLast && gamepad1.a) {
                 //do stuff!
             }
 
             //equations to move the robot
-            flDrivetrain.setPower(yPower + xPower + rPower);
-            frDrivetrain.setPower(yPower - xPower - rPower);
-            blDrivetrain.setPower(yPower - xPower + rPower);
-            brDrivetrain.setPower(yPower + xPower - rPower);
+//            flDrivetrain.setPower(yPower + xPower + rPower);
+//            frDrivetrain.setPower(yPower - xPower - rPower);
+//            blDrivetrain.setPower(yPower - xPower + rPower);
+//            brDrivetrain.setPower(yPower + xPower - rPower);
 
-            flDrivetrain.setTargetPosition(300);
+            outtake.setPower(-gamepad2.left_stick_y);
+            intake.setPower(-gamepad2.right_stick_y);
 
             telemetry.addData("fldrivetrain is ", flDrivetrain.getCurrentPosition());
             telemetry.addData("frdrivetrain is ", frDrivetrain.getCurrentPosition());

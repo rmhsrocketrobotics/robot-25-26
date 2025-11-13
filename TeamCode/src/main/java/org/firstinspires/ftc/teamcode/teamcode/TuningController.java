@@ -9,8 +9,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 @Config
 public class TuningController {
-    public static double MOTOR_TICKS_PER_REV = 537.7;
-    public static double MOTOR_MAX_RPM = 312;
+    public static double MOTOR_TICKS_PER_REV = 28;
+    public static double MOTOR_MAX_RPM = 6000;
     public static double MOTOR_GEAR_RATIO = 1; // output (wheel) speed / input (motor) speed
 
     public static double TESTING_MAX_SPEED = 0.9 * MOTOR_MAX_RPM;
@@ -21,14 +21,14 @@ public class TuningController {
     // alphabetical order. Thus, we preserve the actual order of the process
     // Then we append Z just because we want it to show below the MOTOR_ and TESTING_ because
     // these settings aren't as important
-    public static double ZSTATE1_RAMPING_UP_DURATION = 3.5;
-    public static double ZSTATE2_COASTING_1_DURATION = 4;
-    public static double ZSTATE3_RAMPING_DOWN_DURATION = 2;
-    public static double ZSTATE4_COASTING_2_DURATION = 2;
-    public static double ZSTATE5_RANDOM_1_DURATION = 2;
-    public static double ZSTATE6_RANDOM_2_DURATION = 2;
-    public static double ZSTATE7_RANDOM_3_DURATION = 2;
-    public static double ZSTATE8_REST_DURATION = 1;
+    public static double ZSTATE1_RAMPING_UP_DURATION = 3.5 + 2;
+    public static double ZSTATE2_COASTING_1_DURATION = 4 + 2;
+    public static double ZSTATE3_RAMPING_DOWN_DURATION = 2 + 2;
+    public static double ZSTATE4_COASTING_2_DURATION = 2 + 2;
+    public static double ZSTATE5_RANDOM_1_DURATION = 2 + 2;
+    public static double ZSTATE6_RANDOM_2_DURATION = 2 + 2;
+    public static double ZSTATE7_RANDOM_3_DURATION = 2 + 2;
+    public static double ZSTATE8_REST_DURATION = 1 + 2;
 
     enum State {
         RAMPING_UP,
