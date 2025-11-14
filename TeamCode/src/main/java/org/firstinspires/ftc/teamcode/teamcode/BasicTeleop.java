@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.IMU;
-import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -13,10 +12,6 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 public class BasicTeleop extends LinearOpMode{
     @Override
     public void runOpMode() {
-        //get the motors/servos from the driver station so we can control them
-        // DcMotor armMotor = hardwareMap.get(DcMotor.class, "arm");
-        // DcMotor slideMotor = hardwareMap.get(DcMotor.class, "slide");
-
         DcMotor flDrivetrain = hardwareMap.get(DcMotor.class, "fl");
         DcMotor frDrivetrain = hardwareMap.get(DcMotor.class, "fr");
         DcMotor blDrivetrain = hardwareMap.get(DcMotor.class, "bl");
@@ -26,11 +21,6 @@ public class BasicTeleop extends LinearOpMode{
         DcMotor outtake = hardwareMap.get(DcMotor.class, "outtake");
         DcMotor flick = hardwareMap.get(DcMotor.class, "flick");
 
-        // Servo leftClaw = hardwareMap.get(Servo.class, "lc");
-        // Servo rightClaw = hardwareMap.get(Servo.class, "rc");
-
-        // CRServo outakeServo = hardwareMap.get(CRServo.class, "outakeServo");
-
         //random ahh imu stuff dw
         IMU imu = hardwareMap.get(IMU.class, "imu");
         IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
@@ -39,9 +29,6 @@ public class BasicTeleop extends LinearOpMode{
 
         imu.initialize(parameters);
         imu.resetYaw();
-
-        //gamepad1.left_bumper;
-        //gamepad1.left_trigger;
 
         //change the direction of drivetrain motors so they're all facing the same way
         flDrivetrain.setDirection(DcMotor.Direction.REVERSE);
@@ -58,32 +45,17 @@ public class BasicTeleop extends LinearOpMode{
         blDrivetrain.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         brDrivetrain.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-        // flDrivetrain.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        // frDrivetrain.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        // blDrivetrain.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        // brDrivetrain.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
         flDrivetrain.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         frDrivetrain.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         blDrivetrain.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         brDrivetrain.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-
         waitForStart();
 
-        // leftClaw.setPosition(0.5); //open position is 0.243; closed position is 0.426
-        // rightClaw.setPosition(0.5); //open position is 0.4; closed position is 0.233
-
-        boolean aPressedLast = false;
-
         while (opModeIsActive()) {
-            double yPower = -gamepad1.right_stick_y;//CustomMath.funnyPiecewiseFunction(-gamepad1.right_stick_y) * 0.5;
-            double xPower = gamepad1.right_stick_x;//CustomMath.funnyPiecewiseFunction(gamepad1.right_stick_x) * 0.5;
-            double rPower = gamepad1.left_stick_x;//CustomMath.funnyPiecewiseFunction(gamepad1.left_stick_x) * 0.5;
-
-            if (!aPressedLast && gamepad1.a) {
-                //do stuff!
-            }
+            double yPower = -gamepad1.right_stick_y;
+            double xPower = gamepad1.right_stick_x;
+            double rPower = gamepad1.left_stick_x;
 
             //equations to move the robot
             flDrivetrain.setPower(yPower + xPower + rPower);
@@ -99,9 +71,6 @@ public class BasicTeleop extends LinearOpMode{
             telemetry.addData("bldrivetrain is ", blDrivetrain.getCurrentPosition());
             telemetry.addData("brdrivetrain is ", brDrivetrain.getCurrentPosition());
             telemetry.update();
-
-            //keep track of what buttons were pressed last loop
-            aPressedLast = gamepad1.a;
         }
     }
 }
