@@ -32,7 +32,7 @@ public class MeepMeepTesting {
         MeepMeep meepMeep = new MeepMeep(700);
 
 
-        RoadRunnerBotEntity myBot = testPathLeft(meepMeep);
+        RoadRunnerBotEntity myBot = testPathRight(meepMeep);
 
 
         Image img = null;
@@ -176,9 +176,9 @@ public class MeepMeepTesting {
         return new DefaultBotBuilder(meepMeepRight)
                 // Set bot constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
                 .setConstraints(40, 50, Math.toRadians(180), Math.toRadians(180), 14.5)
-                .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(61, 20, Math.toRadians(180)))
+                .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(61, 10, Math.toRadians(180)))
 
-                        .splineTo(new Vector2d(48.7, 3.6),startToGoalAngle)
+                        .splineTo(new Vector2d(51, 13),startToGoalAngle)
                         .waitSeconds(2)
                         .splineTo(new Vector2d(38, 35),pi/2)
                         .splineTo(new Vector2d(38, 46), pi/2)
@@ -187,7 +187,7 @@ public class MeepMeepTesting {
                         .waitSeconds(3)
 
 
-                        .setReversed(true).splineTo(new Vector2d(56, 20), startToGoalAngle + pi)
+                        .setReversed(true).splineTo(new Vector2d(56, 10), startToGoalAngle + pi)
 
                         .waitSeconds(3)
 
@@ -199,7 +199,7 @@ public class MeepMeepTesting {
                         .waitSeconds(3)
 
 
-                        .setReversed(true).splineTo(new Vector2d(56, 20), startToGoalAngle+pi)
+                        .setReversed(true).splineTo(new Vector2d(56, 10), startToGoalAngle+pi)
                         .waitSeconds(3)
 
 
@@ -221,25 +221,25 @@ public class MeepMeepTesting {
         return new DefaultBotBuilder(meepMeepLeft)
                 // Set bot constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
                 .setConstraints(40, 50, Math.toRadians(180), Math.toRadians(180), 14.5)
-                .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(-61, 20, Math.toRadians(1)))
+                .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(-61, 20, Math.toRadians(180)))
 
-                        .splineTo(new Vector2d(-50, 20), startToGoalAngle)
+                        .setReversed(true).splineTo(new Vector2d(-50, 20), Math.toRadians(-75))
 //                        .waitSeconds(3)
-                        .splineTo(new Vector2d(-13, 35),pi/2)
+                        .setReversed(false).splineTo(new Vector2d(-13, 35),pi/2)
                         .splineTo(new Vector2d(-13, 46), pi/2)
 
 //                        .waitSeconds(3)
 
-                        .setReversed(true).splineTo(new Vector2d(-50, 20), startToGoalAngle+pi)
+                        .setReversed(true).splineTo(new Vector2d(-25, 27), startToGoalAngle+7*pi/6)
 //
 //                        .waitSeconds(3)
 
-                        .setReversed(false).splineTo(new Vector2d(13, 37), pi/2)
+                        .setReversed(false).splineTo(new Vector2d(13, 33), pi/2)
                         .splineTo(new Vector2d(13, 46), pi/2)
 //
 //                        .waitSeconds(3)
 
-                        .setReversed(true).splineTo(new Vector2d(-50, 20), startToGoalAngle+pi)
+                        .setReversed(true).splineTo(new Vector2d(-25, 27), startToGoalAngle+7*pi/6)
 //                        .waitSeconds(3)
 
                         .build());
