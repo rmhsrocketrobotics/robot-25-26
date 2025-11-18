@@ -63,7 +63,7 @@ public class BasicTeleop extends LinearOpMode{
             blDrivetrain.setPower(yPower - xPower + rPower);
             brDrivetrain.setPower(yPower + xPower - rPower);
 
-            outtake.setPower(-gamepad2.left_stick_y);
+            flick.setPower(-gamepad2.left_stick_y);
             intake.setPower(-gamepad2.right_stick_y);
 
             telemetry.addData("fldrivetrain is ", flDrivetrain.getCurrentPosition());

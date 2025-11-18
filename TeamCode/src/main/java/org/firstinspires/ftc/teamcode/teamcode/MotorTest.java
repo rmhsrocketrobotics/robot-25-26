@@ -13,14 +13,18 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 public class MotorTest extends LinearOpMode{
 
-    DcMotorEx gecko;
+    DcMotorEx outtake1;
+    DcMotorEx outtake2;
     ElapsedTime timer = new ElapsedTime();
 
     @Override
     public void runOpMode() {
-        gecko = hardwareMap.get(DcMotorEx.class, "outtake");
+        outtake1 = hardwareMap.get(DcMotorEx.class, "outtake1");
+        outtake2 = hardwareMap.get(DcMotorEx.class, "outtake2");
 
-        gecko.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        outtake1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        outtake2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        outtake1.setDirection(DcMotor.Direction.REVERSE);
 
 
         waitForStart();
@@ -31,37 +35,42 @@ public class MotorTest extends LinearOpMode{
 
         while (opModeIsActive()){
 
-            if (timer.seconds() - timeLastLoop > 0.01) {
-                timeThisLoop = timer.seconds();
-
-                double loopTime = timeThisLoop - timeLastLoop;
-                double ticksTraveled = gecko.getCurrentPosition() - positionLastLoop;
-
-                telemetry.addData("ticks traveled", ticksTraveled);
-                telemetry.addData("loop time", loopTime);
-                telemetry.addData("(our measurements) velocity ticks/s", ticksTraveled / loopTime);
-                telemetry.addData("(motor's measurements) velocity ticks/s", gecko.getVelocity());
-                //telemetry.addData("velocity meters/s", ticksToMeters(ticksTraveled) / loopTime);
-                telemetry.update();
-
-                double motorMetersPerSecond = ticksToMeters(ticksTraveled) / loopTime;
-
-                timeLastLoop = timeThisLoop;
-                positionLastLoop = gecko.getCurrentPosition();
-            }
+//            if (timer.seconds() - timeLastLoop > 0.01) {
+//                timeThisLoop = timer.seconds();
+//
+//                double loopTime = timeThisLoop - timeLastLoop;
+//                double ticksTraveled = gecko.getCurrentPosition() - positionLastLoop;
+//
+//                telemetry.addData("ticks traveled", ticksTraveled);
+//                telemetry.addData("loop time", loopTime);
+//                telemetry.addData("(our measurements) velocity ticks/s", ticksTraveled / loopTime);
+//                telemetry.addData("(motor's measurements) velocity ticks/s", gecko.getVelocity());
+//                //telemetry.addData("velocity meters/s", ticksToMeters(ticksTraveled) / loopTime);
+//                telemetry.update();
+//
+//                double motorMetersPerSecond = ticksToMeters(ticksTraveled) / loopTime;
+//
+//                timeLastLoop = timeThisLoop;
+//                positionLastLoop = gecko.getCurrentPosition();
+//            }
 
 
             //gecko.setPower(-gamepad1.left_stick_y);
             if (gamepad1.b) {
-                gecko.setPower(-1);
+                outtake1.setPower(-1);
+                outtake2.setPower(-1);
             } else if (gamepad1.a) {
-                gecko.setPower(-0.75);
+                outtake1.setPower(-0.75);
+                outtake2.setPower(-0.75);
             } else if (gamepad1.x) {
-                gecko.setPower(-0.5);
+                outtake1.setPower(-0.5);
+                outtake2.setPower(-0.5);
             } else if (gamepad1.y) {
-                gecko.setPower(-0.25);
+                outtake1.setPower(-0.25);
+                outtake2.setPower(-0.25);
             } else {
-                gecko.setPower(0);
+                outtake1.setPower(0);
+                outtake2.setPower(0);
             }
         }
     }

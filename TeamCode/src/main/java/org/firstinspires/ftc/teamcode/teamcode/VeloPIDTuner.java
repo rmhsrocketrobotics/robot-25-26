@@ -26,10 +26,11 @@ public class VeloPIDTuner extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         // Change my id
-        DcMotorEx myMotor = hardwareMap.get(DcMotorEx.class, "launchMotor");
+        DcMotorEx myMotor = hardwareMap.get(DcMotorEx.class, "outtake1");
+        DcMotorEx myMotor2 = hardwareMap.get(DcMotorEx.class, "outtake2");
 
         // Reverse as appropriate
-        // myMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        myMotor.setDirection(DcMotor.Direction.REVERSE);
 
         for (LynxModule module : hardwareMap.getAll(LynxModule.class)) {
             module.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
@@ -38,11 +39,14 @@ public class VeloPIDTuner extends LinearOpMode {
         MotorConfigurationType motorConfigurationType = myMotor.getMotorType().clone();
         motorConfigurationType.setAchieveableMaxRPMFraction(1.0);
         myMotor.setMotorType(motorConfigurationType);
+        myMotor2.setMotorType(motorConfigurationType);
 
         myMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        myMotor2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         batteryVoltageSensor = hardwareMap.voltageSensor.iterator().next();
         setPIDFCoefficients(myMotor, MOTOR_VELO_PID);
+        setPIDFCoefficients(myMotor2, MOTOR_VELO_PID);
 
         TuningController tuningController = new TuningController();
 
@@ -66,6 +70,7 @@ public class VeloPIDTuner extends LinearOpMode {
         while (!isStopRequested() && opModeIsActive()) {
             double targetVelo = tuningController.update();
             myMotor.setVelocity(targetVelo);
+            myMotor2.setVelocity(targetVelo);
 
             telemetry.addData("targetVelocity", targetVelo);
 
@@ -78,6 +83,7 @@ public class VeloPIDTuner extends LinearOpMode {
 
             if (lastKp != MOTOR_VELO_PID.p || lastKi != MOTOR_VELO_PID.i || lastKd != MOTOR_VELO_PID.d || lastKf != MOTOR_VELO_PID.f) {
                 setPIDFCoefficients(myMotor, MOTOR_VELO_PID);
+                setPIDFCoefficients(myMotor2, MOTOR_VELO_PID);
 
                 lastKp = MOTOR_VELO_PID.p;
                 lastKi = MOTOR_VELO_PID.i;
