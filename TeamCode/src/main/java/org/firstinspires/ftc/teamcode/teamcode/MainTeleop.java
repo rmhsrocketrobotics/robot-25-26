@@ -5,10 +5,14 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
+import com.qualcomm.robotcore.hardware.configuration.typecontainers.MotorConfigurationType;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 //import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
@@ -27,9 +31,8 @@ public class MainTeleop extends LinearOpMode{
         Drivetrain drivetrain = new Drivetrain(hardwareMap);
 
         DcMotor intake = hardwareMap.get(DcMotor.class, "intake");
-        DcMotor outtake1 = hardwareMap.get(DcMotor.class, "outtake1");
-        outtake1.setDirection(DcMotor.Direction.REVERSE);
-        DcMotor outtake2 = hardwareMap.get(DcMotor.class, "outtake2");
+        Outtake outtake = new Outtake(hardwareMap, true);
+
         DcMotor flick = hardwareMap.get(DcMotor.class, "flick");
         CRServo flickServo = hardwareMap.get(CRServo.class, "flickServo");
 
@@ -57,14 +60,16 @@ public class MainTeleop extends LinearOpMode{
 
             drivetrain.setDrivetrainPower(-gamepad1.right_stick_y, gamepad1.right_stick_x, gamepad1.left_stick_x);
 
-            outtake1.setPower(-gamepad2.left_stick_y);
-            outtake2.setPower(-gamepad2.left_stick_y);
+            double desiredTPS = -gamepad2.left_stick_y * 1000;
+            outtake.setOuttakeVelocityTPS(desiredTPS);
+            telemetry.addData("desiredTPS", desiredTPS);
 
             //intake.setPower(-gamepad2.right_stick_y);
             flick.setPower(gamepad2.left_trigger);
             flickServo.setPower(gamepad2.right_stick_y);
 
             drivetrain.printTelemetry(telemetry);
+            outtake.printTelemetry(telemetry);
             telemetry.update();
         }
     }
@@ -117,6 +122,56 @@ class Drivetrain {
         telemetry.addData("frdrivetrain is ", frMotor.getCurrentPosition());
         telemetry.addData("bldrivetrain is ", blMotor.getCurrentPosition());
         telemetry.addData("brdrivetrain is ", brMotor.getCurrentPosition());
+    }
+}
+
+class Outtake {
+    DcMotorEx outtake1;
+    DcMotorEx outtake2;
+    PIDFCoefficients MOTOR_VELO_PID;
+    VoltageSensor batteryVoltageSensor;
+    Outtake(HardwareMap hardwareMap, boolean useVeloPID) {
+        outtake1 = hardwareMap.get(DcMotorEx.class, "outtake1");
+        outtake1.setDirection(DcMotor.Direction.REVERSE);
+        outtake2 = hardwareMap.get(DcMotorEx.class, "outtake2");
+
+        if (useVeloPID) {
+            MOTOR_VELO_PID = new PIDFCoefficients(25, 0, 0, 19);
+
+            MotorConfigurationType motorConfigurationType = outtake1.getMotorType().clone();
+            motorConfigurationType.setAchieveableMaxRPMFraction(1.0);
+            outtake1.setMotorType(motorConfigurationType);
+            outtake2.setMotorType(motorConfigurationType);
+
+            outtake1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            outtake2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+            batteryVoltageSensor = hardwareMap.voltageSensor.iterator().next();
+            setPIDFCoefficients(outtake1, MOTOR_VELO_PID);
+            setPIDFCoefficients(outtake2, MOTOR_VELO_PID);
+        }
+    }
+
+    public void setOuttakePower(double power) {
+        outtake1.setPower(-power);
+        outtake2.setPower(-power);
+    }
+
+    public void setOuttakeVelocityTPS(double ticksPerSecond) {
+        outtake1.setVelocity(ticksPerSecond);
+        outtake2.setVelocity(ticksPerSecond);
+    }
+
+    public void printTelemetry(Telemetry telemetry) {
+        double outtakeVelocity = outtake1.getVelocity();
+        telemetry.addData("outtake ticks/sec", outtakeVelocity);
+        telemetry.addData("outtake rev/min", (outtakeVelocity * 60) / 28);
+    }
+
+    private void setPIDFCoefficients(DcMotorEx motor, PIDFCoefficients coefficients) {
+        motor.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(
+                coefficients.p, coefficients.i, coefficients.d, coefficients.f * 12 / batteryVoltageSensor.getVoltage()
+        ));
     }
 }
 

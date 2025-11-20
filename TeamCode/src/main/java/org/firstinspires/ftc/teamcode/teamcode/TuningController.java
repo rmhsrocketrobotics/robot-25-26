@@ -9,13 +9,13 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 @Config
 public class TuningController {
-    // f: 25, p: ??, i: 0, d: ??
+    // f: 17, p: 10, i: 0, d: ??
     public static double MOTOR_TICKS_PER_REV = 28;
     public static double MOTOR_MAX_RPM = 6000;
     public static double MOTOR_GEAR_RATIO = 1; // output (wheel) speed / input (motor) speed
 
-    public static double TESTING_MAX_SPEED = 0.5 * MOTOR_MAX_RPM; // og 0.9
-    public static double TESTING_MIN_SPEED = 0.2 * MOTOR_MAX_RPM; // og 0.3
+    public static double TESTING_MAX_SPEED = 4000;//0.9 * MOTOR_MAX_RPM; // og 0.9
+    public static double TESTING_MIN_SPEED = 1000;// 0.2 * MOTOR_MAX_RPM; // og 0.3
 
 
     // These are prefixed with "STATE1", "STATE2", etc. because Dashboard displays variables in
