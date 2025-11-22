@@ -1,19 +1,24 @@
 package org.firstinspires.ftc.teamcode.teamcode;
 
+import android.graphics.Color;
+
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
+import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.PwmControl;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
+import com.qualcomm.robotcore.hardware.SwitchableLight;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.hardware.configuration.typecontainers.MotorConfigurationType;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -30,6 +35,7 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagMetadata;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 import java.util.List;
+import java.util.Objects;
 //import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
 //import org.firstinspires.ftc.vision.VisionPortal;
 //import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
@@ -43,18 +49,14 @@ import java.util.List;
 public class MainTeleop extends LinearOpMode{
     @Override
     public void runOpMode() {
-        Drivetrain drivetrain = new Drivetrain(hardwareMap);
+        Drivetrain drivetrain = new Drivetrain(hardwareMap); // wheels
+        Spindex spindex = new Spindex(hardwareMap, telemetry); // drumServo, intake, flick
+        Outtake outtake = new Outtake(hardwareMap, true); // outtake, hoodServo (doesn't exist yet TODO make this exist)
 
-        DcMotor intake = hardwareMap.get(DcMotor.class, "intake");
-        Outtake outtake = new Outtake(hardwareMap, true);
-
-        DcMotor flick = hardwareMap.get(DcMotor.class, "flick");
-        CRServo flickServo = hardwareMap.get(CRServo.class, "flickServo");
+        Vision vision = new Vision(hardwareMap);
 
         Gamepad gamepad1Last = new Gamepad();
         Gamepad gamepad2Last = new Gamepad();
-
-        Vision vision = new Vision(hardwareMap);
 
         //random ahh imu stuff dw
         IMU imu = hardwareMap.get(IMU.class, "imu");
@@ -69,23 +71,28 @@ public class MainTeleop extends LinearOpMode{
 
         waitForStart();
 
-        vision.detectObeliskBlocking(drivetrain, telemetry);
+        spindex.init();
+        //vision.detectObeliskBlocking(drivetrain, telemetry);
 
         while (opModeIsActive()) {
+            // GAMEPAD 1 CODE:
             if (gamepad1.y && !gamepad1Last.y) {
                 telemetry.speak("test test 1 2 3");
             }
             gamepad1Last.copy(gamepad1);
 
             drivetrain.setDrivetrainPower(-gamepad1.right_stick_y, gamepad1.right_stick_x, gamepad1.left_stick_x);
+            // GAMEPAD 1 CODE END
 
+            // GAMEPAD 2 CODE:
             double desiredTPS = -gamepad2.left_stick_y * 10000;
             outtake.setOuttakeVelocityTPS(desiredTPS);
             telemetry.addData("desiredTPS", desiredTPS);
 
-            //intake.setPower(-gamepad2.right_stick_y);
-            flick.setPower(gamepad2.left_trigger);
-            flickServo.setPower(gamepad2.right_stick_y);
+            spindex.intake.setPower(gamepad2.right_trigger);
+            spindex.flick.setPower(gamepad2.left_trigger);
+            spindex.update(true);
+            // GAMEPAD 2 CODE END
 
             drivetrain.printTelemetry(telemetry);
             outtake.printTelemetry(telemetry);
@@ -253,8 +260,7 @@ class Vision {
         double tolerance = 0;
 
         double error = 676767;
-        while ((error > tolerance && error < -tolerance) && timer.seconds() < maxSeconds) {
-
+        while ((error > tolerance && error < -tolerance) || timer.seconds() < maxSeconds) {
             List<AprilTagDetection> detections = aprilTag.getDetections();
 
             while (detections.isEmpty() || detections.get(0).metadata == null) {
@@ -281,12 +287,117 @@ class Vision {
     }
 }
 
-//class Spindex {
-//    ServoImplEx drumServo;
-//    NormalizedColorSensor colorSensor;
-//    String[] ballStates = {"none", "none", "none"};
-//    Spindex(HardwareMap hardwareMap) {
-//        drumServo = hardwareMap.get(ServoImplEx.class, "drumServo");
-//        drumServo.setPwmRange(new PwmControl.PwmRange(500, 2500));
-//    }
-//}
+// class that handles the drum, intake, and flick
+class Spindex {
+    Telemetry telemetry;
+    ServoImplEx drumServo;
+    DcMotor intake;
+    DcMotor flick;
+    NormalizedColorSensor colorSensor;
+    String drumMode;
+    int drumPosition;
+    String[] ballStates = {"none", "none", "none"};
+    ElapsedTime switchCooldownTimer;
+    final double switchCooldown = 1; // time before we can intake another ball (setting too low will mean the sensor sees the same ball multiple times)
+
+    Spindex(HardwareMap hardwareMap, Telemetry telemetry) { // should run BEFORE waitForStart()
+        this.telemetry = telemetry;
+
+        drumServo = hardwareMap.get(ServoImplEx.class, "drumServo");
+        drumServo.setPwmRange(new PwmControl.PwmRange(500, 2500));
+
+        intake = hardwareMap.get(DcMotor.class, "intake");
+        intake.setDirection(DcMotor.Direction.REVERSE);
+
+        flick = hardwareMap.get(DcMotor.class, "flick");
+
+        colorSensor = hardwareMap.get(NormalizedColorSensor.class, "colorLeft");
+
+        ((SwitchableLight)colorSensor).enableLight(true);
+        colorSensor.setGain(15);
+
+        drumMode = "intake";
+        drumPosition = 0;
+    }
+
+    public void init() { // should run AFTER waitForStart()
+        switchCooldownTimer = new ElapsedTime();
+        updateDrumPosition();
+    }
+
+    private void updateDrumPosition() { // updates drum position based on drumMode and drumPosition
+        if (Objects.equals(drumMode, "intake")) {
+            double[] positions = {0, 0.3826, 0.7831};
+            drumServo.setPosition(positions[drumPosition]);
+        }
+        else if (Objects.equals(drumMode, "outtake")) {
+            double[] positions = {0.5745, 0.95, 0.1823};
+            drumServo.setPosition(positions[drumPosition]);
+        }
+    }
+
+    public void incrementDrumPosition() {
+        drumPosition += 1;
+        if (drumPosition >= 3) {
+            drumPosition = 0;
+
+            if (Objects.equals(drumMode, "intake")) {
+                drumMode = "outtake";
+            } else if (Objects.equals(drumMode, "outtake")) {
+                drumMode = "intake";
+            }
+        }
+        updateDrumPosition();
+    }
+
+    private boolean detectBall(boolean outputTelemetry){ // returns true if a ball is detected
+        // if still in cooldown, return
+        if (switchCooldownTimer.seconds() < switchCooldown) {
+            return false;
+        }
+
+        // get distance from sensor
+        boolean ballDetected = ((DistanceSensor) colorSensor).getDistance(DistanceUnit.CM) < 3;
+
+        if (!ballDetected) { // could add && Objects.equals(ballStates[drumPosition], "none") to this statement
+            return false;
+        }
+
+        // get color from sensor
+        NormalizedRGBA colors = colorSensor.getNormalizedColors();
+        final float[] hsvValues = new float[3];
+        Color.colorToHSV(colors.toColor(), hsvValues);
+
+        // assume a ball is purple unless proven green (most balls on the field are purple)
+        String color = "purple";
+        if (hsvValues[0] < 180) {
+            color = "green";
+        }
+
+        ballStates[drumPosition] = color;
+
+        if (outputTelemetry) {
+            telemetry.addLine()
+                    .addData("Red", "%.3f", colors.red)
+                    .addData("Green", "%.3f", colors.green)
+                    .addData("Blue", "%.3f", colors.blue);
+            telemetry.addLine()
+                    .addData("Hue", "%.3f", hsvValues[0]);
+            telemetry.addData("Distance (cm)", "%.3f", ((DistanceSensor) colorSensor).getDistance(DistanceUnit.CM));
+            telemetry.addData("ballStates0", ballStates[0]);
+            telemetry.addData("ballStates1", ballStates[1]);
+            telemetry.addData("ballStates2", ballStates[2]);
+        }
+
+        return true;
+    }
+
+    public void update(boolean outputTelemetry) { // should be called in the event loop
+        if (Objects.equals(drumMode, "intake")) {
+            if (detectBall(outputTelemetry)) {
+                incrementDrumPosition();
+            }
+
+        }
+    }
+}
