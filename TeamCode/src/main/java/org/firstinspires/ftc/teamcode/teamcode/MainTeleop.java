@@ -91,6 +91,22 @@ public class MainTeleop extends LinearOpMode{
 
             spindex.intake.setPower(gamepad2.right_trigger);
             spindex.flick.setPower(gamepad2.left_trigger);
+
+            if (gamepad2.y && !gamepad2Last.y) {
+                spindex.incrementDrumPosition();
+            }
+            if (gamepad2.x && !gamepad2Last.x) {
+                spindex.setDrumPosition("intake", 0);
+            }
+            if (gamepad2.left_bumper && !gamepad2Last.left_bumper) {
+                spindex.setDrumPositionToOuttakeColor("purple");
+            }
+            if (gamepad2.right_bumper && !gamepad2Last.right_bumper) {
+                spindex.setDrumPositionToOuttakeColor("green");
+            }
+
+            gamepad2Last.copy(gamepad2);
+
             spindex.update(true);
             // GAMEPAD 2 CODE END
 
@@ -349,7 +365,25 @@ class Spindex {
         updateDrumPosition();
     }
 
-    private boolean detectBall(boolean outputTelemetry){ // returns true if a ball is detected
+    public void setDrumPosition(String drumMode, int drumPosition) {
+        this.drumMode = drumMode;
+        this.drumPosition = drumPosition;
+        updateDrumPosition();
+    }
+
+    public void setDrumPositionToOuttakeColor(String color) {
+        for (int i = 0; i < ballStates.length; i++) {
+            String ballState = ballStates[i];
+            if (Objects.equals(ballState, color)) {
+                drumMode = "outtake";
+                drumPosition = i;
+                break;
+            }
+        }
+        updateDrumPosition();
+    }
+
+    private boolean detectBall() { // returns true if a ball is detected
         // if still in cooldown, return
         if (switchCooldownTimer.seconds() < switchCooldown) {
             return false;
@@ -375,29 +409,24 @@ class Spindex {
 
         ballStates[drumPosition] = color;
 
-        if (outputTelemetry) {
-            telemetry.addLine()
-                    .addData("Red", "%.3f", colors.red)
-                    .addData("Green", "%.3f", colors.green)
-                    .addData("Blue", "%.3f", colors.blue);
-            telemetry.addLine()
-                    .addData("Hue", "%.3f", hsvValues[0]);
-            telemetry.addData("Distance (cm)", "%.3f", ((DistanceSensor) colorSensor).getDistance(DistanceUnit.CM));
-            telemetry.addData("ballStates0", ballStates[0]);
-            telemetry.addData("ballStates1", ballStates[1]);
-            telemetry.addData("ballStates2", ballStates[2]);
-        }
-
         switchCooldownTimer.reset();
         return true;
     }
 
     public void update(boolean outputTelemetry) { // should be called in the event loop
         if (Objects.equals(drumMode, "intake")) {
-            if (detectBall(outputTelemetry)) {
+            if (detectBall()) {
                 incrementDrumPosition();
             }
 
+        }
+
+        if (outputTelemetry) {
+            telemetry.addData("ballStates0", ballStates[0]);
+            telemetry.addData("ballStates1", ballStates[1]);
+            telemetry.addData("ballStates2", ballStates[2]);
+            telemetry.addData("drumMode", drumMode);
+            telemetry.addData("drumPosition", drumPosition);
         }
     }
 }
