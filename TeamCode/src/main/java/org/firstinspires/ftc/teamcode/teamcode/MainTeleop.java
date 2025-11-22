@@ -307,13 +307,12 @@ class Spindex {
         drumServo.setPwmRange(new PwmControl.PwmRange(500, 2500));
 
         intake = hardwareMap.get(DcMotor.class, "intake");
-        intake.setDirection(DcMotor.Direction.REVERSE);
+        //intake.setDirection(DcMotor.Direction.REVERSE);
 
         flick = hardwareMap.get(DcMotor.class, "flick");
 
         colorSensor = hardwareMap.get(NormalizedColorSensor.class, "colorLeft");
 
-        ((SwitchableLight)colorSensor).enableLight(true);
         colorSensor.setGain(15);
 
         drumMode = "intake";
@@ -389,6 +388,7 @@ class Spindex {
             telemetry.addData("ballStates2", ballStates[2]);
         }
 
+        switchCooldownTimer.reset();
         return true;
     }
 
