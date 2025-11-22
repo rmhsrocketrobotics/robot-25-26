@@ -55,23 +55,25 @@ import java.util.List;
 public final class MecanumDrive {
     public static class Params {
         // IMU orientation
+        // TODO: fill in these values based on
+        //   see https://ftc-docs.firstinspires.org/en/latest/programming_resources/imu/imu.html?highlight=imu#physical-hub-mounting
         public RevHubOrientationOnRobot.LogoFacingDirection logoFacingDirection =
-                RevHubOrientationOnRobot.LogoFacingDirection.RIGHT;
+                RevHubOrientationOnRobot.LogoFacingDirection.LEFT;
         public RevHubOrientationOnRobot.UsbFacingDirection usbFacingDirection =
-                RevHubOrientationOnRobot.UsbFacingDirection.UP;
+                RevHubOrientationOnRobot.UsbFacingDirection.FORWARD;
 
         // drive model parameters
-        public double inPerTick = 0.022233;
-        public double lateralInPerTick = 0.022523;
+        public double inPerTick = 0.001970709; // 95 inches / 48206 ticks
+        public double lateralInPerTick = inPerTick;
         public double trackWidthTicks = 0;
 
         // feedforward parameters (in tick units)
-        public double kS = 0.0001;
-        public double kV = 0.003;
-        public double kA = 0.0013;
+        public double kS = 0;
+        public double kV = 0;
+        public double kA = 0;
 
         // path profile parameters (in inches)
-        public double maxWheelVel = 40;
+        public double maxWheelVel = 50;
         public double minProfileAccel = -30;
         public double maxProfileAccel = 50;
 
@@ -80,9 +82,9 @@ public final class MecanumDrive {
         public double maxAngAccel = Math.PI;
 
         // path controller gains
-        public double axialGain = 4.0;
-        public double lateralGain = 4.0;
-        public double headingGain = 4.0; // shared with turn
+        public double axialGain = 0.0;
+        public double lateralGain = 0.0;
+        public double headingGain = 0.0; // shared with turn
 
         public double axialVelGain = 0.0;
         public double lateralVelGain = 0.0;
@@ -95,9 +97,9 @@ public final class MecanumDrive {
 //    public final MecanumKinematics kinematics = new MecanumKinematics(
 //            PARAMS.inPerTick * PARAMS.trackWidthTicks, PARAMS.inPerTick / PARAMS.lateralInPerTick);
 
-    // replaced with this, trackWidth is manually set to 14.5 inches
+    // replaced with this, trackWidth is manually set to 16 inches
     public final MecanumKinematics kinematics = new MecanumKinematics(
-           14.5, PARAMS.inPerTick / PARAMS.lateralInPerTick);
+            16, PARAMS.inPerTick / PARAMS.lateralInPerTick);
 
     public final TurnConstraints defaultTurnConstraints = new TurnConstraints(
             PARAMS.maxAngVel, -PARAMS.maxAngAccel, PARAMS.maxAngAccel);
@@ -140,9 +142,8 @@ public final class MecanumDrive {
 
             imu = lazyImu.get();
 
-
-            leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
-            leftBack.setDirection(DcMotorSimple.Direction.REVERSE);
+            // TODO: reverse encoders if needed
+            //   leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
 
             this.pose = pose;
         }
@@ -266,18 +267,6 @@ public final class MecanumDrive {
     }
 
     public final class FollowTrajectoryAction implements Action {
-        // this section of the code has been modified according to https://rr.brott.dev/docs/v1-0/guides/extra-correction/
-        // this means that we can make the robot take extra time to correct its position, even once it's done with the trajectory
-
-        // the robot will end it's path when it is within positionTolerance inches of its target AND
-        // within headingTolerance radians of its target AND
-        // going slower than velocityTolerance
-        // or it will be forced to end after maxExtraTime seconds
-        final double positionTolerance = 2;
-        final double headingTolerance = Math.PI / 32;
-        final double velocityTolerance = 0.5;
-        final double maxExtraTime = 1;
-
         public final TimeTrajectory timeTrajectory;
         private double beginTs = -1;
 
@@ -308,19 +297,7 @@ public final class MecanumDrive {
                 t = Actions.now() - beginTs;
             }
 
-
-            Pose2dDual<Time> txWorldTarget = timeTrajectory.get(t);
-            targetPoseWriter.write(new PoseMessage(txWorldTarget.value()));
-
-            PoseVelocity2d robotVelRobot = updatePoseEstimate();
-
-            Pose2d error = txWorldTarget.value().minusExp(localizer.getPose());
-
-            if ((t >= timeTrajectory.duration &&
-                    error.position.norm() < positionTolerance &&
-                    error.heading.toDouble() < headingTolerance &&
-                    robotVelRobot.linearVel.norm() < velocityTolerance)
-                    || t >= timeTrajectory.duration + maxExtraTime) {
+            if (t >= timeTrajectory.duration) {
                 leftFront.setPower(0);
                 leftBack.setPower(0);
                 rightBack.setPower(0);
@@ -329,7 +306,10 @@ public final class MecanumDrive {
                 return false;
             }
 
+            Pose2dDual<Time> txWorldTarget = timeTrajectory.get(t);
+            targetPoseWriter.write(new PoseMessage(txWorldTarget.value()));
 
+            PoseVelocity2d robotVelRobot = updatePoseEstimate();
 
             PoseVelocity2dDual<Time> command = new HolonomicController(
                     PARAMS.axialGain, PARAMS.lateralGain, PARAMS.headingGain,
@@ -360,7 +340,7 @@ public final class MecanumDrive {
             p.put("y", localizer.getPose().position.y);
             p.put("heading (deg)", Math.toDegrees(localizer.getPose().heading.toDouble()));
 
-
+            Pose2d error = txWorldTarget.value().minusExp(localizer.getPose());
             p.put("xError", error.position.x);
             p.put("yError", error.position.y);
             p.put("headingError (deg)", Math.toDegrees(error.heading.toDouble()));
@@ -472,14 +452,14 @@ public final class MecanumDrive {
     public PoseVelocity2d updatePoseEstimate() {
         PoseVelocity2d vel = localizer.update();
         poseHistory.add(localizer.getPose());
-        
+
         while (poseHistory.size() > 100) {
             poseHistory.removeFirst();
         }
 
         estimatedPoseWriter.write(new PoseMessage(localizer.getPose()));
-        
-        
+
+
         return vel;
     }
 

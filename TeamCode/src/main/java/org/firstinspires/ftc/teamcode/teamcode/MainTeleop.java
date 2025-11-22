@@ -80,7 +80,6 @@ public class MainTeleop extends LinearOpMode{
                 telemetry.speak("test test 1 2 3");
             }
             gamepad1Last.copy(gamepad1);
-
             drivetrain.setDrivetrainPower(-gamepad1.right_stick_y, gamepad1.right_stick_x, gamepad1.left_stick_x);
             // GAMEPAD 1 CODE END
 
@@ -235,10 +234,10 @@ class Vision {
         myAprilTagLibraryBuilder.addTags(AprilTagGameDatabase.getCurrentGameTagLibrary());
 
         // Create a new AprilTagMetdata object and assign it to a variable.
-        myAprilTagMetadata = new AprilTagMetadata(20, "please work i beg", 6.5, DistanceUnit.INCH);
+        //myAprilTagMetadata = new AprilTagMetadata(20, "please work i beg", 6.5, DistanceUnit.INCH);
 
         // Add a tag to the AprilTagLibrary.Builder.
-        myAprilTagLibraryBuilder.addTag(myAprilTagMetadata);
+        //myAprilTagLibraryBuilder.addTag(myAprilTagMetadata);
 
         // Build the AprilTag library and assign it to a variable.
         myAprilTagLibrary = myAprilTagLibraryBuilder.build();
