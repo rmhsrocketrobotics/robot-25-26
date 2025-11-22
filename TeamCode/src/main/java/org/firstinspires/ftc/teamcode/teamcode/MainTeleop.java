@@ -9,12 +9,27 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
+import com.qualcomm.robotcore.hardware.PwmControl;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.hardware.configuration.typecontainers.MotorConfigurationType;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.vision.VisionPortal;
+import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
+import org.firstinspires.ftc.vision.apriltag.AprilTagGameDatabase;
+import org.firstinspires.ftc.vision.apriltag.AprilTagLibrary;
+import org.firstinspires.ftc.vision.apriltag.AprilTagMetadata;
+import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
+
+import java.util.List;
 //import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
 //import org.firstinspires.ftc.vision.VisionPortal;
 //import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
@@ -39,6 +54,8 @@ public class MainTeleop extends LinearOpMode{
         Gamepad gamepad1Last = new Gamepad();
         Gamepad gamepad2Last = new Gamepad();
 
+        Vision vision = new Vision(hardwareMap);
+
         //random ahh imu stuff dw
         IMU imu = hardwareMap.get(IMU.class, "imu");
         IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
@@ -52,6 +69,8 @@ public class MainTeleop extends LinearOpMode{
 
         waitForStart();
 
+        vision.detectObeliskBlocking(drivetrain, telemetry);
+
         while (opModeIsActive()) {
             if (gamepad1.y && !gamepad1Last.y) {
                 telemetry.speak("test test 1 2 3");
@@ -60,7 +79,7 @@ public class MainTeleop extends LinearOpMode{
 
             drivetrain.setDrivetrainPower(-gamepad1.right_stick_y, gamepad1.right_stick_x, gamepad1.left_stick_x);
 
-            double desiredTPS = -gamepad2.left_stick_y * 1000;
+            double desiredTPS = -gamepad2.left_stick_y * 10000;
             outtake.setOuttakeVelocityTPS(desiredTPS);
             telemetry.addData("desiredTPS", desiredTPS);
 
@@ -175,70 +194,99 @@ class Outtake {
     }
 }
 
-//class Vision {
-//    public void aprilTags(){
-//
-//        List<AprilTagDetection> detections = telemetryAprilTag();
-//        if (gamepad1.dpad_down){
-//            visionPortal.stopStreaming();
-//        } else if (gamepad1.dpad_up){
-//            visionPortal.resumeStreaming();
-//        }
-//        sleep(20);
-//    }
-//
-//        visionPortal.close();
-//    }
-//    public String obelisk(){
-//        List<AprilTagDetection> detections = telemetryAprilTag();
-//        for (AprilTagDetection detection : tagProcessor.getDetections()) {
-//            if (detection.id = 21) {
-//                return "green, purple, purple";
-//            } else if (detection.id = 22) {
-//                return "purple, green, purple";
-//            } else if (detection.id = 23) {
-//                return "purple, purple, green";
-//            } else {
-//                return "no pattern";
-//            }
-//        }
-//    }
-//    public double distance(){
-//        for (AprilTagDetection detection : tagProcessor.getDetections()) {
-//            return detection.robotPose.getPosition().y;
-//        }
-//    }
-//}
-//
-//private void initAprilTag(){
-//    AprilTagMetadata myAprilTagMetadata;
-//    AprilTagLibrary.Builder myAprilTagLibraryBuilder;
-//    AprilTagProcessor.Builder myAprilTagProcessorBuilder;
-//    AprilTagLibrary myAprilTagLibrary;
-//    AprilTagProcessor myAprilTagProcessor;
-//
-//    public myAprilTagLibraryBuilder = new AprilTagLibrary.Builder();
-//    myAprilTagLibraryBuilder.addTag(myAprilTagMetadata);
-//    myAprilTagLibrary = myAprilTagLibraryBuilder.build();
-//    myAprilTagProcessorBuilder = new AprilTagProcessor.Builder();
-//    myAprilTagProcessorBuilder.setTagLibrary(myAprilTagLibrary);
-//    public AprilTagProcessor aprilTag = myAprilTagProcessorBuilder.build();
-//    public VisionPortal.Builder builder = new VisionPortal.Builder();
-//    if (USE_WEBCAM){
-//        builder.setCamera(hardwareMap.get(WebcamName.class, "camera"));
-//    } else {
-//        builder.setCamera(BuiltinCameraDirection.BACK);
-//    }
-//    builder.addProcessor(aprilTag);
-//    public VisionPortal visionPortal = builder.build();
-//}
-//private List<AprilTagDetection> telemetryAprilTag(){
-//    List<AprilTagDetection> currentDetections = aprilTag.getDetections();
-//    return currentDetections.size();
-//    return currentDetections;
-//}   // end method telemetryAprilTag()
-//
-//static double clamp(double value, double min, double max) {
-//    return Math.min(Math.max(min, value), max);
-//} // end class
+class Vision {
+    private AprilTagProcessor aprilTag;
+    private VisionPortal visionPortal;
+    Vision(HardwareMap hardwareMap) {
 
+        AprilTagMetadata myAprilTagMetadata;
+        AprilTagLibrary.Builder myAprilTagLibraryBuilder;
+        AprilTagProcessor.Builder myAprilTagProcessorBuilder;
+        AprilTagLibrary myAprilTagLibrary;
+
+        // Create a new AprilTagLibrary.Builder object and assigns it to a variable.
+        myAprilTagLibraryBuilder = new AprilTagLibrary.Builder();
+
+        // Add all the tags from the given AprilTagLibrary to the AprilTagLibrary.Builder.
+        // Get the AprilTagLibrary for the current season.
+        myAprilTagLibraryBuilder.addTags(AprilTagGameDatabase.getCurrentGameTagLibrary());
+
+        // Create a new AprilTagMetdata object and assign it to a variable.
+        myAprilTagMetadata = new AprilTagMetadata(20, "please work i beg", 6.5, DistanceUnit.INCH);
+
+        // Add a tag to the AprilTagLibrary.Builder.
+        myAprilTagLibraryBuilder.addTag(myAprilTagMetadata);
+
+        // Build the AprilTag library and assign it to a variable.
+        myAprilTagLibrary = myAprilTagLibraryBuilder.build();
+
+        // Create a new AprilTagProcessor.Builder object and assign it to a variable.
+        myAprilTagProcessorBuilder = new AprilTagProcessor.Builder();
+
+        // Set the tag library.
+        myAprilTagProcessorBuilder.setTagLibrary(myAprilTagLibrary);
+
+        // Build the AprilTag processor and assign it to a variable.
+        aprilTag = myAprilTagProcessorBuilder.build();
+
+        // Create the vision portal by using a builder.
+        VisionPortal.Builder builder = new VisionPortal.Builder();
+
+        // Set the camera (webcam vs. built-in RC phone camera).
+        builder.setCamera(hardwareMap.get(WebcamName.class, "camera"));
+
+        // Set and enable the processor.
+        builder.addProcessor(aprilTag);
+
+        // Build the Vision Portal, using the above settings.
+        visionPortal = builder.build();
+
+        // Disable or re-enable the aprilTag processor at any time.
+        //visionPortal.setProcessorEnabled(aprilTag, true);
+
+        }   // end method initAprilTag()
+
+    public void detectObeliskBlocking(Drivetrain drivetrain, Telemetry telemetry) {
+        ElapsedTime timer = new ElapsedTime();
+        double maxSeconds = 100;
+        double clampValue = 0.3;
+        double tolerance = 0;
+
+        double error = 676767;
+        while ((error > tolerance && error < -tolerance) && timer.seconds() < maxSeconds) {
+
+            List<AprilTagDetection> detections = aprilTag.getDetections();
+
+            while (detections.isEmpty() || detections.get(0).metadata == null) {
+                detections = aprilTag.getDetections();
+                if (timer.seconds() > maxSeconds) {
+                    break;
+                }
+            }
+
+            double bearing = detections.get(0).ftcPose.bearing;
+
+            error = bearing * 0.05;
+
+            drivetrain.setDrivetrainPower(0, 0, clamp(error, -clampValue, clampValue));
+
+            telemetry.addData("error", error);
+            telemetry.addData("timer", timer.seconds());
+            telemetry.update();
+        }
+    }
+
+    static double clamp(double value, double min, double max) {
+        return Math.min(Math.max(min, value), max);
+    }
+}
+
+//class Spindex {
+//    ServoImplEx drumServo;
+//    NormalizedColorSensor colorSensor;
+//    String[] ballStates = {"none", "none", "none"};
+//    Spindex(HardwareMap hardwareMap) {
+//        drumServo = hardwareMap.get(ServoImplEx.class, "drumServo");
+//        drumServo.setPwmRange(new PwmControl.PwmRange(500, 2500));
+//    }
+//}
