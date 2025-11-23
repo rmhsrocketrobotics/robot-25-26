@@ -287,11 +287,20 @@ public final class TuningOpModes {
             throw new RuntimeException();
         }
 
+        AngularRampLogger angularRampLogger = new AngularRampLogger(dvf);
+        angularRampLogger.POWER_PER_SEC = 0.1;
+        angularRampLogger.POWER_MAX = 1;
         manager.register(metaForClass(AngularRampLogger.class), new AngularRampLogger(dvf));
         manager.register(metaForClass(ForwardPushTest.class), new ForwardPushTest(dvf));
-        manager.register(metaForClass(ForwardRampLogger.class), new ForwardRampLogger(dvf));
+        ForwardRampLogger forwardRampLogger = new ForwardRampLogger(dvf);
+        forwardRampLogger.POWER_PER_SEC = 0.2;
+        forwardRampLogger.POWER_MAX = 1;
+        manager.register(metaForClass(ForwardRampLogger.class), forwardRampLogger);
         manager.register(metaForClass(LateralPushTest.class), new LateralPushTest(dvf));
-        manager.register(metaForClass(LateralRampLogger.class), new LateralRampLogger(dvf));
+        LateralRampLogger lateralRampLogger = new LateralRampLogger(dvf);
+        lateralRampLogger.POWER_PER_SEC = 0.2;
+        lateralRampLogger.POWER_MAX = 1;
+        manager.register(metaForClass(LateralRampLogger.class), lateralRampLogger);
         manager.register(metaForClass(ManualFeedforwardTuner.class), new ManualFeedforwardTuner(dvf));
         manager.register(metaForClass(MecanumMotorDirectionDebugger.class), new MecanumMotorDirectionDebugger(dvf));
         manager.register(metaForClass(DeadWheelDirectionDebugger.class), new DeadWheelDirectionDebugger(dvf));
