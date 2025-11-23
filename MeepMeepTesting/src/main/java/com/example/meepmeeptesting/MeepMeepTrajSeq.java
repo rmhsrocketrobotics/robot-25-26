@@ -16,21 +16,18 @@ import org.rowlandhall.meepmeep.roadrunner.DefaultBotBuilder;
 import org.rowlandhall.meepmeep.roadrunner.SampleMecanumDrive;
 import org.rowlandhall.meepmeep.roadrunner.entity.RoadRunnerBotEntity;
 
-
 import java.awt.Image;
 import java.io.File;
 import java.io.IOException;
-
-
 import javax.imageio.ImageIO;
 
-public class MeepMeepTesting {
+public class MeepMeepTrajSeq {
     static final double pi = Math.PI;
 
     public static void main(String[] args) {
         MeepMeep meepMeep = new MeepMeep(700);
 
-        RoadRunnerBotEntity myBot = testPathLeftRed(meepMeep);
+        RoadRunnerBotEntity myBot = testPathRightRed(meepMeep);
 
         Image img = null;
         try { img = ImageIO.read(new File("MeepMeepTesting/src/main/java/com/example/meepmeeptesting/decode webfield.png")); }
