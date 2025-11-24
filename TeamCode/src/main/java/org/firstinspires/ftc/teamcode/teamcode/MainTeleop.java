@@ -112,7 +112,11 @@ public class MainTeleop extends LinearOpMode{
 
             drivetrain.printTelemetry(telemetry);
             outtake.printTelemetry(telemetry);
-            telemetry.addData("facing direction", imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS));
+            telemetry.addData("facing direction radians", imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS));
+            telemetry.addData("angular velocity radians", imu.getRobotAngularVelocity(AngleUnit.RADIANS));
+            telemetry.addData("facing direction degrees", imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
+            telemetry.addData("angular velocity degrees", imu.getRobotAngularVelocity(AngleUnit.DEGREES));
+
             telemetry.update();
         }
     }

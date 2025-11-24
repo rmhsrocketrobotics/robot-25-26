@@ -65,7 +65,7 @@ public final class MecanumDrive {
         // drive model parameters
         public double inPerTick = 0.001978937;
         public double lateralInPerTick = 0.0015183702823129092;
-        public double trackWidthTicks = 0;
+        public double trackWidthTicks = 6833.982599888048;
 
         // feedforward parameters (in tick units)
         public double kS = 1.6287402309944712;
@@ -93,13 +93,8 @@ public final class MecanumDrive {
 
     public static Params PARAMS = new Params();
 
-    // this is the original code:
-//    public final MecanumKinematics kinematics = new MecanumKinematics(
-//            PARAMS.inPerTick * PARAMS.trackWidthTicks, PARAMS.inPerTick / PARAMS.lateralInPerTick);
-
-    // replaced with this, trackWidth is manually set to 16 inches
     public final MecanumKinematics kinematics = new MecanumKinematics(
-            16, PARAMS.inPerTick / PARAMS.lateralInPerTick);
+    PARAMS.inPerTick * PARAMS.trackWidthTicks, PARAMS.inPerTick / PARAMS.lateralInPerTick);
 
     public final TurnConstraints defaultTurnConstraints = new TurnConstraints(
             PARAMS.maxAngVel, -PARAMS.maxAngAccel, PARAMS.maxAngAccel);
