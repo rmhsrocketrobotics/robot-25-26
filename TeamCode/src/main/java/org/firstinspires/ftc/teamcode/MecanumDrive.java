@@ -63,14 +63,14 @@ public final class MecanumDrive {
                 RevHubOrientationOnRobot.UsbFacingDirection.FORWARD;
 
         // drive model parameters
-        public double inPerTick = 0.001970709; // 95 inches / 48206 ticks
-        public double lateralInPerTick = inPerTick;
-        public double trackWidthTicks = 0;
+        public double inPerTick = 0.001978937;
+        public double lateralInPerTick = 0.0015183702823129092;
+        public double trackWidthTicks = 6833.982599888048;
 
         // feedforward parameters (in tick units)
-        public double kS = 0;
-        public double kV = 0;
-        public double kA = 0;
+        public double kS = 1.6287402309944712;
+        public double kV = 0.00026999921429893443;
+        public double kA = 0.00001;
 
         // path profile parameters (in inches)
         public double maxWheelVel = 50;
@@ -93,13 +93,8 @@ public final class MecanumDrive {
 
     public static Params PARAMS = new Params();
 
-    // this is the original code:
-//    public final MecanumKinematics kinematics = new MecanumKinematics(
-//            PARAMS.inPerTick * PARAMS.trackWidthTicks, PARAMS.inPerTick / PARAMS.lateralInPerTick);
-
-    // replaced with this, trackWidth is manually set to 16 inches
     public final MecanumKinematics kinematics = new MecanumKinematics(
-            16, PARAMS.inPerTick / PARAMS.lateralInPerTick);
+    PARAMS.inPerTick * PARAMS.trackWidthTicks, PARAMS.inPerTick / PARAMS.lateralInPerTick);
 
     public final TurnConstraints defaultTurnConstraints = new TurnConstraints(
             PARAMS.maxAngVel, -PARAMS.maxAngAccel, PARAMS.maxAngAccel);
