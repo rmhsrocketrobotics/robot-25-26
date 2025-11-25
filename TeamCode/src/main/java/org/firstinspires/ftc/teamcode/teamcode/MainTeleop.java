@@ -2,7 +2,7 @@ package org.firstinspires.ftc.teamcode.teamcode;
 
 import android.graphics.Color;
 
-import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
+import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -10,7 +10,6 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
@@ -22,6 +21,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
@@ -48,9 +48,9 @@ public class MainTeleop extends LinearOpMode{
         state = "intake"; // states are: "intake", "transition", and "outtake"
 
         drivetrain = new Drivetrain(hardwareMap); // wheels
-        spindex = new Spindex(hardwareMap, telemetry); // drumServo, intake, flick
+        spindex = new Spindex(hardwareMap); // drumServo, intake, flick
         outtake = new Outtake(hardwareMap); // outtake, hoodServo (doesn't exist yet TODO make this exist)
-        vision = new Vision(hardwareMap); // camera
+        vision = new Vision(hardwareMap, true); // camera, pinpoint
 
         gamepad1Last = new Gamepad();
         gamepad2Last = new Gamepad();
@@ -68,24 +68,33 @@ public class MainTeleop extends LinearOpMode{
 
         waitForStart();
 
+        ElapsedTime obeliskDetectionTimer = new ElapsedTime();
+        while (opModeIsActive() && obeliskDetectionTimer.seconds() < 2) {
+            if (vision.detectObelisk()) {
+                break;
+            }
+        }
+
         spindex.init();
-        //vision.detectObeliskBlocking(drivetrain, telemetry);
 
         while (opModeIsActive()) {
             // GAMEPAD 1 CODE:
-            if (gamepad1.left_bumper) {
-                // speed mode
-                drivetrain.setDrivetrainPower(-gamepad1.right_stick_y, gamepad1.right_stick_x, gamepad1.left_stick_x);
-            } else if (gamepad1.right_bumper) {
-                // slow mode
-                drivetrain.setDrivetrainPower(-gamepad1.right_stick_y, gamepad1.right_stick_x, gamepad1.left_stick_x,
-                        0.2, 0.2, 0.2);
+            if (gamepad1.y) {
+                vision.faceObelisk(drivetrain);
             } else {
-                // normal mode
-                drivetrain.setDrivetrainPower(-gamepad1.right_stick_y, gamepad1.right_stick_x, gamepad1.left_stick_x,
-                        0.7, 0.7, 0.7);
+                if (gamepad1.left_bumper) {
+                    // speed mode
+                    drivetrain.setDrivetrainPower(-gamepad1.right_stick_y, gamepad1.right_stick_x, gamepad1.left_stick_x);
+                } else if (gamepad1.right_bumper) {
+                    // slow mode
+                    drivetrain.setDrivetrainPower(-gamepad1.right_stick_y, gamepad1.right_stick_x, gamepad1.left_stick_x,
+                            0.2, 0.2, 0.2);
+                } else {
+                    // normal mode
+                    drivetrain.setDrivetrainPower(-gamepad1.right_stick_y, gamepad1.right_stick_x, gamepad1.left_stick_x,
+                            0.7, 0.7, 0.7);
+                }
             }
-
 
             // literally all of the rest of this code is for gamepad 2:
             spindex.intake.setPower(gamepad2.right_trigger);
@@ -115,8 +124,9 @@ public class MainTeleop extends LinearOpMode{
                 outtake();
             }
 
-            spindex.update(true);
+            spindex.update();
             outtake.update();
+            vision.update();
 
             //drivetrain.printTelemetry(telemetry);
             //outtake.printTelemetry(telemetry);
@@ -124,7 +134,7 @@ public class MainTeleop extends LinearOpMode{
             //telemetry.addData("angular velocity radians", imu.getRobotAngularVelocity(AngleUnit.RADIANS));
             //telemetry.addData("facing direction degrees", imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
             //telemetry.addData("angular velocity degrees", imu.getRobotAngularVelocity(AngleUnit.DEGREES));
-
+            vision.printTelemetry(telemetry);
             telemetry.update();
         }
     }
@@ -264,7 +274,13 @@ class Outtake {
 class Vision {
     private AprilTagProcessor aprilTag;
     private VisionPortal visionPortal;
-    Vision(HardwareMap hardwareMap) {
+    private double targetAbsoluteBearing = 0;
+    public int obeliskId = 22; // guess that the obelisk is 22 if we aren't able to detect it
+    private boolean isRedAlliance;
+    GoBildaPinpointDriver pinpoint;
+    double currentBearing = 0;
+    double goalDistance = 1;
+    Vision(HardwareMap hardwareMap, boolean isRedAlliance) {
 
         AprilTagMetadata myAprilTagMetadata;
         AprilTagLibrary.Builder myAprilTagLibraryBuilder;
@@ -311,46 +327,78 @@ class Vision {
         // Disable or re-enable the aprilTag processor at any time.
         //visionPortal.setProcessorEnabled(aprilTag, true);
 
-        }   // end method initAprilTag()
+        this.isRedAlliance = isRedAlliance;
 
-    public void detectObeliskBlocking(Drivetrain drivetrain, Telemetry telemetry) {
-        ElapsedTime timer = new ElapsedTime();
-        double maxSeconds = 100;
-        double clampValue = 0.3;
-        double tolerance = 0;
+        pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
 
-        double error = 676767;
-        while ((error > tolerance && error < -tolerance) || timer.seconds() < maxSeconds) {
-            List<AprilTagDetection> detections = aprilTag.getDetections();
+        pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
+        pinpoint.setOffsets(-155, 0, DistanceUnit.MM);
 
-            while (detections.isEmpty() || detections.get(0).metadata == null) {
-                detections = aprilTag.getDetections();
-                if (timer.seconds() > maxSeconds) {
-                    break;
-                }
-            }
+        pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.FORWARD);
 
-            double bearing = detections.get(0).ftcPose.bearing;
-
-            error = bearing * 0.05;
-
-            drivetrain.setDrivetrainPower(0, 0, clamp(error, -clampValue, clampValue));
-
-            telemetry.addData("error", error);
-            telemetry.addData("timer", timer.seconds());
-            telemetry.update();
+        pinpoint.resetPosAndIMU();
         }
+
+    private void detectGoalAprilTag() {
+        List<AprilTagDetection> detections = aprilTag.getDetections();
+        for (AprilTagDetection detection : detections) {
+            if (isRedAlliance && detection.id == 24) {
+                targetAbsoluteBearing = currentBearing + detection.ftcPose.bearing;
+                goalDistance = detection.ftcPose.range;
+            } else if (!isRedAlliance && detection.id == 20) {
+                targetAbsoluteBearing = currentBearing + detection.ftcPose.bearing;
+                goalDistance = detection.ftcPose.range;
+            }
+        }
+    }
+
+    private double getTargetRelativeBearing() {
+        return targetAbsoluteBearing - currentBearing;
+    }
+
+    /**
+     * sets drivetrain powers to try to face the obelisk
+     * */
+    public void faceObelisk(Drivetrain drivetrain) {
+        double bearingError = getTargetRelativeBearing();
+        double rotationPower = clamp(bearingError * 0.03, -0.25, 0.25);
+        drivetrain.setDrivetrainPower(0, 0, -rotationPower);
+    }
+
+    /**
+     * returns true if the obelisk has successfully been detected
+     * */
+    public boolean detectObelisk() {
+        List<AprilTagDetection> detections = aprilTag.getDetections();
+        for (AprilTagDetection detection : detections) {
+            if (detection.id == 21 || detection.id == 22 || detection.id == 23) {
+                obeliskId = detection.id;
+                return true;
+            }
+        }
+        return false;
     }
 
     static double clamp(double value, double min, double max) {
         return Math.min(Math.max(min, value), max);
     }
+
+    public void printTelemetry(Telemetry telemetry) {
+        telemetry.addData("obelisk id", obeliskId);
+        telemetry.addData("target absolute bearing", targetAbsoluteBearing);
+        telemetry.addData("bearing", currentBearing);
+        telemetry.addData("goal distance", goalDistance);
+    }
+
+    public void update() {
+        pinpoint.update();
+        currentBearing = pinpoint.getHeading(AngleUnit.DEGREES);
+        detectGoalAprilTag();
+    }
 }
 
 // class that handles the drum, intake, and flick
 class Spindex {
-    private Telemetry telemetry;
-
     private ServoImplEx drumServo;
 
     final double[] intakePositions = {0, 0.3826, 0.7831};
@@ -385,9 +433,7 @@ class Spindex {
     /**
      * should run BEFORE waitForStart()
      * */
-    Spindex(HardwareMap hardwareMap, Telemetry telemetry) {
-        this.telemetry = telemetry;
-
+    Spindex(HardwareMap hardwareMap) {
         drumServo = hardwareMap.get(ServoImplEx.class, "drumServo");
         drumServo.setPwmRange(new PwmControl.PwmRange(500, 2500));
 
@@ -577,7 +623,7 @@ class Spindex {
     /**
      * should be called in the event loop
      * */
-    public void update(boolean outputTelemetry) {
+    public void update() {
         if (drumInIntakeMode()) {
             if (detectBallIntake()) {
                 incrementDrumPosition();
@@ -600,15 +646,15 @@ class Spindex {
         }
 
         updateDrumPosition();
+    }
 
-        if (outputTelemetry) {
-            telemetry.addData("ballStates[0]", ballStates[0]);
-            telemetry.addData("ballStates[1]", ballStates[1]);
-            telemetry.addData("ballStates[2]", ballStates[2]);
-            telemetry.addData("drumMode", drumMode);
-            telemetry.addData("drumPosition", drumPosition);
-            telemetry.addData("switchCooldown", switchCooldown);
-            telemetry.addData("switchCooldownTimer.seconds()", switchCooldownTimer.seconds());
-        }
+    public void printTelemetry(Telemetry telemetry) {
+        telemetry.addData("ballStates[0]", ballStates[0]);
+        telemetry.addData("ballStates[1]", ballStates[1]);
+        telemetry.addData("ballStates[2]", ballStates[2]);
+        telemetry.addData("drumMode", drumMode);
+        telemetry.addData("drumPosition", drumPosition);
+        telemetry.addData("switchCooldown", switchCooldown);
+        telemetry.addData("switchCooldownTimer.seconds()", switchCooldownTimer.seconds());
     }
 }
