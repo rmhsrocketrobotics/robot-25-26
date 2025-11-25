@@ -76,10 +76,6 @@ public class MainTeleop extends LinearOpMode{
 
         while (opModeIsActive()) {
             // GAMEPAD 1 CODE:
-            if (gamepad1.y && !gamepad1Last.y) {
-                telemetry.speak("test test 1 2 3");
-            }
-            gamepad1Last.copy(gamepad1);
             drivetrain.setDrivetrainPower(-gamepad1.right_stick_y, gamepad1.right_stick_x, gamepad1.left_stick_x);
             // GAMEPAD 1 CODE END
 
@@ -109,12 +105,12 @@ public class MainTeleop extends LinearOpMode{
             spindex.update(true);
             // GAMEPAD 2 CODE END
 
-            drivetrain.printTelemetry(telemetry);
-            outtake.printTelemetry(telemetry);
-            telemetry.addData("facing direction radians", imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS));
-            telemetry.addData("angular velocity radians", imu.getRobotAngularVelocity(AngleUnit.RADIANS));
-            telemetry.addData("facing direction degrees", imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
-            telemetry.addData("angular velocity degrees", imu.getRobotAngularVelocity(AngleUnit.DEGREES));
+            //drivetrain.printTelemetry(telemetry);
+            //outtake.printTelemetry(telemetry);
+            //telemetry.addData("facing direction radians", imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS));
+            //telemetry.addData("angular velocity radians", imu.getRobotAngularVelocity(AngleUnit.RADIANS));
+            //telemetry.addData("facing direction degrees", imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
+            //telemetry.addData("angular velocity degrees", imu.getRobotAngularVelocity(AngleUnit.DEGREES));
 
             telemetry.update();
         }
@@ -334,18 +330,18 @@ class Spindex {
 
     // time it takes to go from position 0 to position 1 on the drum servo
     // (setting too low will mean the sensor sees the same ball multiple times)
-    final double switchCooldownConstant = 1.2;
+    final double switchCooldownConstant = 1.3;
 
     double switchCooldown = switchCooldownConstant;
 
     private ElapsedTime flickTimer;
 
-    final double flickMinTime = 0.5; // min time that the robot will try to flick the ball up for
+    final double flickMinTime = 1; // min time that the robot will try to flick the ball up for
 
     /**
      * should run BEFORE waitForStart()
      * */
-    Spindex(HardwareMap hardwareMap, Telemetry telemetry) { //
+    Spindex(HardwareMap hardwareMap, Telemetry telemetry) {
         this.telemetry = telemetry;
 
         drumServo = hardwareMap.get(ServoImplEx.class, "drumServo");
@@ -401,16 +397,19 @@ class Spindex {
     }
 
     public void incrementDrumPosition() {
-        setDrumState(drumPosition += 1);
-        if (drumPosition >= 3) {
-            setDrumState(0);
+        int newDrumPosition = drumPosition + 1;
+        String newDrumState = drumMode;
+        if (newDrumPosition >= 3) {
+            newDrumPosition = 0;
 
             if (drumInIntakeMode()) {
-                setDrumState("outtake");
+                newDrumState = "outtake";
             } else if (drumInOuttakeMode()) {
-                setDrumState("intake");
+                newDrumState = "intake";
             }
         }
+
+        setDrumState(newDrumState, newDrumPosition);
     }
 
     public boolean drumInOuttakeMode() {
@@ -419,6 +418,10 @@ class Spindex {
 
     public boolean drumInIntakeMode() {
         return drumMode.equals("intake");
+    }
+
+    public boolean drumIsEmpty() {
+        return ballStates[0].equals("empty") && ballStates[1].equals("empty") && ballStates[2].equals("empty");
     }
 
     public void setDrumState(String newDrumMode) {
@@ -473,6 +476,10 @@ class Spindex {
 
     public boolean drumIsSwitching() {
         return switchCooldownTimer.seconds() < switchCooldown;
+    }
+
+    public boolean drumIsFlicking() {
+        return flickTimer.seconds() < flickMinTime;
     }
 
     /**
@@ -531,15 +538,21 @@ class Spindex {
             if (detectBallIntake()) {
                 incrementDrumPosition();
             }
-        } else if (drumInOuttakeMode()) {
-
         }
 
-        if (drumInOuttakeMode() && flickTimer.seconds() < flickMinTime) {
-            flick.setPower(1);
-            ballStates[drumPosition] = "empty";
+        if (drumInOuttakeMode() && drumIsFlicking()) {
+            if (!drumIsSwitching()) {
+                flick.setPower(1);
+                ballStates[drumPosition] = "empty";
+            } else {
+                flickTimer.reset();
+            }
         } else {
             flick.setPower(0);
+        }
+
+        if (drumIsEmpty() && drumInOuttakeMode() && !drumIsSwitching() && !drumIsFlicking()) {
+            setDrumState("intake", 0);
         }
 
         updateDrumPosition();
