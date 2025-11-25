@@ -5,7 +5,6 @@ import android.graphics.Color;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
@@ -16,17 +15,13 @@ import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.PwmControl;
-import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
-import com.qualcomm.robotcore.hardware.SwitchableLight;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.hardware.configuration.typecontainers.MotorConfigurationType;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
@@ -36,35 +31,37 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagMetadata;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 import java.util.List;
-import java.util.Objects;
-//import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
-//import org.firstinspires.ftc.vision.VisionPortal;
-//import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
-//import org.firstinspires.ftc.vision.apriltag.AprilTagLibrary;
-//import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
-//
-//import java.util.List;
 
 @TeleOp(group = "!main")
 
 public class MainTeleop extends LinearOpMode{
+    String state;
+    Drivetrain drivetrain;
+    Spindex spindex;
+    Outtake outtake;
+    Vision vision;
+    Gamepad gamepad1Last;
+    Gamepad gamepad2Last;
+
     @Override
     public void runOpMode() {
-        Drivetrain drivetrain = new Drivetrain(hardwareMap); // wheels
-        Spindex spindex = new Spindex(hardwareMap, telemetry); // drumServo, intake, flick
-        Outtake outtake = new Outtake(hardwareMap, true); // outtake, hoodServo (doesn't exist yet TODO make this exist)
-        Vision vision = new Vision(hardwareMap); // camera
+        state = "intake"; // states are: "intake", "transition", and "outtake"
 
-        Gamepad gamepad1Last = new Gamepad();
-        Gamepad gamepad2Last = new Gamepad();
+        drivetrain = new Drivetrain(hardwareMap); // wheels
+        spindex = new Spindex(hardwareMap, telemetry); // drumServo, intake, flick
+        outtake = new Outtake(hardwareMap); // outtake, hoodServo (doesn't exist yet TODO make this exist)
+        vision = new Vision(hardwareMap); // camera
 
-        //random ahh imu stuff dw
-        IMU imu = hardwareMap.get(IMU.class, "imu");
-        IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
-                RevHubOrientationOnRobot.LogoFacingDirection.LEFT,
-                RevHubOrientationOnRobot.UsbFacingDirection.FORWARD));
-        imu.initialize(parameters);
-        imu.resetYaw();
+        gamepad1Last = new Gamepad();
+        gamepad2Last = new Gamepad();
+
+//        //random ahh imu stuff dw
+//        IMU imu = hardwareMap.get(IMU.class, "imu");
+//        IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
+//                RevHubOrientationOnRobot.LogoFacingDirection.LEFT,
+//                RevHubOrientationOnRobot.UsbFacingDirection.FORWARD));
+//        imu.initialize(parameters);
+//        imu.resetYaw();
 
         telemetry.setMsTransmissionInterval(200); //default 250
         //telemetry.setNumDecimalPlaces(0, 5);
@@ -76,14 +73,21 @@ public class MainTeleop extends LinearOpMode{
 
         while (opModeIsActive()) {
             // GAMEPAD 1 CODE:
-            drivetrain.setDrivetrainPower(-gamepad1.right_stick_y, gamepad1.right_stick_x, gamepad1.left_stick_x);
-            // GAMEPAD 1 CODE END
+            if (gamepad1.left_bumper) {
+                // speed mode
+                drivetrain.setDrivetrainPower(-gamepad1.right_stick_y, gamepad1.right_stick_x, gamepad1.left_stick_x);
+            } else if (gamepad1.right_bumper) {
+                // slow mode
+                drivetrain.setDrivetrainPower(-gamepad1.right_stick_y, gamepad1.right_stick_x, gamepad1.left_stick_x,
+                        0.2, 0.2, 0.2);
+            } else {
+                // normal mode
+                drivetrain.setDrivetrainPower(-gamepad1.right_stick_y, gamepad1.right_stick_x, gamepad1.left_stick_x,
+                        0.7, 0.7, 0.7);
+            }
 
-            // GAMEPAD 2 CODE:
-            double desiredTPS = -gamepad2.left_stick_y * 10000;
-            outtake.setOuttakeVelocityTPS(desiredTPS);
-            telemetry.addData("desiredTPS", desiredTPS);
 
+            // literally all of the rest of this code is for gamepad 2:
             spindex.intake.setPower(gamepad2.right_trigger);
             spindex.flick.setPower(gamepad2.left_trigger);
 
@@ -102,8 +106,17 @@ public class MainTeleop extends LinearOpMode{
 
             gamepad2Last.copy(gamepad2);
 
+            // state specific code goes in these methods
+            if (state.equals("intake")) {
+                intake();
+            } else if (state.equals("transition")) {
+                transition();
+            } else if (state.equals("outtake")) {
+                outtake();
+            }
+
             spindex.update(true);
-            // GAMEPAD 2 CODE END
+            outtake.update();
 
             //drivetrain.printTelemetry(telemetry);
             //outtake.printTelemetry(telemetry);
@@ -114,6 +127,20 @@ public class MainTeleop extends LinearOpMode{
 
             telemetry.update();
         }
+    }
+
+    public void intake() {
+        if (gamepad2.dpad_up) {
+            state = "transition";
+        }
+    }
+
+    public void transition() {
+        //outtake.targetTicksPerSecond = 10000; // arbitrary rn
+    }
+
+    public void outtake() {
+
     }
 }
 
@@ -159,6 +186,18 @@ class Drivetrain {
         brMotor.setPower(yPower + xPower - rPower);
     }
 
+    public void setDrivetrainPower(double yPower, double xPower, double rPower, double yPowerMultiplier, double xPowerMultiplier, double rPowerMultiplier) {
+        yPower = yPower * yPowerMultiplier;
+        xPower = xPower * xPowerMultiplier;
+        rPower = rPower * rPowerMultiplier;
+
+        //equations to move the robot
+        flMotor.setPower(yPower + xPower + rPower);
+        frMotor.setPower(yPower - xPower - rPower);
+        blMotor.setPower(yPower - xPower + rPower);
+        brMotor.setPower(yPower + xPower - rPower);
+    }
+
     public void printTelemetry(Telemetry telemetry) {
         telemetry.addData("fldrivetrain is ", flMotor.getCurrentPosition());
         telemetry.addData("frdrivetrain is ", frMotor.getCurrentPosition());
@@ -172,26 +211,27 @@ class Outtake {
     DcMotorEx outtake2;
     PIDFCoefficients MOTOR_VELO_PID;
     VoltageSensor batteryVoltageSensor;
-    Outtake(HardwareMap hardwareMap, boolean useVeloPID) {
+    double targetTicksPerSecond;
+    Outtake(HardwareMap hardwareMap) {
         outtake1 = hardwareMap.get(DcMotorEx.class, "outtake1");
         outtake1.setDirection(DcMotor.Direction.REVERSE);
         outtake2 = hardwareMap.get(DcMotorEx.class, "outtake2");
 
-        if (useVeloPID) {
-            MOTOR_VELO_PID = new PIDFCoefficients(25, 0, 0, 19);
+        MOTOR_VELO_PID = new PIDFCoefficients(25, 0, 0, 19);
 
-            MotorConfigurationType motorConfigurationType = outtake1.getMotorType().clone();
-            motorConfigurationType.setAchieveableMaxRPMFraction(1.0);
-            outtake1.setMotorType(motorConfigurationType);
-            outtake2.setMotorType(motorConfigurationType);
+        MotorConfigurationType motorConfigurationType = outtake1.getMotorType().clone();
+        motorConfigurationType.setAchieveableMaxRPMFraction(1.0);
+        outtake1.setMotorType(motorConfigurationType);
+        outtake2.setMotorType(motorConfigurationType);
 
-            outtake1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            outtake2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        outtake1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        outtake2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-            batteryVoltageSensor = hardwareMap.voltageSensor.iterator().next();
-            setPIDFCoefficients(outtake1, MOTOR_VELO_PID);
-            setPIDFCoefficients(outtake2, MOTOR_VELO_PID);
-        }
+        batteryVoltageSensor = hardwareMap.voltageSensor.iterator().next();
+        setPIDFCoefficients(outtake1, MOTOR_VELO_PID);
+        setPIDFCoefficients(outtake2, MOTOR_VELO_PID);
+
+        targetTicksPerSecond = 0;
     }
 
     public void setOuttakePower(double power) {
@@ -199,7 +239,7 @@ class Outtake {
         outtake2.setPower(-power);
     }
 
-    public void setOuttakeVelocityTPS(double ticksPerSecond) {
+    private void setOuttakeVelocityTPS(double ticksPerSecond) {
         outtake1.setVelocity(ticksPerSecond);
         outtake2.setVelocity(ticksPerSecond);
     }
@@ -214,6 +254,10 @@ class Outtake {
         motor.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(
                 coefficients.p, coefficients.i, coefficients.d, coefficients.f * 12 / batteryVoltageSensor.getVoltage()
         ));
+    }
+
+    public void update() {
+        setOuttakeVelocityTPS(targetTicksPerSecond);
     }
 }
 
