@@ -31,6 +31,13 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagMetadata;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 import java.util.List;
+import static java.lang.Math.sqrt;
+import static java.lang.Math.sin;
+import static java.lang.Math.cos;
+import static java.lang.Math.tan;
+import static java.lang.Math.toRadians;
+import static java.lang.Math.toDegrees;
+import static java.lang.Math.atan;
 
 @TeleOp(group = "!main")
 
@@ -154,6 +161,16 @@ public class MainTeleop extends LinearOpMode{
     }
 }
 
+// little baby class used in the Outtake class
+class Velocity {
+    public double speed;
+    public double direction;
+    Velocity(double speed, double direction) {
+        this.speed = speed;
+        this.direction = direction;
+    }
+}
+
 class Drivetrain {
     public DcMotor flMotor;
     public DcMotor frMotor;
@@ -268,6 +285,42 @@ class Outtake {
 
     public void update() {
         setOuttakeVelocityTPS(targetTicksPerSecond);
+    }
+
+    // inner class :O (has functions for calculating the trajectory of the ball)
+    static class TrajectoryMath {
+        static final double g = 9.81; // force of gravity in meters per second squared
+        static final double h = 0.7; // height of the target above the launch point in meters
+        static final double theta = toRadians(30); // angle that we are trying to get the ball to enter the bucket with in degrees above the horizon
+
+        private static double calculateStartSpeed(double g, double d, double h, double theta) {
+            double numerator = g * d * d;
+            double denominator = 2 * cos(theta) * cos(theta) * (d * tan(theta) + h);
+
+            return sqrt(numerator / denominator);
+        }
+
+        private static double calculateEndSpeed(double startSpeed, double g, double d, double h, double theta) {
+            double xSpeed = startSpeed * cos(theta);
+            double ySpeed = (startSpeed * sin(theta)) - ((g * d) / xSpeed);
+
+            return sqrt(xSpeed * xSpeed + ySpeed * ySpeed);
+        }
+
+        private static double calculateEndDirection(double startSpeed, double g, double d, double h, double theta) {
+            double xSpeed = startSpeed * cos(theta);
+            double ySpeed = (startSpeed * sin(theta)) - ((g * d) / xSpeed);
+
+            return toDegrees(atan(ySpeed / xSpeed));
+        }
+
+        public static Velocity calculateBallLaunchVelocity(double distanceFromBucket) {
+            double startSpeed = calculateStartSpeed(g, distanceFromBucket, h, theta);
+            // these calculations actually work in reverse, so "endSpeed" and "endDirection" are actually the speed and direction that we need the ball to START with
+            double endSpeed = calculateEndSpeed(startSpeed, g, distanceFromBucket, h, theta);
+            double endDirection = calculateEndDirection(startSpeed, g, distanceFromBucket, h, theta);
+            return new Velocity(endSpeed, endDirection);
+        }
     }
 }
 
