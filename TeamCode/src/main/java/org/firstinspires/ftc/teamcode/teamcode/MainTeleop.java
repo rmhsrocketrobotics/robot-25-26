@@ -334,7 +334,7 @@ class Spindex {
 
     // time it takes to go from position 0 to position 1 on the drum servo
     // (setting too low will mean the sensor sees the same ball multiple times)
-    final double switchCooldownConstant = 1;
+    final double switchCooldownConstant = 1.2;
 
     double switchCooldown = switchCooldownConstant;
 
@@ -359,7 +359,7 @@ class Spindex {
         intakeColorSensor = hardwareMap.get(NormalizedColorSensor.class, "colorLeft"); // TODO: rename this
         intakeColorSensor.setGain(15);
 
-        outtakeColorSensor = hardwareMap.get(NormalizedColorSensor.class, "idk lmao"); // TODO: config the sensor below the outtake
+        //outtakeColorSensor = hardwareMap.get(NormalizedColorSensor.class, "idk lmao"); // TODO: config the sensor below the outtake
 
         drumMode = "intake";
         drumPosition = 0;
