@@ -30,7 +30,7 @@ public class MeepMeepTesting {
     public static void main(String[] args) {
         MeepMeep meepMeep = new MeepMeep(700);
 
-        RoadRunnerBotEntity myBot = testPathRightRed(meepMeep);
+        RoadRunnerBotEntity myBot = testPathLeftRed(meepMeep);
 
         Image img = null;
         try { img = ImageIO.read(new File("MeepMeepTesting/src/main/java/com/example/meepmeeptesting/decode webfield.png")); }
