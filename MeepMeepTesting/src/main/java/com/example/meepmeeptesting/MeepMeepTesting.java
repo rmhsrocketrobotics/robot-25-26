@@ -43,6 +43,15 @@ public class MeepMeepTesting {
                 .start();
     }
 
+    public static RoadRunnerBotEntity testPath(MeepMeep meepMeep) {
+        return new DefaultBotBuilder(meepMeep)
+                // Set bot constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
+                .setConstraints(50, 50, Math.toRadians(180), Math.toRadians(180), 14.5)
+                .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(0, 0, 0))
+                        .splineTo(new Vector2d(40, 40), pi/2)
+                        .build());
+    }
+
 
     //starts on the right side, towards red goal
     public static RoadRunnerBotEntity testPathRightRed(MeepMeep meepMeepRightRed) {
