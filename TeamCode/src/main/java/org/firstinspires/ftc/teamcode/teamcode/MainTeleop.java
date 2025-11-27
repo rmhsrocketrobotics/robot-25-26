@@ -75,12 +75,12 @@ public class MainTeleop extends LinearOpMode{
 
         waitForStart();
 
-        ElapsedTime obeliskDetectionTimer = new ElapsedTime();
-        while (opModeIsActive() && obeliskDetectionTimer.seconds() < 2) {
-            if (vision.detectObelisk()) {
-                break;
-            }
-        }
+//        ElapsedTime obeliskDetectionTimer = new ElapsedTime();
+//        while (opModeIsActive() && obeliskDetectionTimer.seconds() < 2) {
+//            if (vision.detectObelisk()) {
+//                break;
+//            }
+//        }
 
         spindex.init();
 
@@ -105,13 +105,24 @@ public class MainTeleop extends LinearOpMode{
 
             // literally all of the rest of this code is for gamepad 2:
             spindex.intake.setPower(gamepad2.right_trigger);
-            spindex.flick.setPower(gamepad2.left_trigger);
+            //spindex.flick.setPower(gamepad2.left_trigger);
 
-            if (gamepad2.y && !gamepad2Last.y) {
-                spindex.incrementDrumPosition();
-            }
-            if (gamepad2.x && !gamepad2Last.x) {
-                spindex.setDrumState("intake", 0);
+//            if (gamepad2.y && !gamepad2Last.y) {
+//                spindex.incrementDrumPosition();
+//            }
+//            if (gamepad2.x && !gamepad2Last.x) {
+//                spindex.setDrumState("intake", 0);
+//            }
+            if (gamepad2.y) {
+                outtake.targetTicksPerSecond = 500;
+            } else if (gamepad2.b) {
+                outtake.targetTicksPerSecond = 1000;
+            } else if (gamepad2.a) {
+                outtake.targetTicksPerSecond = 1500;
+            } else if (gamepad2.x) {
+                outtake.targetTicksPerSecond = 2000;
+            } else if (gamepad2.dpad_up) {
+                outtake.targetTicksPerSecond = 0;
             }
             if (gamepad2.left_bumper && !gamepad2Last.left_bumper) {
                 spindex.flickNextBall("purple");
@@ -136,12 +147,12 @@ public class MainTeleop extends LinearOpMode{
             vision.update();
 
             //drivetrain.printTelemetry(telemetry);
-            //outtake.printTelemetry(telemetry);
+            outtake.printTelemetry(telemetry);
             //telemetry.addData("facing direction radians", imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS));
             //telemetry.addData("angular velocity radians", imu.getRobotAngularVelocity(AngleUnit.RADIANS));
             //telemetry.addData("facing direction degrees", imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
             //telemetry.addData("angular velocity degrees", imu.getRobotAngularVelocity(AngleUnit.DEGREES));
-            vision.printTelemetry(telemetry);
+            //vision.printTelemetry(telemetry);
             telemetry.update();
         }
     }
