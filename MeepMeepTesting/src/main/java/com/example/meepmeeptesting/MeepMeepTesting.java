@@ -220,25 +220,25 @@ public class MeepMeepTesting {
 
                         .setReversed(true).splineToLinearHeading(new Pose2d(-25, -20, -startToGoalAngle - pi/8), -pi/8)
 
-//                        .waitSeconds(3)
+                        .waitSeconds(3)
 //
-                        .setReversed(false).splineToLinearHeading(new Pose2d(-11, -25, 3*pi/2), -pi/8)
+                        .setReversed(false).splineToLinearHeading(new Pose2d(-11, -15, 3*pi/2), -pi/8)
                         .forward(25)
 
-////                        .waitSeconds(3)
-
-                        .setReversed(true).splineToLinearHeading(new Pose2d(-25, -25, -startToGoalAngle - pi/8), -pi)
-
-////                        .waitSeconds(3)
-
-                        .setReversed(false).splineToLinearHeading(new Pose2d(13, -25, 3*pi/2), -pi/8)
-                        .forward(25)
-
-////                        .waitSeconds(3)
+                        .waitSeconds(3)
 
                         .setReversed(true).splineToLinearHeading(new Pose2d(-25, -27, -startToGoalAngle - pi/8), -pi)
 
-////                        .waitSeconds(3)
+                        .waitSeconds(3)
+
+                        .setReversed(false).splineToLinearHeading(new Pose2d(13, -20, 3*pi/2), -pi/8)
+                        .forward(25)
+
+                        .waitSeconds(3)
+
+                        .setReversed(true).splineToLinearHeading(new Pose2d(-25, -27, -startToGoalAngle - pi/8), -pi)
+
+                        .waitSeconds(3)
                         .strafeLeft(15)
 ////// third column of artifacts
 //                        .setReversed(false).splineToLinearHeading(new Pose2d(36, -27, 3*pi/2), -pi/8)
