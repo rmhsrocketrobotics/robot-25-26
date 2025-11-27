@@ -120,29 +120,28 @@ public class MeepMeepTesting {
                 .setConstraints(40, 50, Math.toRadians(180), Math.toRadians(180), 14.5)
                 .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(-61, 20, Math.toRadians(180)))
 
-                        .setReversed(true).lineToSplineHeading(new Pose2d(-50, 20, startToGoalAngle))
+
+                        .setReversed(true).splineToLinearHeading(new Pose2d(-25, 27, startToGoalAngle + pi/8), pi/8)
 
                         .waitSeconds(3)
-
-                        .setReversed(false).lineToSplineHeading(new Pose2d(-11, 20, pi/2))
+//
+                        .setReversed(false).splineToLinearHeading(new Pose2d(-11, 30, pi/2), pi/8)
                         .forward(25)
-
+////
                         .waitSeconds(3)
-
-                        .setReversed(true).lineToSplineHeading(new Pose2d(-25, 27, startToGoalAngle + pi/8))
-
+////
+                        .setReversed(true).splineToLinearHeading(new Pose2d(-25, 30, startToGoalAngle + pi/8), pi)
+//
                         .waitSeconds(3)
-
-                        .setReversed(false).lineToSplineHeading(new Pose2d(13, 27, pi/2))
+//
+                        .setReversed(true).splineToLinearHeading(new Pose2d(13, 30, pi/2), pi/8)
                         .forward(25)
-
+////
                         .waitSeconds(3)
-
-                        .setReversed(true).lineToSplineHeading(new Pose2d(-25, 27, startToGoalAngle+pi/8))
-
+////
+                        .setReversed(true).splineToLinearHeading(new Pose2d(-25, 27, startToGoalAngle + pi/8), pi)
+////
                         .waitSeconds(3)
-
-                        .strafeLeft(15)
 // third column of artifacts
 //                        .setReversed(false).lineToSplineHeading(new Pose2d(36, 27, pi/2))
 //                        .forward(25)

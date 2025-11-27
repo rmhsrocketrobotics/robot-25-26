@@ -31,7 +31,6 @@ public final class RedRightAuto extends LinearOpMode {
                 drive.actionBuilder(beginPose)
 
                         .splineTo(new Vector2d(51, 13),startToGoalAngle)
-
                         .waitSeconds(3)
 
                         .splineTo(new Vector2d(36, 38),pi/2)
