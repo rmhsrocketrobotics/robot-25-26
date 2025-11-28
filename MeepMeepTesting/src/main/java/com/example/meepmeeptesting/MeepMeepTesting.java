@@ -30,7 +30,7 @@ public class MeepMeepTesting {
     public static void main(String[] args) {
         MeepMeep meepMeep = new MeepMeep(700);
 
-        RoadRunnerBotEntity myBot = testPathLeftRed(meepMeep);
+        RoadRunnerBotEntity myBot = testPathLeftBlue(meepMeep);
 
         Image img = null;
         try { img = ImageIO.read(new File("MeepMeepTesting/src/main/java/com/example/meepmeeptesting/decode webfield.png")); }
@@ -89,7 +89,7 @@ public class MeepMeepTesting {
 
                         .setReversed(true).splineTo(new Vector2d(56, 10), startToGoalAngle+pi)
                         .waitSeconds(3)
-                        .forward(15)
+                        .setReversed(false).splineTo(new Vector2d(40, 10), pi)
 
 // third column of artifacts
 //                        .setReversed(false).splineTo(new Vector2d(-11, 37), pi/2)
@@ -120,36 +120,36 @@ public class MeepMeepTesting {
                 .setConstraints(40, 50, Math.toRadians(180), Math.toRadians(180), 14.5)
                 .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(-61, 20, Math.toRadians(180)))
 
-                        .setReversed(true).lineToSplineHeading(new Pose2d(-50, 20, startToGoalAngle))
+
+                        .setReversed(true).splineToLinearHeading(new Pose2d(-25, 27, startToGoalAngle + pi/8), pi/8)
 
                         .waitSeconds(3)
 
-                        .setReversed(false).lineToSplineHeading(new Pose2d(-11, 20, pi/2))
-                        .forward(25)
+                        .setReversed(false).splineToLinearHeading(new Pose2d(-11, 30, pi/2), pi/8)
+                        .splineTo(new Vector2d(-11, 45), pi/2)
 
                         .waitSeconds(3)
 
-                        .setReversed(true).lineToSplineHeading(new Pose2d(-25, 27, startToGoalAngle + pi/8))
+                        .setReversed(true).splineToLinearHeading(new Pose2d(-25, 30, startToGoalAngle + pi/8), pi)
 
                         .waitSeconds(3)
 
-                        .setReversed(false).lineToSplineHeading(new Pose2d(13, 27, pi/2))
-                        .forward(25)
+                        .setReversed(true).splineToLinearHeading(new Pose2d(13, 30, pi/2), pi/8)
+                        .setReversed(false).splineTo(new Vector2d(13, 45), pi/2)
 
                         .waitSeconds(3)
 
-                        .setReversed(true).lineToSplineHeading(new Pose2d(-25, 27, startToGoalAngle+pi/8))
+                        .setReversed(true).splineToLinearHeading(new Pose2d(-25, 27, startToGoalAngle + pi/8), pi)
 
                         .waitSeconds(3)
-
                         .strafeLeft(15)
 // third column of artifacts
-//                        .setReversed(false).lineToSplineHeading(new Pose2d(36, 27, pi/2))
-//                        .forward(25)
+//                        .setReversed(false).splineToLinearHeading(new Pose2d(36, 30, pi/2), pi/8)
+//                        .splineTo(new Vector2d(36, 45), pi/2)
 //
 //                        .waitSeconds(1.5)
 //
-//                        .setReversed(true).lineToSplineHeading(new Pose2d(-25, 27, startToGoalAngle+pi/8))
+//                        .setReversed(true).splineToLinearHeading(new Pose2d(-25, 27, startToGoalAngle+pi/8), pi)
 //
 //                        .waitSeconds(1.5)
 
@@ -190,7 +190,8 @@ public class MeepMeepTesting {
 
                         .setReversed(true).splineTo(new Vector2d(56, -10), startToGoalAngle+pi)
                         .waitSeconds(3)
-                        .forward(15)
+
+                        .setReversed(false).splineTo(new Vector2d(40, -17),startToGoalAngle)
 // third column of artifacts
 //                        .setReversed(false).splineTo(new Vector2d(-11, -37), 3*pi/2)
 //                        .splineTo(new Vector2d(-11, -46), 3*pi/2)
@@ -219,37 +220,37 @@ public class MeepMeepTesting {
                 .setConstraints(40, 50, Math.toRadians(180), Math.toRadians(180), 14.5)
                 .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(-61, -20, Math.toRadians(180)))
 
-                        .setReversed(true).lineToSplineHeading(new Pose2d(-25, -20, -startToGoalAngle - pi/8))
+                        .setReversed(true).splineToLinearHeading(new Pose2d(-25, -20, -startToGoalAngle - pi/8), -pi/8)
 
                         .waitSeconds(3)
-
-                        .setReversed(false).lineToSplineHeading(new Pose2d(-11, -20, 3*pi/2))
-                        .forward(25)
-
-                        .waitSeconds(3)
-
-                        .setReversed(true).lineToSplineHeading(new Pose2d(-25, -27, -startToGoalAngle - pi/8))
-
-                        .waitSeconds(3)
-
-                        .setReversed(false).lineToSplineHeading(new Pose2d(13, -27,3*pi/2))
-                        .forward(25)
-
-                        .waitSeconds(3)
-
-                        .setReversed(true).lineToSplineHeading(new Pose2d(-25, -27, -startToGoalAngle - pi/8))
-
-                        .waitSeconds(3)
-                        .strafeRight(15)
-// third column of artifacts
 //
-//                        .setReversed(false).lineToSplineHeading(new Pose2d(36, -27, 3*pi/2))
+                        .setReversed(false).splineToLinearHeading(new Pose2d(-11, -15, 3*pi/2), -pi/8)
+                        .splineTo(new Vector2d(-11, -45), 3*pi/2)
+
+                        .waitSeconds(3)
+
+                        .setReversed(true).splineToLinearHeading(new Pose2d(-25, -27, -startToGoalAngle - pi/8), -pi)
+
+                        .waitSeconds(3)
+
+                        .setReversed(false).splineToLinearHeading(new Pose2d(13, -20, 3*pi/2), -pi/8)
+                        .splineTo(new Vector2d(13, -45), 3*pi/2)
+
+
+                        .waitSeconds(3)
+
+                        .setReversed(true).splineToLinearHeading(new Pose2d(-25, -27, -startToGoalAngle - pi/8), -pi)
+
+                        .waitSeconds(3)
+                        .strafeLeft(15)
+////// third column of artifacts
+//                        .setReversed(false).splineToLinearHeading(new Pose2d(36, -27, 3*pi/2), -pi/8)
 //                        .forward(25)
-//
-//                        .waitSeconds(1.5)
-//
-//                        .setReversed(true).lineToSplineHeading(new Pose2d(-25, -27, -startToGoalAngle-pi/8))
-//
+
+////                        .waitSeconds(1.5)
+
+//                        .setReversed(true).splineToLinearHeading(new Pose2d(-25, -27, -startToGoalAngle-pi/8), -pi)
+
 //                        .waitSeconds(1.5)
 
                         .build());
