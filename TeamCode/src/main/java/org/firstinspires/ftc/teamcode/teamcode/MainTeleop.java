@@ -14,6 +14,7 @@ import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.PwmControl;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.hardware.configuration.typecontainers.MotorConfigurationType;
@@ -27,7 +28,6 @@ import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagGameDatabase;
 import org.firstinspires.ftc.vision.apriltag.AprilTagLibrary;
-import org.firstinspires.ftc.vision.apriltag.AprilTagMetadata;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 import java.util.List;
@@ -56,7 +56,7 @@ public class MainTeleop extends LinearOpMode{
 
         drivetrain = new Drivetrain(hardwareMap); // wheels
         spindex = new Spindex(hardwareMap); // drumServo, intake, flick
-        outtake = new Outtake(hardwareMap); // outtake, hoodServo (doesn't exist yet TODO make this exist)
+        outtake = new Outtake(hardwareMap); // outtake, hoodServo
         vision = new Vision(hardwareMap, true); // camera, pinpoint
 
         gamepad1Last = new Gamepad();
@@ -86,8 +86,8 @@ public class MainTeleop extends LinearOpMode{
 
         while (opModeIsActive()) {
             // GAMEPAD 1 CODE:
-            if (gamepad1.y) {
-                vision.faceObelisk(drivetrain);
+            if (gamepad1.y && vision.seenGoalAprilTag && state.equals("outtake")) {
+                vision.faceGoal(drivetrain);
             } else {
                 if (gamepad1.left_bumper) {
                     // speed mode
@@ -104,32 +104,23 @@ public class MainTeleop extends LinearOpMode{
             }
 
             // literally all of the rest of this code is for gamepad 2:
-            spindex.intake.setPower(gamepad2.right_trigger);
-            spindex.flick.setPower(gamepad2.left_trigger);
+            //spindex.flick.setPower(gamepad2.left_trigger);
 
-            if (gamepad2.y && !gamepad2Last.y) {
-                spindex.incrementDrumPosition();
-            }
-            if (gamepad2.x && !gamepad2Last.x) {
-                spindex.setDrumState("intake", 0);
-            }
-            if (gamepad2.left_bumper && !gamepad2Last.left_bumper) {
-                spindex.flickNextBall("purple");
-            }
-            if (gamepad2.right_bumper && !gamepad2Last.right_bumper) {
-                spindex.flickNextBall("green");
-            }
-
-            gamepad2Last.copy(gamepad2);
+//            if (gamepad2.y && !gamepad2Last.y) {
+//                spindex.incrementDrumPosition();
+//            }
+//            if (gamepad2.x && !gamepad2Last.x) {
+//                spindex.setDrumState("intake", 0);
+//            }
 
             // state specific code goes in these methods
             if (state.equals("intake")) {
                 intake();
-            } else if (state.equals("transition")) {
-                transition();
             } else if (state.equals("outtake")) {
                 outtake();
             }
+
+            gamepad2Last.copy(gamepad2);
 
             spindex.update();
             outtake.update();
@@ -147,27 +138,48 @@ public class MainTeleop extends LinearOpMode{
     }
 
     public void intake() {
-        if (gamepad2.dpad_up) {
-            state = "transition";
+        if ((gamepad2.dpad_up && !gamepad2Last.dpad_up) || spindex.shouldSwitchToOuttake) {
+            state = "outtake";
+            spindex.setDrumState("outtake", 0);
+            vision.seenGoalAprilTag = true;
         }
-    }
 
-    public void transition() {
-        //outtake.targetTicksPerSecond = 10000; // arbitrary rn
+        spindex.intake.setPower(gamepad2.right_trigger);
     }
 
     public void outtake() {
+        if ((gamepad2.dpad_down && !gamepad2Last.dpad_down) || spindex.shouldSwitchToIntake) {
+            state = "intake";
+            spindex.setDrumState("intake", 0);
+        }
 
+        vision.detectGoalAprilTag();
+
+        Velocity requiredVelocity = vision.getRequiredVelocity();
+        outtake.setOuttakeAndHoodToVelocity(requiredVelocity);
+
+        if (gamepad2.left_bumper && !gamepad2Last.left_bumper) {
+            spindex.flickNextBall("purple");
+        }
+        if (gamepad2.right_bumper && !gamepad2Last.right_bumper) {
+            spindex.flickNextBall("green");
+        }
     }
 }
 
-// little baby class used in the Outtake class
+// little baby class used in the TrajectoryMath inner class
 class Velocity {
     public double speed;
     public double direction;
     Velocity(double speed, double direction) {
         this.speed = speed;
         this.direction = direction;
+    }
+}
+
+class CustomMath {
+    static double clamp(double value, double min, double max) {
+        return Math.min(Math.max(min, value), max);
     }
 }
 
@@ -236,6 +248,7 @@ class Drivetrain {
 class Outtake {
     DcMotorEx outtake1;
     DcMotorEx outtake2;
+    Servo hoodServo;
     PIDFCoefficients MOTOR_VELO_PID;
     VoltageSensor batteryVoltageSensor;
     double targetTicksPerSecond;
@@ -243,6 +256,7 @@ class Outtake {
         outtake1 = hardwareMap.get(DcMotorEx.class, "outtake1");
         outtake1.setDirection(DcMotor.Direction.REVERSE);
         outtake2 = hardwareMap.get(DcMotorEx.class, "outtake2");
+        //hoodServo = hardwareMap.get(Servo.class, "hoodServo"); // TODO config this
 
         MOTOR_VELO_PID = new PIDFCoefficients(25, 0, 0, 19);
 
@@ -287,40 +301,14 @@ class Outtake {
         setOuttakeVelocityTPS(targetTicksPerSecond);
     }
 
-    // inner class :O (has functions for calculating the trajectory of the ball)
-    static class TrajectoryMath {
-        static final double g = 9.81; // force of gravity in meters per second squared
-        static final double h = 0.7; // height of the target above the launch point in meters
-        static final double theta = toRadians(30); // angle that we are trying to get the ball to enter the bucket with in degrees above the horizon
+    public void setOuttakeAndHoodToVelocity(Velocity velocity) {
+        // change meters per second into ticks per second
+        // this is a SUPER rough calculation based on https://www.desmos.com/calculator/5v4yv1rgcy
+        double metersPerSecond = CustomMath.clamp(velocity.speed, 4, 6);
+        double ticksPerSecond = 221.77866 * metersPerSecond;
+        targetTicksPerSecond = ticksPerSecond;
 
-        private static double calculateStartSpeed(double g, double d, double h, double theta) {
-            double numerator = g * d * d;
-            double denominator = 2 * cos(theta) * cos(theta) * (d * tan(theta) + h);
-
-            return sqrt(numerator / denominator);
-        }
-
-        private static double calculateEndSpeed(double startSpeed, double g, double d, double h, double theta) {
-            double xSpeed = startSpeed * cos(theta);
-            double ySpeed = (startSpeed * sin(theta)) - ((g * d) / xSpeed);
-
-            return sqrt(xSpeed * xSpeed + ySpeed * ySpeed);
-        }
-
-        private static double calculateEndDirection(double startSpeed, double g, double d, double h, double theta) {
-            double xSpeed = startSpeed * cos(theta);
-            double ySpeed = (startSpeed * sin(theta)) - ((g * d) / xSpeed);
-
-            return toDegrees(atan(ySpeed / xSpeed));
-        }
-
-        public static Velocity calculateBallLaunchVelocity(double distanceFromBucket) {
-            double startSpeed = calculateStartSpeed(g, distanceFromBucket, h, theta);
-            // these calculations actually work in reverse, so "endSpeed" and "endDirection" are actually the speed and direction that we need the ball to START with
-            double endSpeed = calculateEndSpeed(startSpeed, g, distanceFromBucket, h, theta);
-            double endDirection = calculateEndDirection(startSpeed, g, distanceFromBucket, h, theta);
-            return new Velocity(endSpeed, endDirection);
-        }
+        // TODO: finish this method (add hood support)
     }
 }
 
@@ -329,13 +317,13 @@ class Vision {
     private VisionPortal visionPortal;
     private double targetAbsoluteBearing = 0;
     public int obeliskId = 22; // guess that the obelisk is 22 if we aren't able to detect it
-    private boolean isRedAlliance;
+    private final boolean isRedAlliance;
     GoBildaPinpointDriver pinpoint;
     double currentBearing = 0;
-    double goalDistance = 1;
+    private double goalDistance = 0;
+    boolean seenGoalAprilTag = false;
     Vision(HardwareMap hardwareMap, boolean isRedAlliance) {
 
-        AprilTagMetadata myAprilTagMetadata;
         AprilTagLibrary.Builder myAprilTagLibraryBuilder;
         AprilTagProcessor.Builder myAprilTagProcessorBuilder;
         AprilTagLibrary myAprilTagLibrary;
@@ -392,15 +380,16 @@ class Vision {
         pinpoint.resetPosAndIMU();
         }
 
-    private void detectGoalAprilTag() {
+    public void detectGoalAprilTag() {
         List<AprilTagDetection> detections = aprilTag.getDetections();
         for (AprilTagDetection detection : detections) {
-            if (isRedAlliance && detection.id == 24) {
+            if ( (isRedAlliance && detection.id == 24) || (!isRedAlliance && detection.id == 20) ) {
                 targetAbsoluteBearing = currentBearing + detection.ftcPose.bearing;
-                goalDistance = detection.ftcPose.range;
-            } else if (!isRedAlliance && detection.id == 20) {
-                targetAbsoluteBearing = currentBearing + detection.ftcPose.bearing;
-                goalDistance = detection.ftcPose.range;
+
+                double range = detection.ftcPose.range;
+                goalDistance = Math.sqrt((range * range) - (0.4572 * 0.4572));
+
+                seenGoalAprilTag = true;
             }
         }
     }
@@ -410,11 +399,11 @@ class Vision {
     }
 
     /**
-     * sets drivetrain powers to try to face the obelisk
+     * sets drivetrain powers to try to face the goal
      * */
-    public void faceObelisk(Drivetrain drivetrain) {
+    public void faceGoal(Drivetrain drivetrain) {
         double bearingError = getTargetRelativeBearing();
-        double rotationPower = clamp(bearingError * 0.03, -0.25, 0.25);
+        double rotationPower = CustomMath.clamp(bearingError * 0.03, -0.25, 0.25);
         drivetrain.setDrivetrainPower(0, 0, -rotationPower);
     }
 
@@ -432,10 +421,6 @@ class Vision {
         return false;
     }
 
-    static double clamp(double value, double min, double max) {
-        return Math.min(Math.max(min, value), max);
-    }
-
     public void printTelemetry(Telemetry telemetry) {
         telemetry.addData("obelisk id", obeliskId);
         telemetry.addData("target absolute bearing", targetAbsoluteBearing);
@@ -446,7 +431,50 @@ class Vision {
     public void update() {
         pinpoint.update();
         currentBearing = pinpoint.getHeading(AngleUnit.DEGREES);
-        detectGoalAprilTag();
+    }
+
+    public Velocity getRequiredVelocity() {
+        if (seenGoalAprilTag) {
+            return TrajectoryMath.calculateBallLaunchVelocity(goalDistance);
+        } else {
+            return TrajectoryMath.calculateBallLaunchVelocity(2);
+        }
+    }
+
+    // inner class :O (has functions for calculating the trajectory of the ball)
+    static class TrajectoryMath {
+        static final double g = 9.81; // force of gravity in meters per second squared
+        static final double h = 0.7; // height of the target above the launch point in meters
+        static final double theta = toRadians(30); // angle that we are trying to get the ball to enter the bucket with in degrees above the horizon
+
+        private static double calculateStartSpeed(double g, double d, double h, double theta) {
+            double numerator = g * d * d;
+            double denominator = 2 * cos(theta) * cos(theta) * (d * tan(theta) + h);
+
+            return sqrt(numerator / denominator);
+        }
+
+        private static double calculateEndSpeed(double startSpeed, double g, double d, double h, double theta) {
+            double xSpeed = startSpeed * cos(theta);
+            double ySpeed = (startSpeed * sin(theta)) - ((g * d) / xSpeed);
+
+            return sqrt(xSpeed * xSpeed + ySpeed * ySpeed);
+        }
+
+        private static double calculateEndDirection(double startSpeed, double g, double d, double h, double theta) {
+            double xSpeed = startSpeed * cos(theta);
+            double ySpeed = (startSpeed * sin(theta)) - ((g * d) / xSpeed);
+
+            return toDegrees(atan(ySpeed / xSpeed));
+        }
+
+        public static Velocity calculateBallLaunchVelocity(double distanceFromBucket) {
+            double startSpeed = calculateStartSpeed(g, distanceFromBucket, h, theta);
+            // these calculations actually work in reverse, so "endSpeed" and "endDirection" are actually the speed and direction that we need the ball to START with
+            double endSpeed = calculateEndSpeed(startSpeed, g, distanceFromBucket, h, theta);
+            double endDirection = calculateEndDirection(startSpeed, g, distanceFromBucket, h, theta);
+            return new Velocity(endSpeed, endDirection);
+        }
     }
 }
 
@@ -482,6 +510,9 @@ class Spindex {
     private ElapsedTime flickTimer;
 
     final double flickMinTime = 1; // min time that the robot will try to flick the ball up for
+
+    public boolean shouldSwitchToIntake = false;
+    public boolean shouldSwitchToOuttake = false;
 
     /**
      * should run BEFORE waitForStart()
@@ -677,9 +708,15 @@ class Spindex {
      * should be called in the event loop
      * */
     public void update() {
+        boolean shouldSwitchToIntake = false;
+        boolean shouldSwitchToOuttake = false;
+
         if (drumInIntakeMode()) {
             if (detectBallIntake()) {
                 incrementDrumPosition();
+                if (drumInOuttakeMode()) {
+                    shouldSwitchToOuttake = true;
+                }
             }
         }
 
@@ -695,7 +732,7 @@ class Spindex {
         }
 
         if (drumIsEmpty() && drumInOuttakeMode() && !drumIsSwitching() && !drumIsFlicking()) {
-            setDrumState("intake", 0);
+            shouldSwitchToIntake = true;
         }
 
         updateDrumPosition();
