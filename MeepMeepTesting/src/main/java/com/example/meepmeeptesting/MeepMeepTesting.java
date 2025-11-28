@@ -30,7 +30,7 @@ public class MeepMeepTesting {
     public static void main(String[] args) {
         MeepMeep meepMeep = new MeepMeep(700);
 
-        RoadRunnerBotEntity myBot = testPathLeftBlue(meepMeep);
+        RoadRunnerBotEntity myBot = testPathLeftRed(meepMeep);
 
         Image img = null;
         try { img = ImageIO.read(new File("MeepMeepTesting/src/main/java/com/example/meepmeeptesting/decode webfield.png")); }
@@ -89,7 +89,7 @@ public class MeepMeepTesting {
 
                         .setReversed(true).splineTo(new Vector2d(56, 10), startToGoalAngle+pi)
                         .waitSeconds(3)
-                        .forward(15)
+                        .setReversed(false).splineTo(new Vector2d(40, 10), pi)
 
 // third column of artifacts
 //                        .setReversed(false).splineTo(new Vector2d(-11, 37), pi/2)
@@ -126,7 +126,7 @@ public class MeepMeepTesting {
                         .waitSeconds(3)
 
                         .setReversed(false).splineToLinearHeading(new Pose2d(-11, 30, pi/2), pi/8)
-                        .forward(25)
+                        .splineTo(new Vector2d(-11, 45), pi/2)
 
                         .waitSeconds(3)
 
@@ -135,16 +135,17 @@ public class MeepMeepTesting {
                         .waitSeconds(3)
 
                         .setReversed(true).splineToLinearHeading(new Pose2d(13, 30, pi/2), pi/8)
-                        .forward(25)
+                        .setReversed(false).splineTo(new Vector2d(13, 45), pi/2)
 
                         .waitSeconds(3)
 
                         .setReversed(true).splineToLinearHeading(new Pose2d(-25, 27, startToGoalAngle + pi/8), pi)
 
                         .waitSeconds(3)
+                        .strafeTo(new Vector2d(-17,37))
 // third column of artifacts
 //                        .setReversed(false).splineToLinearHeading(new Pose2d(36, 30, pi/2), pi/8)
-//                        .forward(25)
+//                        .splineTo(new Vector2d(36, 45), pi/2)
 //
 //                        .waitSeconds(1.5)
 //
@@ -189,7 +190,8 @@ public class MeepMeepTesting {
 
                         .setReversed(true).splineTo(new Vector2d(56, -10), startToGoalAngle+pi)
                         .waitSeconds(3)
-                        .forward(15)
+
+                        .setReversed(false).splineTo(new Vector2d(40, -17),startToGoalAngle)
 // third column of artifacts
 //                        .setReversed(false).splineTo(new Vector2d(-11, -37), 3*pi/2)
 //                        .splineTo(new Vector2d(-11, -46), 3*pi/2)
@@ -223,7 +225,7 @@ public class MeepMeepTesting {
                         .waitSeconds(3)
 //
                         .setReversed(false).splineToLinearHeading(new Pose2d(-11, -15, 3*pi/2), -pi/8)
-                        .forward(25)
+                        .splineTo(new Vector2d(-11, -45), 3*pi/2)
 
                         .waitSeconds(3)
 
@@ -232,17 +234,18 @@ public class MeepMeepTesting {
                         .waitSeconds(3)
 
                         .setReversed(false).splineToLinearHeading(new Pose2d(13, -20, 3*pi/2), -pi/8)
-                        .forward(25)
+                        .splineTo(new Vector2d(13, -45), 3*pi/2)
+
 
                         .waitSeconds(3)
 
                         .setReversed(true).splineToLinearHeading(new Pose2d(-25, -27, -startToGoalAngle - pi/8), -pi)
 
                         .waitSeconds(3)
-                        .strafeLeft(15)
+                        .strafeTo(new Vector2d(-17,-35))
 ////// third column of artifacts
 //                        .setReversed(false).splineToLinearHeading(new Pose2d(36, -27, 3*pi/2), -pi/8)
-//                        .forward(25)
+//                         .splineTo(new Vector2d(36, -45), 3*pi/2)
 
 ////                        .waitSeconds(1.5)
 
