@@ -141,7 +141,7 @@ public class MainTeleop extends LinearOpMode{
         if ((gamepad2.dpad_up && !gamepad2Last.dpad_up) || spindex.shouldSwitchToOuttake) {
             state = "outtake";
             spindex.setDrumState("outtake", 0);
-            vision.seenGoalAprilTag = true;
+            vision.seenGoalAprilTag = false;
         }
 
         spindex.intake.setPower(gamepad2.right_trigger);
@@ -387,7 +387,7 @@ class Vision {
                 targetAbsoluteBearing = currentBearing + detection.ftcPose.bearing;
 
                 double range = detection.ftcPose.range;
-                goalDistance = Math.sqrt((range * range) - (0.4572 * 0.4572));
+                goalDistance = Math.sqrt((range * range) - (0.4572 * 0.4572)); // triangles
 
                 seenGoalAprilTag = true;
             }
