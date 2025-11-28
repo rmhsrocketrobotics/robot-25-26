@@ -73,20 +73,16 @@ public class MainTeleop extends LinearOpMode{
         telemetry.setMsTransmissionInterval(200); //default 250
         //telemetry.setNumDecimalPlaces(0, 5);
 
-        waitForStart();
-
-        ElapsedTime obeliskDetectionTimer = new ElapsedTime();
-        while (opModeIsActive() && obeliskDetectionTimer.seconds() < 2) {
-            if (vision.detectObelisk()) {
-                break;
-            }
+        //this is in place of a waitForStart() call
+        while (opModeInInit()) {
+            vision.detectObelisk();
         }
 
         spindex.init();
 
         while (opModeIsActive()) {
             // GAMEPAD 1 CODE:
-            if (gamepad1.y && vision.seenGoalAprilTag && state.equals("outtake")) {
+            if (gamepad1.y && vision.seenGoalAprilTag) {
                 vision.faceGoal(drivetrain);
             } else {
                 if (gamepad1.left_bumper) {
@@ -103,6 +99,9 @@ public class MainTeleop extends LinearOpMode{
                 }
             }
 
+            outtake.hoodServo.setPosition((gamepad2.left_stick_y / 2) + 0.5);
+            telemetry.addData("servo position", outtake.hoodServo.getPosition());
+
             // literally all of the rest of this code is for gamepad 2:
             //spindex.flick.setPower(gamepad2.left_trigger);
 
@@ -113,11 +112,13 @@ public class MainTeleop extends LinearOpMode{
 //                spindex.setDrumState("intake", 0);
 //            }
 
+            spindex.intake.setPower(gamepad2.right_trigger);
+
             // state specific code goes in these methods
             if (state.equals("intake")) {
-                intake();
+                intakeMode();
             } else if (state.equals("outtake")) {
-                outtake();
+                outtakeMode();
             }
 
             gamepad2Last.copy(gamepad2);
@@ -133,30 +134,37 @@ public class MainTeleop extends LinearOpMode{
             //telemetry.addData("facing direction degrees", imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
             //telemetry.addData("angular velocity degrees", imu.getRobotAngularVelocity(AngleUnit.DEGREES));
             vision.printTelemetry(telemetry);
+            telemetry.addData("state", state);
             telemetry.update();
         }
     }
 
-    public void intake() {
+    public void intakeMode() {
         if ((gamepad2.dpad_up && !gamepad2Last.dpad_up) || spindex.shouldSwitchToOuttake) {
             state = "outtake";
             spindex.setDrumState("outtake", 0);
-            vision.seenGoalAprilTag = false;
+            //vision.seenGoalAprilTag = false;
+            return;
+        } else if (gamepad2.dpad_down && !gamepad2Last.dpad_down) {
+            spindex.setDrumState("intake", 0);
+            return;
         }
-
-        spindex.intake.setPower(gamepad2.right_trigger);
     }
 
-    public void outtake() {
+    public void outtakeMode() {
         if ((gamepad2.dpad_down && !gamepad2Last.dpad_down) || spindex.shouldSwitchToIntake) {
             state = "intake";
             spindex.setDrumState("intake", 0);
+            outtake.targetTicksPerSecond = 0;
+            return;
         }
 
-        vision.detectGoalAprilTag();
+        //vision.detectGoalAprilTag();
 
         Velocity requiredVelocity = vision.getRequiredVelocity();
-        outtake.setOuttakeAndHoodToVelocity(requiredVelocity);
+        telemetry.addData("target speed m/s", requiredVelocity.speed);
+        telemetry.addData("target angle m/s", requiredVelocity.direction);
+        //outtake.setOuttakeAndHoodToVelocity(requiredVelocity);
 
         if (gamepad2.left_bumper && !gamepad2Last.left_bumper) {
             spindex.flickNextBall("purple");
@@ -256,7 +264,7 @@ class Outtake {
         outtake1 = hardwareMap.get(DcMotorEx.class, "outtake1");
         outtake1.setDirection(DcMotor.Direction.REVERSE);
         outtake2 = hardwareMap.get(DcMotorEx.class, "outtake2");
-        //hoodServo = hardwareMap.get(Servo.class, "hoodServo"); // TODO config this
+        hoodServo = hardwareMap.get(Servo.class, "hoodServo"); // TODO config this
 
         MOTOR_VELO_PID = new PIDFCoefficients(25, 0, 0, 19);
 
@@ -303,9 +311,9 @@ class Outtake {
 
     public void setOuttakeAndHoodToVelocity(Velocity velocity) {
         // change meters per second into ticks per second
-        // this is a SUPER rough calculation based on https://www.desmos.com/calculator/5v4yv1rgcy
+        // UPDATE: this calculation is based on https://www.desmos.com/calculator/ye3y2vp7c2
         double metersPerSecond = CustomMath.clamp(velocity.speed, 4, 6);
-        double ticksPerSecond = 221.77866 * metersPerSecond;
+        double ticksPerSecond = (262.7892 * metersPerSecond) - 64.05544;
         targetTicksPerSecond = ticksPerSecond;
 
         // TODO: finish this method (add hood support)
@@ -386,7 +394,7 @@ class Vision {
             if ( (isRedAlliance && detection.id == 24) || (!isRedAlliance && detection.id == 20) ) {
                 targetAbsoluteBearing = currentBearing + detection.ftcPose.bearing;
 
-                double range = detection.ftcPose.range;
+                double range = detection.ftcPose.range / 39.37;
                 goalDistance = Math.sqrt((range * range) - (0.4572 * 0.4572)); // triangles
 
                 seenGoalAprilTag = true;
@@ -431,6 +439,8 @@ class Vision {
     public void update() {
         pinpoint.update();
         currentBearing = pinpoint.getHeading(AngleUnit.DEGREES);
+
+        detectGoalAprilTag();
     }
 
     public Velocity getRequiredVelocity() {
@@ -708,8 +718,8 @@ class Spindex {
      * should be called in the event loop
      * */
     public void update() {
-        boolean shouldSwitchToIntake = false;
-        boolean shouldSwitchToOuttake = false;
+        shouldSwitchToIntake = false;
+        shouldSwitchToOuttake = false;
 
         if (drumInIntakeMode()) {
             if (detectBallIntake()) {
