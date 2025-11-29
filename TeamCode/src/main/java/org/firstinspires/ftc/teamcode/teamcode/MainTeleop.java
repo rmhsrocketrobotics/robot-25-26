@@ -115,6 +115,7 @@ public class MainTeleop extends LinearOpMode{
 //            }
 
             spindex.intake.setPower(gamepad2.right_trigger);
+            //spindex.flick.setPower(gamepad2.left_trigger);
 
             // state specific code goes in these methods
             if (state.equals("intake")) {
@@ -125,7 +126,7 @@ public class MainTeleop extends LinearOpMode{
 
             gamepad2Last.copy(gamepad2);
 
-            spindex.update();
+            spindex.update(outtake);
             outtake.update();
             vision.update();
 
@@ -166,7 +167,7 @@ public class MainTeleop extends LinearOpMode{
         Velocity requiredVelocity = vision.getRequiredVelocity();
         telemetry.addData("target speed m/s", requiredVelocity.speed);
         telemetry.addData("target angle m/s", requiredVelocity.direction);
-        //outtake.setOuttakeAndHoodToVelocity(requiredVelocity);
+        outtake.setOuttakeAndHoodToVelocity(requiredVelocity);
 
         if (gamepad2.left_bumper && !gamepad2Last.left_bumper) {
             spindex.queueBall("purple");
@@ -262,6 +263,9 @@ class Outtake {
     PIDFCoefficients MOTOR_VELO_PID;
     VoltageSensor batteryVoltageSensor;
     double targetTicksPerSecond;
+
+    // the outtake must be going at +- this t/s for atTargetSpeed() to return true
+    final double tolerance = 300;
     Outtake(HardwareMap hardwareMap) {
         outtake1 = hardwareMap.get(DcMotorEx.class, "outtake1");
         outtake1.setDirection(DcMotor.Direction.REVERSE);
@@ -305,6 +309,13 @@ class Outtake {
         motor.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(
                 coefficients.p, coefficients.i, coefficients.d, coefficients.f * 12 / batteryVoltageSensor.getVoltage()
         ));
+    }
+
+    public boolean atTargetSpeed() {
+        double minTargetTicksPerSecond = targetTicksPerSecond - tolerance;
+        double maxTargetTicksPerSecond = targetTicksPerSecond + tolerance;
+        double currentTicksPerSecond = outtake1.getVelocity();
+        return (currentTicksPerSecond > minTargetTicksPerSecond) && (currentTicksPerSecond < maxTargetTicksPerSecond);
     }
 
     public void update() {
@@ -412,7 +423,7 @@ class Vision {
      * sets drivetrain powers to try to face the goal
      * */
     public void faceGoal(Drivetrain drivetrain) {
-        double bearingError = getTargetRelativeBearing();
+        double bearingError = getTargetRelativeBearing() + 6;
         double rotationPower = CustomMath.clamp(bearingError * 0.03, -0.25, 0.25);
         drivetrain.setDrivetrainPower(0, 0, -rotationPower);
     }
@@ -495,7 +506,7 @@ class Spindex {
     private ServoImplEx drumServo;
 
     final double[] intakePositions = {0, 0.3826, 0.7831};
-    final double[] outtakePositions = {0.5745, 0.95, 0.1823};
+    final double[] outtakePositions = {0.5745, 0.975, 0.1823};
 
     DcMotor intake;
 
@@ -522,7 +533,8 @@ class Spindex {
 
     private ElapsedTime flickTimer;
 
-    final double flickMinTime = 1; // min time that the robot will try to flick the ball up for
+    final double flickTime = 1.4; // time that the robot will try to flick the ball up for
+    final double postFlickTime = 0.25; // time that the robot will wait after flicking before doing anything else
 
     public boolean shouldSwitchToIntake = false;
     public boolean shouldSwitchToOuttake = false;
@@ -538,6 +550,7 @@ class Spindex {
         //intake.setDirection(DcMotor.Direction.REVERSE);
 
         flick = hardwareMap.get(DcMotor.class, "flick");
+        flick.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         intakeColorSensor = hardwareMap.get(NormalizedColorSensor.class, "colorLeft"); // TODO: rename this
         intakeColorSensor.setGain(15);
@@ -677,7 +690,11 @@ class Spindex {
     }
 
     public boolean drumIsFlicking() {
-        return flickTimer.seconds() < flickMinTime;
+        return flickTimer.seconds() < flickTime;
+    }
+
+    public boolean drumIsInFlickCooldown() {
+        return flickTimer.seconds() < flickTime + postFlickTime;
     }
 
     /**
@@ -740,7 +757,7 @@ class Spindex {
     /**
      * should be called in the event loop
      * */
-    public void update() {
+    public void update(Outtake outtake) {
         shouldSwitchToIntake = false;
         shouldSwitchToOuttake = false;
 
@@ -755,7 +772,8 @@ class Spindex {
         }
 
         // if we aren't doing anything, get the next ball from the queue
-        if (drumInOuttakeMode() && !drumIsSwitching() && !drumIsFlicking() && !ballQueue.isEmpty()) {
+        // holy if statement
+        if (drumInOuttakeMode() && !drumIsSwitching() && !drumIsInFlickCooldown() && !ballQueue.isEmpty() && outtake.atTargetSpeed()) {
             flickNextBall(ballQueue.removeFirst(), true);
         }
 
@@ -772,7 +790,7 @@ class Spindex {
         }
 
         // switch back to intake if we're not doing anything
-        if (drumIsEmpty() && drumInOuttakeMode() && !drumIsSwitching() && !drumIsFlicking()) {
+        if (drumIsEmpty() && drumInOuttakeMode() && !drumIsSwitching() && !drumIsInFlickCooldown()) {
             shouldSwitchToIntake = true;
         }
 
