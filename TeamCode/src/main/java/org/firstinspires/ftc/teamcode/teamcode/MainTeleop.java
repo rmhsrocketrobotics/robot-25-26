@@ -31,6 +31,8 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagLibrary;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 import java.util.List;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import static java.lang.Math.sqrt;
 import static java.lang.Math.sin;
 import static java.lang.Math.cos;
@@ -167,10 +169,10 @@ public class MainTeleop extends LinearOpMode{
         //outtake.setOuttakeAndHoodToVelocity(requiredVelocity);
 
         if (gamepad2.left_bumper && !gamepad2Last.left_bumper) {
-            spindex.flickNextBall("purple");
+            spindex.queueBall("purple");
         }
         if (gamepad2.right_bumper && !gamepad2Last.right_bumper) {
-            spindex.flickNextBall("green");
+            spindex.queueBall("green");
         }
     }
 }
@@ -508,6 +510,7 @@ class Spindex {
     int drumPosition;
 
     String[] ballStates = {"empty", "empty", "empty"};
+    Deque<String> ballQueue = new ArrayDeque<>();
 
     private ElapsedTime switchCooldownTimer;
 
@@ -638,23 +641,34 @@ class Spindex {
         }
     }
 
+    /**
+     * shoot a ball
+     * */
     private void setDrumStateToNextOuttake() {
         for (int i = 0; i < ballStates.length; i++) {
             String ballState = ballStates[i];
             if (!ballState.equals("empty")) {
                 setDrumState("outtake", i);
-                break;
+                return;
             }
         }
     }
 
-    private void setDrumStateToNextOuttake(String color) {
+    /**
+     * shoot a ball of a specific color
+     * if there are no balls of the specified color and shootAny is true, then the robot will attempt to shoot a ball of the opposite color
+     * */
+    private void setDrumStateToNextOuttake(String color, boolean shootAny) {
         for (int i = 0; i < ballStates.length; i++) {
             String ballState = ballStates[i];
             if (ballState.equals(color)) {
                 setDrumState("outtake", i);
-                break;
+                return;
             }
+        }
+
+        if (shootAny) {
+            setDrumStateToNextOuttake();
         }
     }
 
@@ -708,10 +722,19 @@ class Spindex {
 
     /**
      * move the drum to the next outtake slot with a ball of a certain color in it and flick it
+     * if there are no balls of the specified color and shootAny is true, then the robot will attempt to shoot a ball of the opposite color
      */
-    public void flickNextBall(String color) {
-        setDrumStateToNextOuttake(color);
+    public void flickNextBall(String color, boolean shootAny) {
+        setDrumStateToNextOuttake(color, shootAny);
         flickTimer.reset();
+    }
+
+    public void queueBall(String color) {
+        if (color.equals("green")) {
+            ballQueue.addLast("green");
+        } else if (color.equals("purple")) {
+            ballQueue.addLast("purple");
+        }
     }
 
     /**
@@ -721,6 +744,7 @@ class Spindex {
         shouldSwitchToIntake = false;
         shouldSwitchToOuttake = false;
 
+        // detect if we have intaked (intook?) a ball, if so, switch to a new slot
         if (drumInIntakeMode()) {
             if (detectBallIntake()) {
                 incrementDrumPosition();
@@ -730,6 +754,12 @@ class Spindex {
             }
         }
 
+        // if we aren't doing anything, get the next ball from the queue
+        if (drumInOuttakeMode() && !drumIsSwitching() && !drumIsFlicking() && !ballQueue.isEmpty()) {
+            flickNextBall(ballQueue.removeFirst(), true);
+        }
+
+        // if we should be flicking, then turn the flick on
         if (drumInOuttakeMode() && drumIsFlicking()) {
             if (!drumIsSwitching()) {
                 flick.setPower(1);
@@ -741,6 +771,7 @@ class Spindex {
             flick.setPower(0);
         }
 
+        // switch back to intake if we're not doing anything
         if (drumIsEmpty() && drumInOuttakeMode() && !drumIsSwitching() && !drumIsFlicking()) {
             shouldSwitchToIntake = true;
         }
