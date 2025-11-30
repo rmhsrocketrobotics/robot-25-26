@@ -78,11 +78,16 @@ public class Outtake {
 
     public void setOuttakeAndHoodToVelocity(Velocity velocity) {
         // change meters per second into ticks per second
-        // UPDATE: this calculation is based on https://www.desmos.com/calculator/ye3y2vp7c2
         double metersPerSecond = CustomMath.clamp(velocity.speed, 4, 6);
-        double ticksPerSecond = (262.7892 * metersPerSecond) - 64.05544;
-        targetTicksPerSecond = ticksPerSecond;
+        targetTicksPerSecond = metersPerSecondToTicksPerSecond(metersPerSecond);
 
         // TODO: finish this method (add hood support)
+    }
+
+    private double metersPerSecondToTicksPerSecond(double metersPerSecond) {
+        // this calculation is based on https://www.desmos.com/calculator/ye3y2vp7c2
+        double m = 262.7892;// + 150;
+        double b = -64.05544;// - 600;
+        return (m * metersPerSecond) + b;
     }
 }

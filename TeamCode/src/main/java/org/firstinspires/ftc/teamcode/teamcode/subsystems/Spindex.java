@@ -36,7 +36,7 @@ public class Spindex {
     int drumPosition;
 
     String[] ballStates = {"empty", "empty", "empty"};
-    Deque<String> ballQueue = new ArrayDeque<>();
+    public Deque<String> ballQueue = new ArrayDeque<>();
 
     private ElapsedTime switchCooldownTimer;
 
@@ -48,7 +48,7 @@ public class Spindex {
 
     private ElapsedTime flickTimer;
 
-    final double flickTime = 1.4; // time that the robot will try to flick the ball up for
+    final double flickTime = 1.2; // time that the robot will try to flick the ball up for
     final double postFlickTime = 0.25; // time that the robot will wait after flicking before doing anything else
 
     public boolean shouldSwitchToIntake = false;
@@ -67,10 +67,10 @@ public class Spindex {
         flick = hardwareMap.get(DcMotor.class, "flick");
         flick.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        intakeColorSensor = hardwareMap.get(NormalizedColorSensor.class, "colorLeft"); // TODO: rename this
+        intakeColorSensor = hardwareMap.get(NormalizedColorSensor.class, "intakeColorSensor");
         intakeColorSensor.setGain(15);
 
-        //outtakeColorSensor = hardwareMap.get(NormalizedColorSensor.class, "idk lmao"); // TODO: config the sensor below the outtake
+        //outtakeColorSensor = hardwareMap.get(NormalizedColorSensor.class, "idk lmao");
 
         drumMode = "intake";
         drumPosition = 0;
@@ -244,21 +244,23 @@ public class Spindex {
         return true;
     }
 
-    /**
-     * move the drum to the next outtake slot with a ball in it and flick it
-     * */
-    public void flickNextBall() {
-        setDrumStateToNextOuttake();
-        flickTimer.reset();
-    }
+//    /**
+//     * move the drum to the next outtake slot with a ball in it and flick it
+//     * */
+//    public void flickNextBall() {
+//        setDrumStateToNextOuttake();
+//        flickTimer.reset();
+//    }
 
     /**
      * move the drum to the next outtake slot with a ball of a certain color in it and flick it
      * if there are no balls of the specified color and shootAny is true, then the robot will attempt to shoot a ball of the opposite color
      */
     public void flickNextBall(String color, boolean shootAny) {
+        if (!drumIsEmpty()) {
         setDrumStateToNextOuttake(color, shootAny);
         flickTimer.reset();
+        }
     }
 
     public void queueBall(String color) {

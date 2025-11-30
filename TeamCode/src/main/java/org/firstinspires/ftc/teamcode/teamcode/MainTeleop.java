@@ -104,7 +104,7 @@ public class MainTeleop extends LinearOpMode{
             odometry.update();
 
             //drivetrain.printTelemetry(telemetry);
-            //outtake.printTelemetry(telemetry);
+            outtake.printTelemetry(telemetry);
             //telemetry.addData("facing direction radians", imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS));
             //telemetry.addData("angular velocity radians", imu.getRobotAngularVelocity(AngleUnit.RADIANS));
             //telemetry.addData("facing direction degrees", imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
@@ -120,6 +120,7 @@ public class MainTeleop extends LinearOpMode{
             state = "outtake";
             spindex.setDrumState("outtake", 0);
             //vision.seenGoalAprilTag = false;
+            spindex.ballQueue.clear();
             return;
         } else if (gamepad2.dpad_down && !gamepad2Last.dpad_down) {
             spindex.setDrumState("intake", 0);
