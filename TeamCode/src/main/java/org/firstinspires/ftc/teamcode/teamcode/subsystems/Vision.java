@@ -1,0 +1,192 @@
+package org.firstinspires.ftc.teamcode.teamcode.subsystems;
+
+import static java.lang.Math.atan;
+import static java.lang.Math.cos;
+import static java.lang.Math.sin;
+import static java.lang.Math.sqrt;
+import static java.lang.Math.tan;
+import static java.lang.Math.toDegrees;
+import static java.lang.Math.toRadians;
+
+import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
+import com.qualcomm.robotcore.hardware.HardwareMap;
+
+import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.vision.VisionPortal;
+import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
+import org.firstinspires.ftc.vision.apriltag.AprilTagGameDatabase;
+import org.firstinspires.ftc.vision.apriltag.AprilTagLibrary;
+import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
+
+import java.util.List;
+
+public class Vision {
+    private AprilTagProcessor aprilTag;
+    private VisionPortal visionPortal;
+    private double targetAbsoluteBearing = 0;
+    public int obeliskId = 22; // guess that the obelisk is 22 if we aren't able to detect it
+    private final boolean isRedAlliance;
+    GoBildaPinpointDriver pinpoint;
+    double currentBearing = 0;
+    private double goalDistance = 0;
+    public boolean seenGoalAprilTag = false;
+    public Vision(HardwareMap hardwareMap, boolean isRedAlliance) {
+
+        AprilTagLibrary.Builder myAprilTagLibraryBuilder;
+        AprilTagProcessor.Builder myAprilTagProcessorBuilder;
+        AprilTagLibrary myAprilTagLibrary;
+
+        // Create a new AprilTagLibrary.Builder object and assigns it to a variable.
+        myAprilTagLibraryBuilder = new AprilTagLibrary.Builder();
+
+        // Add all the tags from the given AprilTagLibrary to the AprilTagLibrary.Builder.
+        // Get the AprilTagLibrary for the current season.
+        myAprilTagLibraryBuilder.addTags(AprilTagGameDatabase.getCurrentGameTagLibrary());
+
+        // Create a new AprilTagMetdata object and assign it to a variable.
+        //myAprilTagMetadata = new AprilTagMetadata(20, "please work i beg", 6.5, DistanceUnit.INCH);
+
+        // Add a tag to the AprilTagLibrary.Builder.
+        //myAprilTagLibraryBuilder.addTag(myAprilTagMetadata);
+
+        // Build the AprilTag library and assign it to a variable.
+        myAprilTagLibrary = myAprilTagLibraryBuilder.build();
+
+        // Create a new AprilTagProcessor.Builder object and assign it to a variable.
+        myAprilTagProcessorBuilder = new AprilTagProcessor.Builder();
+
+        // Set the tag library.
+        myAprilTagProcessorBuilder.setTagLibrary(myAprilTagLibrary);
+
+        // Build the AprilTag processor and assign it to a variable.
+        aprilTag = myAprilTagProcessorBuilder.build();
+
+        // Create the vision portal by using a builder.
+        VisionPortal.Builder builder = new VisionPortal.Builder();
+
+        // Set the camera (webcam vs. built-in RC phone camera).
+        builder.setCamera(hardwareMap.get(WebcamName.class, "camera"));
+
+        // Set and enable the processor.
+        builder.addProcessor(aprilTag);
+
+        // Build the Vision Portal, using the above settings.
+        visionPortal = builder.build();
+
+        // Disable or re-enable the aprilTag processor at any time.
+        //visionPortal.setProcessorEnabled(aprilTag, true);
+
+        this.isRedAlliance = isRedAlliance;
+
+        pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
+
+        pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
+        pinpoint.setOffsets(-155, 0, DistanceUnit.MM);
+
+        pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.FORWARD);
+
+        pinpoint.resetPosAndIMU();
+    }
+
+    public void detectGoalAprilTag() {
+        List<AprilTagDetection> detections = aprilTag.getDetections();
+        for (AprilTagDetection detection : detections) {
+            if ( (isRedAlliance && detection.id == 24) || (!isRedAlliance && detection.id == 20) ) {
+                targetAbsoluteBearing = currentBearing + detection.ftcPose.bearing;
+
+                double range = detection.ftcPose.range / 39.37;
+                goalDistance = Math.sqrt((range * range) - (0.4572 * 0.4572)); // triangles
+
+                seenGoalAprilTag = true;
+            }
+        }
+    }
+
+    private double getTargetRelativeBearing() {
+        return targetAbsoluteBearing - currentBearing;
+    }
+
+    /**
+     * sets drivetrain powers to try to face the goal
+     * */
+    public void faceGoal(Drivetrain drivetrain) {
+        double bearingError = getTargetRelativeBearing() + 6;
+        double rotationPower = CustomMath.clamp(bearingError * 0.03, -0.25, 0.25);
+        drivetrain.setDrivetrainPower(0, 0, -rotationPower);
+    }
+
+    /**
+     * returns true if the obelisk has successfully been detected
+     * */
+    public boolean detectObelisk() {
+        List<AprilTagDetection> detections = aprilTag.getDetections();
+        for (AprilTagDetection detection : detections) {
+            if (detection.id == 21 || detection.id == 22 || detection.id == 23) {
+                obeliskId = detection.id;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void printTelemetry(Telemetry telemetry) {
+        telemetry.addData("obelisk id", obeliskId);
+        telemetry.addData("target absolute bearing", targetAbsoluteBearing);
+        telemetry.addData("bearing", currentBearing);
+        telemetry.addData("goal distance", goalDistance);
+    }
+
+    public void update() {
+        pinpoint.update();
+        currentBearing = pinpoint.getHeading(AngleUnit.DEGREES);
+
+        detectGoalAprilTag();
+    }
+
+    public Velocity getRequiredVelocity() {
+        if (seenGoalAprilTag) {
+            return TrajectoryMath.calculateBallLaunchVelocity(goalDistance);
+        } else {
+            return TrajectoryMath.calculateBallLaunchVelocity(2);
+        }
+    }
+
+    // inner class :O (has functions for calculating the trajectory of the ball)
+    static class TrajectoryMath {
+        static final double g = 9.81; // force of gravity in meters per second squared
+        static final double h = 0.7; // height of the target above the launch point in meters
+        static final double theta = toRadians(30); // angle that we are trying to get the ball to enter the bucket with in degrees above the horizon
+
+        private static double calculateStartSpeed(double g, double d, double h, double theta) {
+            double numerator = g * d * d;
+            double denominator = 2 * cos(theta) * cos(theta) * (d * tan(theta) + h);
+
+            return sqrt(numerator / denominator);
+        }
+
+        private static double calculateEndSpeed(double startSpeed, double g, double d, double h, double theta) {
+            double xSpeed = startSpeed * cos(theta);
+            double ySpeed = (startSpeed * sin(theta)) - ((g * d) / xSpeed);
+
+            return sqrt(xSpeed * xSpeed + ySpeed * ySpeed);
+        }
+
+        private static double calculateEndDirection(double startSpeed, double g, double d, double h, double theta) {
+            double xSpeed = startSpeed * cos(theta);
+            double ySpeed = (startSpeed * sin(theta)) - ((g * d) / xSpeed);
+
+            return toDegrees(atan(ySpeed / xSpeed));
+        }
+
+        public static Velocity calculateBallLaunchVelocity(double distanceFromBucket) {
+            double startSpeed = calculateStartSpeed(g, distanceFromBucket, h, theta);
+            // these calculations actually work in reverse, so "endSpeed" and "endDirection" are actually the speed and direction that we need the ball to START with
+            double endSpeed = calculateEndSpeed(startSpeed, g, distanceFromBucket, h, theta);
+            double endDirection = calculateEndDirection(startSpeed, g, distanceFromBucket, h, theta);
+            return new Velocity(endSpeed, endDirection);
+        }
+    }
+}
