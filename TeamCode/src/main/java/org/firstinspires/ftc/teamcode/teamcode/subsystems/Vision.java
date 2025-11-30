@@ -29,8 +29,6 @@ public class Vision {
     private double targetAbsoluteBearing = 0;
     public int obeliskId = 22; // guess that the obelisk is 22 if we aren't able to detect it
     private final boolean isRedAlliance;
-    GoBildaPinpointDriver pinpoint;
-    double currentBearing = 0;
     private double goalDistance = 0;
     public boolean seenGoalAprilTag = false;
     public Vision(HardwareMap hardwareMap, boolean isRedAlliance) {
@@ -80,18 +78,9 @@ public class Vision {
         //visionPortal.setProcessorEnabled(aprilTag, true);
 
         this.isRedAlliance = isRedAlliance;
-
-        pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
-
-        pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
-        pinpoint.setOffsets(-155, 0, DistanceUnit.MM);
-
-        pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.FORWARD);
-
-        pinpoint.resetPosAndIMU();
     }
 
-    public void detectGoalAprilTag() {
+    public void detectGoalAprilTag(double currentBearing) {
         List<AprilTagDetection> detections = aprilTag.getDetections();
         for (AprilTagDetection detection : detections) {
             if ( (isRedAlliance && detection.id == 24) || (!isRedAlliance && detection.id == 20) ) {
@@ -105,15 +94,15 @@ public class Vision {
         }
     }
 
-    private double getTargetRelativeBearing() {
+    private double getTargetRelativeBearing(double currentBearing) {
         return targetAbsoluteBearing - currentBearing;
     }
 
     /**
      * sets drivetrain powers to try to face the goal
      * */
-    public void faceGoal(Drivetrain drivetrain) {
-        double bearingError = getTargetRelativeBearing() + 6;
+    public void faceGoal(Drivetrain drivetrain, double currentBearing) {
+        double bearingError = getTargetRelativeBearing(currentBearing) + 6;
         double rotationPower = CustomMath.clamp(bearingError * 0.03, -0.25, 0.25);
         drivetrain.setDrivetrainPower(0, 0, -rotationPower);
     }
@@ -135,15 +124,11 @@ public class Vision {
     public void printTelemetry(Telemetry telemetry) {
         telemetry.addData("obelisk id", obeliskId);
         telemetry.addData("target absolute bearing", targetAbsoluteBearing);
-        telemetry.addData("bearing", currentBearing);
         telemetry.addData("goal distance", goalDistance);
     }
 
-    public void update() {
-        pinpoint.update();
-        currentBearing = pinpoint.getHeading(AngleUnit.DEGREES);
-
-        detectGoalAprilTag();
+    public void update(double currentBearing) {
+        detectGoalAprilTag(currentBearing);
     }
 
     public Velocity getRequiredVelocity() {
