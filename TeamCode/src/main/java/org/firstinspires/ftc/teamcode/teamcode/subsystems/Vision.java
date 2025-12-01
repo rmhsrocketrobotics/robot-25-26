@@ -162,7 +162,7 @@ public class Vision {
         if (seenGoalAprilTag) {
             return TrajectoryMath.calculateBallLaunchVelocity(goalDistance);
         } else {
-            return TrajectoryMath.calculateBallLaunchVelocity(2);
+            return TrajectoryMath.calculateBallLaunchVelocity(1.2);
         }
     }
 

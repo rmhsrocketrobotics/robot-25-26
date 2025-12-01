@@ -89,19 +89,17 @@ public class Outtake {
         setOuttakeVelocityTPS(targetTicksPerSecond);
     }
 
-    public void setOuttakeAndHoodToVelocity(Velocity velocity) {
+    public void setOuttakeToSpeed(double speed) {
         // change meters per second into ticks per second
-        double metersPerSecond = CustomMath.clamp(velocity.speed, 4.5, 6.5);
+        double metersPerSecond = CustomMath.clamp(speed, 4.5, 6.5);
         targetTicksPerSecond = metersPerSecondToTicksPerSecondQuadratic(metersPerSecond);
-
-        setHoodServoToAngle(velocity.direction);
     }
 
-    private void setHoodServoToAngle(double degrees) {
+    public void setHoodServoToAngle(double degrees) {
         // all angles are in degrees above the horizon
         double maxDegrees = 60;
         double minDegrees = 45;
-        double maxPosition = 0.5;
+        double maxPosition = 0.55;
         double minPosition = 0;
 
         degrees = CustomMath.clamp(degrees, minDegrees, maxDegrees);
