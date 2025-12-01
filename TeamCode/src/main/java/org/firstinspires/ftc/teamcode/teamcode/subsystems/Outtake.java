@@ -65,14 +65,14 @@ public class Outtake {
         ));
     }
 
-    private boolean aboveMaxPowerThreshold() {
-        return targetTicksPerSecond > 1400-75;
-    }
+//    private boolean aboveMaxPowerThreshold() {
+//        return targetTicksPerSecond > 1400-75;
+//    }
 
     public boolean atTargetSpeed() {
-        if (aboveMaxPowerThreshold()) {
-            return outtake1.getVelocity() > 1600;
-        }
+//        if (aboveMaxPowerThreshold()) {
+//            return outtake1.getVelocity() > 1600;
+//        }
         double minTargetTicksPerSecond = targetTicksPerSecond - tolerance;
         double maxTargetTicksPerSecond = targetTicksPerSecond + tolerance;
         double currentTicksPerSecond = outtake1.getVelocity();
@@ -80,18 +80,18 @@ public class Outtake {
     }
 
     public void update() {
-        if (aboveMaxPowerThreshold()) {
-            setOuttakePower(-0.9);
-        } else {
-            setOuttakeVelocityTPS(targetTicksPerSecond);
-        }
-        //setOuttakeVelocityTPS(targetTicksPerSecond);
+//        if (aboveMaxPowerThreshold()) {
+//            setOuttakePower(-0.9);
+//        } else {
+//            setOuttakeVelocityTPS(targetTicksPerSecond);
+//        }
+        setOuttakeVelocityTPS(targetTicksPerSecond);
     }
 
     public void setOuttakeAndHoodToVelocity(Velocity velocity) {
         // change meters per second into ticks per second
-        double metersPerSecond = CustomMath.clamp(velocity.speed, 4, 6);
-        targetTicksPerSecond = metersPerSecondToTicksPerSecond(metersPerSecond);
+        double metersPerSecond = CustomMath.clamp(velocity.speed, 4.5, 6.5);
+        targetTicksPerSecond = metersPerSecondToTicksPerSecondLinear(metersPerSecond);
 
         setHoodServoToAngle(velocity.direction);
     }
@@ -110,10 +110,17 @@ public class Outtake {
         hoodServo.setPosition(position);
     }
 
-    private double metersPerSecondToTicksPerSecond(double metersPerSecond) {
+    private double metersPerSecondToTicksPerSecondLinear(double metersPerSecond) {
         // this calculation is based on https://www.desmos.com/calculator/ye3y2vp7c2
         double m = 262.7892;
-        double b = -64.05544 - 75;
+        double b = -64.05544;
         return (m * metersPerSecond) + b;
+    }
+
+    private double metersPerSecondToTicksPerSecondQuadratic(double metersPerSecond) {
+        double a = 115;
+        double b = -754.72577;
+        double c = 2057.30175;
+        return (a * metersPerSecond * metersPerSecond) + (b * metersPerSecond) + (c);
     }
 }
