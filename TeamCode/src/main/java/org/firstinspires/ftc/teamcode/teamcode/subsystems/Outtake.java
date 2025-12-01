@@ -73,6 +73,11 @@ public class Outtake {
     }
 
     public void update() {
+//        if (targetTicksPerSecond > 1375) {
+//            setOuttakePower(1); // TODO: this value may have to be negative (this code is commented out until i can test)
+//        } else {
+//            setOuttakeVelocityTPS(targetTicksPerSecond);
+//        }
         setOuttakeVelocityTPS(targetTicksPerSecond);
     }
 
