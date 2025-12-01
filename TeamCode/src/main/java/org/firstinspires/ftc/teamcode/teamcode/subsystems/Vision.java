@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class Vision {
+    private boolean initialized = false;
     private AprilTagProcessor aprilTag;
     public VisionPortal visionPortal;
     private double targetAbsoluteBearing = 0;
@@ -147,7 +148,14 @@ public class Vision {
     }
 
     public void update(double currentBearing) {
-        detectGoalAprilTag(currentBearing);
+        if (visionPortal.getCameraState() == VisionPortal.CameraState.STREAMING && !initialized) {
+            init();
+            initialized = true;
+        }
+
+        if (initialized) {
+            detectGoalAprilTag(currentBearing);
+        }
     }
 
     public Velocity getRequiredVelocity() {

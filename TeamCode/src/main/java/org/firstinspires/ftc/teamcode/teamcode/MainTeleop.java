@@ -48,15 +48,12 @@ public class MainTeleop extends LinearOpMode{
         telemetry.setMsTransmissionInterval(200); //default 250
         //telemetry.setNumDecimalPlaces(0, 5);
 
-        while (vision.visionPortal.getCameraState() != VisionPortal.CameraState.STREAMING && !isStopRequested()) {
-            sleep(20);
-        }
-        vision.init();
+//        //this is in place of a waitForStart() call
+//        while (opModeInInit() && !isStopRequested()) {
+//            vision.detectObelisk();
+//        }
 
-        //this is in place of a waitForStart() call
-        while (opModeInInit() && !isStopRequested()) {
-            vision.detectObelisk();
-        }
+        waitForStart();
 
         spindex.init();
 
@@ -111,10 +108,6 @@ public class MainTeleop extends LinearOpMode{
 
             //drivetrain.printTelemetry(telemetry);
             outtake.printTelemetry(telemetry);
-            //telemetry.addData("facing direction radians", imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS));
-            //telemetry.addData("angular velocity radians", imu.getRobotAngularVelocity(AngleUnit.RADIANS));
-            //telemetry.addData("facing direction degrees", imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
-            //telemetry.addData("angular velocity degrees", imu.getRobotAngularVelocity(AngleUnit.DEGREES));
             vision.printTelemetry(telemetry);
             telemetry.addData("state", state);
             telemetry.update();
