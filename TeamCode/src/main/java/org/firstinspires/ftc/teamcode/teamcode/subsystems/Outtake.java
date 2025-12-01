@@ -24,7 +24,7 @@ public class Outtake {
         outtake1 = hardwareMap.get(DcMotorEx.class, "outtake1");
         outtake1.setDirection(DcMotor.Direction.REVERSE);
         outtake2 = hardwareMap.get(DcMotorEx.class, "outtake2");
-        hoodServo = hardwareMap.get(Servo.class, "hoodServo"); // TODO config this
+        hoodServo = hardwareMap.get(Servo.class, "hoodServo");
 
         MOTOR_VELO_PID = new PIDFCoefficients(25, 0, 0, 19);
 
@@ -81,7 +81,22 @@ public class Outtake {
         double metersPerSecond = CustomMath.clamp(velocity.speed, 4, 6);
         targetTicksPerSecond = metersPerSecondToTicksPerSecond(metersPerSecond);
 
-        // TODO: finish this method (add hood support)
+        // TODO: uncomment this line once the function is finished
+        // setHoodServoToAngle(velocity.direction);
+    }
+
+    private void setHoodServoToAngle(double degrees) {
+        // all angles are in degrees above the horizon
+        double maxDegrees = 60;
+        double minDegrees = 45;
+        double maxPosition = 1; // TODO find these values (max position and min position)
+        double minPosition = 0;
+
+        degrees = CustomMath.clamp(degrees, minDegrees, maxDegrees);
+        double percentRaised = (degrees - minDegrees) / (maxDegrees - minDegrees);
+        double position = (percentRaised * (maxPosition - minPosition)) + minPosition;
+
+        hoodServo.setPosition(position);
     }
 
     private double metersPerSecondToTicksPerSecond(double metersPerSecond) {

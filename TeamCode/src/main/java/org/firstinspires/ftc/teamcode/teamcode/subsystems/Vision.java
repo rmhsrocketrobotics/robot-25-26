@@ -171,7 +171,7 @@ public class Vision {
             // these calculations actually work in reverse, so "endSpeed" and "endDirection" are actually the speed and direction that we need the ball to START with
             double endSpeed = calculateEndSpeed(startSpeed, g, distanceFromBucket, h, theta);
             double endDirection = calculateEndDirection(startSpeed, g, distanceFromBucket, h, theta);
-            return new Velocity(endSpeed, endDirection);
+            return new Velocity(endSpeed, -endDirection);
         }
     }
 }
