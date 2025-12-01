@@ -33,9 +33,9 @@ public class Spindex {
 
     private String drumMode;
 
-    int drumPosition;
+    private int drumPosition;
 
-    String[] ballStates = {"empty", "empty", "empty"};
+    public String[] ballStates = {"empty", "empty", "empty"};
     public Deque<String> ballQueue = new ArrayDeque<>();
 
     private ElapsedTime switchCooldownTimer;

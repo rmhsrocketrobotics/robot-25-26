@@ -19,7 +19,7 @@ public class Outtake {
     public double targetTicksPerSecond;
 
     // the outtake must be going at +- this t/s for atTargetSpeed() to return true
-    final double tolerance = 300;
+    public double tolerance = 300;
     public Outtake(HardwareMap hardwareMap) {
         outtake1 = hardwareMap.get(DcMotorEx.class, "outtake1");
         outtake1.setDirection(DcMotor.Direction.REVERSE);
@@ -65,7 +65,14 @@ public class Outtake {
         ));
     }
 
+    private boolean aboveMaxPowerThreshold() {
+        return targetTicksPerSecond > 1375;
+    }
+
     public boolean atTargetSpeed() {
+//        if (aboveMaxPowerThreshold()) {
+//            return outtake1.getVelocity() > 1500; // TODO: see the todo below
+//        }
         double minTargetTicksPerSecond = targetTicksPerSecond - tolerance;
         double maxTargetTicksPerSecond = targetTicksPerSecond + tolerance;
         double currentTicksPerSecond = outtake1.getVelocity();
@@ -73,7 +80,7 @@ public class Outtake {
     }
 
     public void update() {
-//        if (targetTicksPerSecond > 1375) {
+//        if (aboveMaxPowerThreshold()) {
 //            setOuttakePower(1); // TODO: this value may have to be negative (this code is commented out until i can test)
 //        } else {
 //            setOuttakeVelocityTPS(targetTicksPerSecond);
