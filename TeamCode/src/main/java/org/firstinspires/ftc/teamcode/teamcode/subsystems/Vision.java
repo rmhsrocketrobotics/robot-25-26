@@ -7,12 +7,15 @@ import static java.lang.Math.sqrt;
 import static java.lang.Math.tan;
 import static java.lang.Math.toDegrees;
 import static java.lang.Math.toRadians;
+import static java.lang.Thread.sleep;
 
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.vision.VisionPortal;
@@ -22,10 +25,11 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagLibrary;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class Vision {
     private AprilTagProcessor aprilTag;
-    private VisionPortal visionPortal;
+    public VisionPortal visionPortal;
     private double targetAbsoluteBearing = 0;
     public int obeliskId = 22; // guess that the obelisk is 22 if we aren't able to detect it
     private final boolean isRedAlliance;
@@ -75,9 +79,18 @@ public class Vision {
         visionPortal = builder.build();
 
         // Disable or re-enable the aprilTag processor at any time.
-        //visionPortal.setProcessorEnabled(aprilTag, true);
+        visionPortal.setProcessorEnabled(aprilTag, true);
 
         this.isRedAlliance = isRedAlliance;
+    }
+
+    public void init() {
+        ExposureControl exposureControl = visionPortal.getCameraControl(ExposureControl.class);
+        exposureControl.setMode(ExposureControl.Mode.Manual);
+        exposureControl.setExposure(5, TimeUnit.MILLISECONDS);
+
+        GainControl gainControl = visionPortal.getCameraControl(GainControl.class);
+        gainControl.setGain(100);
     }
 
     public void detectGoalAprilTag(double currentBearing) {
@@ -102,7 +115,13 @@ public class Vision {
      * sets drivetrain powers to try to face the goal
      * */
     public void faceGoal(Drivetrain drivetrain, double currentBearing) {
-        double bearingError = getTargetRelativeBearing(currentBearing) + 6;
+        double bearingError = getTargetRelativeBearing(currentBearing);
+        if (!isRedAlliance) {
+            bearingError += 6;
+        } else {
+            bearingError -= 6;
+        }
+
         double rotationPower = CustomMath.clamp(bearingError * 0.03, -0.25, 0.25);
         drivetrain.setDrivetrainPower(0, 0, -rotationPower);
     }

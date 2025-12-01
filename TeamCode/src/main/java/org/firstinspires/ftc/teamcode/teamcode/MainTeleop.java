@@ -10,6 +10,7 @@ import org.firstinspires.ftc.teamcode.teamcode.subsystems.Vision;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Spindex;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Outtake;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Drivetrain;
+import org.firstinspires.ftc.vision.VisionPortal;
 
 @TeleOp(group = "!main")
 
@@ -30,7 +31,7 @@ public class MainTeleop extends LinearOpMode{
         drivetrain = new Drivetrain(hardwareMap); // wheels
         spindex = new Spindex(hardwareMap); // drumServo, intake, flick
         outtake = new Outtake(hardwareMap); // outtake, hoodServo
-        vision = new Vision(hardwareMap, true); // camera
+        vision = new Vision(hardwareMap, false); // camera
         odometry = new Odometry(hardwareMap); // pinpoint
 
         gamepad1Last = new Gamepad();
@@ -47,8 +48,13 @@ public class MainTeleop extends LinearOpMode{
         telemetry.setMsTransmissionInterval(200); //default 250
         //telemetry.setNumDecimalPlaces(0, 5);
 
+        while (vision.visionPortal.getCameraState() != VisionPortal.CameraState.STREAMING && !isStopRequested()) {
+            sleep(20);
+        }
+        vision.init();
+
         //this is in place of a waitForStart() call
-        while (opModeInInit()) {
+        while (opModeInInit() && !isStopRequested()) {
             vision.detectObelisk();
         }
 
@@ -73,8 +79,8 @@ public class MainTeleop extends LinearOpMode{
                 }
             }
 
-            outtake.hoodServo.setPosition((gamepad2.left_stick_y / 2) + 0.5);
-            telemetry.addData("servo position", outtake.hoodServo.getPosition());
+//            outtake.hoodServo.setPosition((gamepad2.left_stick_y / 2) + 0.5);
+//            telemetry.addData("servo position", outtake.hoodServo.getPosition());
 
             // literally all of the rest of this code is for gamepad 2:
             //spindex.flick.setPower(gamepad2.left_trigger);

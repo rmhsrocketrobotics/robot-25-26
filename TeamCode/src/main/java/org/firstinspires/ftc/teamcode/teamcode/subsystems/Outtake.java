@@ -66,13 +66,13 @@ public class Outtake {
     }
 
     private boolean aboveMaxPowerThreshold() {
-        return targetTicksPerSecond > 1375;
+        return targetTicksPerSecond > 1400-75;
     }
 
     public boolean atTargetSpeed() {
-//        if (aboveMaxPowerThreshold()) {
-//            return outtake1.getVelocity() > 1500; // TODO: see the todo below
-//        }
+        if (aboveMaxPowerThreshold()) {
+            return outtake1.getVelocity() > 1600;
+        }
         double minTargetTicksPerSecond = targetTicksPerSecond - tolerance;
         double maxTargetTicksPerSecond = targetTicksPerSecond + tolerance;
         double currentTicksPerSecond = outtake1.getVelocity();
@@ -80,12 +80,12 @@ public class Outtake {
     }
 
     public void update() {
-//        if (aboveMaxPowerThreshold()) {
-//            setOuttakePower(1); // TODO: this value may have to be negative (this code is commented out until i can test)
-//        } else {
-//            setOuttakeVelocityTPS(targetTicksPerSecond);
-//        }
-        setOuttakeVelocityTPS(targetTicksPerSecond);
+        if (aboveMaxPowerThreshold()) {
+            setOuttakePower(-0.9);
+        } else {
+            setOuttakeVelocityTPS(targetTicksPerSecond);
+        }
+        //setOuttakeVelocityTPS(targetTicksPerSecond);
     }
 
     public void setOuttakeAndHoodToVelocity(Velocity velocity) {
@@ -93,19 +93,18 @@ public class Outtake {
         double metersPerSecond = CustomMath.clamp(velocity.speed, 4, 6);
         targetTicksPerSecond = metersPerSecondToTicksPerSecond(metersPerSecond);
 
-        // TODO: uncomment this line once the function is finished
-        // setHoodServoToAngle(velocity.direction);
+        setHoodServoToAngle(velocity.direction);
     }
 
     private void setHoodServoToAngle(double degrees) {
         // all angles are in degrees above the horizon
         double maxDegrees = 60;
         double minDegrees = 45;
-        double maxPosition = 1; // TODO find these values (max position and min position)
+        double maxPosition = 0.5;
         double minPosition = 0;
 
         degrees = CustomMath.clamp(degrees, minDegrees, maxDegrees);
-        double percentRaised = (degrees - minDegrees) / (maxDegrees - minDegrees);
+        double percentRaised = 1 - ( (degrees - minDegrees) / (maxDegrees - minDegrees) );
         double position = (percentRaised * (maxPosition - minPosition)) + minPosition;
 
         hoodServo.setPosition(position);
@@ -113,8 +112,8 @@ public class Outtake {
 
     private double metersPerSecondToTicksPerSecond(double metersPerSecond) {
         // this calculation is based on https://www.desmos.com/calculator/ye3y2vp7c2
-        double m = 262.7892;// + 150;
-        double b = -64.05544;// - 600;
+        double m = 262.7892;
+        double b = -64.05544 - 75;
         return (m * metersPerSecond) + b;
     }
 }
