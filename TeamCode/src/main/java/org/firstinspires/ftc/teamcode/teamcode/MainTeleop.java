@@ -92,11 +92,15 @@ public class MainTeleop extends LinearOpMode{
             spindex.intake.setPower(gamepad2.right_trigger);
             //spindex.flick.setPower(gamepad2.left_trigger);
 
+            Velocity requiredVelocity = vision.getRequiredVelocity();
+            telemetry.addData("target speed m/s", requiredVelocity.speed);
+            telemetry.addData("target angle m/s", requiredVelocity.direction);
+
             // state specific code goes in these methods
             if (state.equals("intake")) {
                 intakeMode();
             } else if (state.equals("outtake")) {
-                outtakeMode();
+                outtakeMode(requiredVelocity);
             }
 
             gamepad2Last.copy(gamepad2);
@@ -127,7 +131,7 @@ public class MainTeleop extends LinearOpMode{
         }
     }
 
-    public void outtakeMode() {
+    public void outtakeMode(Velocity requiredVelocity) {
         if ((gamepad2.dpad_down && !gamepad2Last.dpad_down) || spindex.shouldSwitchToIntake) {
             state = "intake";
             spindex.setDrumState("intake", 0);
@@ -137,9 +141,6 @@ public class MainTeleop extends LinearOpMode{
 
         //vision.detectGoalAprilTag();
 
-        Velocity requiredVelocity = vision.getRequiredVelocity();
-        telemetry.addData("target speed m/s", requiredVelocity.speed);
-        telemetry.addData("target angle m/s", requiredVelocity.direction);
         outtake.setOuttakeAndHoodToVelocity(requiredVelocity);
 
         if (gamepad2.left_bumper && !gamepad2Last.left_bumper) {

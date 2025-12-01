@@ -55,8 +55,9 @@ public class Outtake {
 
     public void printTelemetry(Telemetry telemetry) {
         double outtakeVelocity = outtake1.getVelocity();
+        telemetry.addData("outtake target ticks/sec", targetTicksPerSecond);
         telemetry.addData("outtake ticks/sec", outtakeVelocity);
-        telemetry.addData("outtake rev/min", (outtakeVelocity * 60) / 28);
+        //telemetry.addData("outtake rev/min", (outtakeVelocity * 60) / 28);
     }
 
     private void setPIDFCoefficients(DcMotorEx motor, PIDFCoefficients coefficients) {
@@ -91,7 +92,7 @@ public class Outtake {
     public void setOuttakeAndHoodToVelocity(Velocity velocity) {
         // change meters per second into ticks per second
         double metersPerSecond = CustomMath.clamp(velocity.speed, 4.5, 6.5);
-        targetTicksPerSecond = metersPerSecondToTicksPerSecondLinear(metersPerSecond);
+        targetTicksPerSecond = metersPerSecondToTicksPerSecondQuadratic(metersPerSecond);
 
         setHoodServoToAngle(velocity.direction);
     }
