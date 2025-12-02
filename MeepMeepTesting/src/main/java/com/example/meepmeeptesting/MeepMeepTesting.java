@@ -30,7 +30,7 @@ public class MeepMeepTesting {
     public static void main(String[] args) {
         MeepMeep meepMeep = new MeepMeep(700);
 
-        RoadRunnerBotEntity myBot = testPathLeftBlue(meepMeep);
+        RoadRunnerBotEntity myBot = testPathRightRed(meepMeep);
 
         Image img = null;
         try { img = ImageIO.read(new File("MeepMeepTesting/src/main/java/com/example/meepmeeptesting/decode webfield.png")); }
@@ -123,25 +123,25 @@ public class MeepMeepTesting {
 
                         .setReversed(true).splineToLinearHeading(new Pose2d(-25, 27, startToGoalAngle + pi/8), pi/8)
 
-                        .waitSeconds(3)
+//                        .waitSeconds(3)
 
                         .setReversed(false).splineToLinearHeading(new Pose2d(-11, 30, pi/2), pi/8)
                         .splineTo(new Vector2d(-11, 45), pi/2)
 
-                        .waitSeconds(3)
+//                        .waitSeconds(3)
 
                         .setReversed(true).splineToLinearHeading(new Pose2d(-25, 30, startToGoalAngle + pi/8), pi)
 
-                        .waitSeconds(3)
+//                        .waitSeconds(3)
 
                         .setReversed(true).splineToLinearHeading(new Pose2d(13, 30, pi/2), pi/8)
                         .setReversed(false).splineTo(new Vector2d(13, 45), pi/2)
 
-                        .waitSeconds(3)
+//                        .waitSeconds(3)
 
                         .setReversed(true).splineToLinearHeading(new Pose2d(-25, 27, startToGoalAngle + pi/8), pi)
 
-                        .waitSeconds(3)
+//                        .waitSeconds(3)
                         .strafeLeft(15)
 // third column of artifacts
 //                        .setReversed(false).splineToLinearHeading(new Pose2d(36, 30, pi/2), pi/8)
