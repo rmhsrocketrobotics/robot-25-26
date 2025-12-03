@@ -125,7 +125,7 @@ public final class ActionAuto extends LinearOpMode {
             telemetry.addLine("21 is gpp; 22 is pgp; 23 is ppg");
         }
 
-        Action fullPath = new SequentialAction(startToLaunchZone.build(), launchZoneToFirstBalls.build());
+        Action fullPath = new SequentialAction(startToLaunchZone.build(), launchZoneToFirstBalls.build(), firstBallsToLaunchZone.build(), );
         Actions.runBlocking(
 
 
