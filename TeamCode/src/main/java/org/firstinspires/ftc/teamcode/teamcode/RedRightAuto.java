@@ -32,7 +32,7 @@ public final class RedRightAuto extends LinearOpMode {
         Outtake outtake;
 
         public BallHandler(HardwareMap hardwareMap) {
-            spindex = new Spindex(hardwareMap);
+            spindex = new Spindex(hardwareMap, true);
             spindex.ballStates = new String[]{"green", "purple", "purple"};
 
             outtake = new Outtake(hardwareMap);
@@ -69,8 +69,8 @@ public final class RedRightAuto extends LinearOpMode {
                         spindex.queueBall("purple");
                         spindex.queueBall("green");
                     }
-
-                    outtake.setOuttakeAndHoodToVelocity(new Velocity(6, 45));
+                    outtake.setOuttakeToSpeed(6);
+                    outtake.setHoodServoToAngle(45);
                 }
 
                 spindex.update(outtake);

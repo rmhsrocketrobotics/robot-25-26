@@ -54,10 +54,12 @@ public class Spindex {
     public boolean shouldSwitchToIntake = false;
     public boolean shouldSwitchToOuttake = false;
 
+    public boolean usingAutoFlickMode; // TODO: implement this?? maybe not necessary
+
     /**
      * should run BEFORE waitForStart()
      * */
-    public Spindex(HardwareMap hardwareMap) {
+    public Spindex(HardwareMap hardwareMap, boolean usingAutoFlickMode) {
         drumServo = hardwareMap.get(ServoImplEx.class, "drumServo");
         drumServo.setPwmRange(new PwmControl.PwmRange(500, 2500));
 
@@ -74,6 +76,8 @@ public class Spindex {
 
         drumMode = "intake";
         drumPosition = 0;
+
+        this.usingAutoFlickMode = usingAutoFlickMode;
     }
 
     /**
