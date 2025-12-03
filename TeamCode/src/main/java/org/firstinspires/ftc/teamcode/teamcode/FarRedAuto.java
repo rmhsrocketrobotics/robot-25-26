@@ -4,7 +4,10 @@ import androidx.annotation.NonNull;
 
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
+import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.RaceAction;
+import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
@@ -16,6 +19,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.teamcode.MecanumDrive;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Outtake;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Spindex;
+import org.firstinspires.ftc.teamcode.teamcode.subsystems.Velocity;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Vision;
 
 @Autonomous
@@ -24,6 +28,7 @@ public final class FarRedAuto extends LinearOpMode {
     public class BallHandler { // combination of spindex and outtake
         Spindex spindex;
         Outtake outtake;
+        public int obeliskId;
 
         public BallHandler(HardwareMap hardwareMap) {
             spindex = new Spindex(hardwareMap, true);
@@ -33,20 +38,19 @@ public final class FarRedAuto extends LinearOpMode {
             outtake.tolerance = 150;
         }
 
+        public void init() {
+            spindex.init();
+        }
+
         public class LaunchAllBalls implements Action {
             private boolean initialized = false;
-            int obeliskId;
-
-            public LaunchAllBalls(int obeliskId) {
-                this.obeliskId = obeliskId;
-            }
 
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
                 if (!initialized) {
                     initialized = true;
-                    spindex.setDrumState("outtake");
-                    spindex.init();
+
+                    spindex.setDrumState("outtake", 0);
 
                     if (obeliskId == 21) {
                         spindex.queueBall("green");
@@ -63,17 +67,66 @@ public final class FarRedAuto extends LinearOpMode {
                         spindex.queueBall("purple");
                         spindex.queueBall("green");
                     }
-                    outtake.setOuttakeToSpeed(6);
+                    outtake.setOuttakeToSpeed(6.25);
                     outtake.setHoodServoToAngle(45);
                 }
 
                 spindex.update(outtake);
+                outtake.update();
 
                 return !spindex.shouldSwitchToIntake;
             }
         }
-        public Action launchAllBalls(int obeliskId) {
-            return new LaunchAllBalls(obeliskId);
+        public Action launchAllBalls() {
+            return new LaunchAllBalls();
+        }
+
+        public class RunActiveIntake implements Action {
+            private boolean initialized = false;
+
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                if (!initialized) {
+                    initialized = true;
+
+                    spindex.ballStates = new String[] {};
+                    spindex.setDrumState("intake", 0);
+                    spindex.intake.setPower(1);
+                }
+                spindex.update(outtake);
+
+                return true;
+            }
+        }
+        public Action runActiveIntake() {
+            return new RunActiveIntake();
+        }
+
+        public class ReadyOuttake implements Action {
+            private boolean initialized = false;
+            public Velocity ballVelocity;
+
+            public ReadyOuttake(Velocity ballVelocity) {
+                this.ballVelocity = ballVelocity;
+            }
+
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                if (!initialized) {
+                    initialized = true;
+
+                    spindex.setDrumState("outtake", 0);
+                    spindex.update(outtake);
+
+                    outtake.setOuttakeToSpeed(6.25);
+                    outtake.setHoodServoToAngle(45);
+                }
+
+                return true;
+            }
+        }
+        public Action readyOuttake(Velocity ballVelocity) {
+            return new ReadyOuttake(ballVelocity);
         }
     }
 
@@ -88,58 +141,85 @@ public final class FarRedAuto extends LinearOpMode {
 
         double startToGoalAngle = angleBetweenPoints(new Vector2d(56, 0), new Vector2d(-66, 60));
 
+        // path actions: (.build() must be called in order for any of these to become actual actions)
+        // IMPORTANT: for all of the following functions:
+        // "first balls" are the PRELOAD;
+        // "second balls" are the FIRST set of balls we PICK UP;
+        // "third balls" are the SECOND set of balls we PICK UP
         TrajectoryActionBuilder startToLaunchZone = drive.actionBuilder(beginPose)
                 .splineTo(new Vector2d(51, 13), startToGoalAngle);
 
-        TrajectoryActionBuilder launchZoneToFirstBalls = startToLaunchZone.endTrajectory().fresh()
+        TrajectoryActionBuilder launchZoneToSecondBalls = startToLaunchZone.endTrajectory().fresh()
                 .splineTo(new Vector2d(36, 38), pi/2)
                 .splineTo(new Vector2d(36, 46), pi/2);
 
-        TrajectoryActionBuilder firstBallsToLaunchZone = launchZoneToFirstBalls.endTrajectory().fresh()
+        TrajectoryActionBuilder secondBallsToLaunchZone = launchZoneToSecondBalls.endTrajectory().fresh()
                 .setReversed(true)
                 .splineTo(new Vector2d(56, 10), startToGoalAngle + pi);
 
-        TrajectoryActionBuilder launchZoneToSecondBalls = firstBallsToLaunchZone.endTrajectory().fresh()
+        TrajectoryActionBuilder launchZoneToThirdBalls = secondBallsToLaunchZone.endTrajectory().fresh()
                 .setReversed(false).splineTo(new Vector2d(13, 37), pi/2)
                 .splineTo(new Vector2d(13, 46), pi/2);
 
-        TrajectoryActionBuilder secondBallsToLaunchZone = launchZoneToSecondBalls.endTrajectory().fresh()
+        TrajectoryActionBuilder thirdBallsToLaunchZone = launchZoneToThirdBalls.endTrajectory().fresh()
                 .setReversed(true)
                 .splineTo(new Vector2d(56, 10), startToGoalAngle+pi);
 
-        //Action shootFirstBalls = new ParallelAction(startToLaunchZone.build(), ballHandler.launchAllBalls(21));
+        Velocity launchVelocity = new Velocity(6.25, 45);
+
+        // path actions combined with other actions
+        Action launchFirstBalls = new ParallelAction(startToLaunchZone.build(), ballHandler.launchAllBalls());
+
+        Action getSecondBalls = new RaceAction(launchZoneToSecondBalls.build(), ballHandler.runActiveIntake());
+        Action returnToLaunchZoneWithSecondBalls = new RaceAction(secondBallsToLaunchZone.build(), ballHandler.readyOuttake(launchVelocity));
+        Action launchSecondBalls = ballHandler.launchAllBalls();
+
+        Action getThirdBalls = new RaceAction(launchZoneToThirdBalls.build(), ballHandler.runActiveIntake());
+        Action returnToLaunchZoneWithThirdBalls = new RaceAction(thirdBallsToLaunchZone.build(), ballHandler.readyOuttake(launchVelocity));
+        Action launchThirdBalls = ballHandler.launchAllBalls();
+
+        // combine all of the above actions into one big long sequential action
+        Action runAutonomous = new SequentialAction(
+                launchFirstBalls,
+                getSecondBalls, returnToLaunchZoneWithSecondBalls, launchSecondBalls,
+                getThirdBalls, returnToLaunchZoneWithThirdBalls, launchThirdBalls
+        );
 
         // this is in place of a waitForStart() call
-        while (opModeInInit()) {
+        while (opModeInInit() && !isStopRequested()) {
             vision.detectObelisk();
             telemetry.addData("obelisk", vision.obeliskId);
             telemetry.addLine("21 is gpp; 22 is pgp; 23 is ppg");
         }
 
-        Actions.runBlocking(
-                drive.actionBuilder(beginPose)
+        ballHandler.obeliskId = vision.obeliskId;
 
-                        .splineTo(new Vector2d(51, 13),startToGoalAngle)
-                        .waitSeconds(3)
+        Actions.runBlocking(runAutonomous);
 
-                        .splineTo(new Vector2d(36, 38),pi/2)
-                        .splineTo(new Vector2d(36, 46), pi/2)
-
-                        .waitSeconds(3)
-
-                        .setReversed(true).splineTo(new Vector2d(56, 10), startToGoalAngle + pi)
-
-                        .waitSeconds(3)
-
-                        .setReversed(false).splineTo(new Vector2d(13, 37), pi/2)
-                        .splineTo(new Vector2d(13, 46), pi/2)
-
-                        .waitSeconds(3)
-
-                        .setReversed(true).splineTo(new Vector2d(56, 10), startToGoalAngle+pi)
-                        .waitSeconds(3)
-
-                        .build());
+//        Actions.runBlocking(
+//                drive.actionBuilder(beginPose)
+//
+//                        .splineTo(new Vector2d(51, 13),startToGoalAngle)
+//                        .waitSeconds(3)
+//
+//                        .splineTo(new Vector2d(36, 38),pi/2)
+//                        .splineTo(new Vector2d(36, 46), pi/2)
+//
+//                        .waitSeconds(3)
+//
+//                        .setReversed(true).splineTo(new Vector2d(56, 10), startToGoalAngle + pi)
+//
+//                        .waitSeconds(3)
+//
+//                        .setReversed(false).splineTo(new Vector2d(13, 37), pi/2)
+//                        .splineTo(new Vector2d(13, 46), pi/2)
+//
+//                        .waitSeconds(3)
+//
+//                        .setReversed(true).splineTo(new Vector2d(56, 10), startToGoalAngle+pi)
+//                        .waitSeconds(3)
+//
+//                        .build());
     }
 
     public double angleBetweenPoints(Vector2d point1, Vector2d point2) {
