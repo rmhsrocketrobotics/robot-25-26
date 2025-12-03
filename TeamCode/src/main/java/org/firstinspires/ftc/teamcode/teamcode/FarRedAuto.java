@@ -4,28 +4,22 @@ import androidx.annotation.NonNull;
 
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
-import com.acmerobotics.roadrunner.InstantAction;
-import com.acmerobotics.roadrunner.NullAction;
-import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
-import com.acmerobotics.roadrunner.RaceAction;
 import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.teamcode.MecanumDrive;
-import org.firstinspires.ftc.teamcode.teamcode.subsystems.Drivetrain;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Outtake;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Spindex;
-import org.firstinspires.ftc.teamcode.teamcode.subsystems.Velocity;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Vision;
 
-@TeleOp
-public final class RedRightAuto extends LinearOpMode {
+@Autonomous
+public final class FarRedAuto extends LinearOpMode {
 
     public class BallHandler { // combination of spindex and outtake
         Spindex spindex;
