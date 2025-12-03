@@ -19,7 +19,7 @@ public class Outtake {
     public double targetTicksPerSecond;
 
     // the outtake must be going at +- this t/s for atTargetSpeed() to return true
-    public double tolerance = 300;
+    public double tolerance = 150;
     public Outtake(HardwareMap hardwareMap) {
         outtake1 = hardwareMap.get(DcMotorEx.class, "outtake1");
         outtake1.setDirection(DcMotor.Direction.REVERSE);
@@ -75,6 +75,11 @@ public class Outtake {
 //            return outtake1.getVelocity() > 1600;
 //        }
         double minTargetTicksPerSecond = targetTicksPerSecond - tolerance;
+
+        if (targetTicksPerSecond > 2000) {
+            minTargetTicksPerSecond = 2000 - tolerance;
+        }
+
         double maxTargetTicksPerSecond = targetTicksPerSecond + tolerance;
         double currentTicksPerSecond = outtake1.getVelocity();
         return (currentTicksPerSecond > minTargetTicksPerSecond) && (currentTicksPerSecond < maxTargetTicksPerSecond);
@@ -91,7 +96,7 @@ public class Outtake {
 
     public void setOuttakeToSpeed(double speed) {
         // change meters per second into ticks per second
-        double metersPerSecond = CustomMath.clamp(speed, 4.5, 6.5);
+        double metersPerSecond = CustomMath.clamp(speed, 4.7, 6.5);
         targetTicksPerSecond = metersPerSecondToTicksPerSecondQuadratic(metersPerSecond);
     }
 
@@ -117,9 +122,9 @@ public class Outtake {
     }
 
     private double metersPerSecondToTicksPerSecondQuadratic(double metersPerSecond) {
-        double a = 115;
-        double b = -754.72577;
-        double c = 2057.30175;
+        double a = 90;//115;
+        double b = -533.53;//-754.72577;
+        double c = 1668.14 + 100;//2057.30175;
         return (a * metersPerSecond * metersPerSecond) + (b * metersPerSecond) + (c);
     }
 }

@@ -29,7 +29,7 @@ public class MainTeleop extends LinearOpMode{
         state = "intake"; // states are: "intake", "transition", and "outtake"
 
         drivetrain = new Drivetrain(hardwareMap); // wheels
-        spindex = new Spindex(hardwareMap); // drumServo, intake, flick
+        spindex = new Spindex(hardwareMap, false); // drumServo, intake, flick
         outtake = new Outtake(hardwareMap); // outtake, hoodServo
         vision = new Vision(hardwareMap, false); // camera
         odometry = new Odometry(hardwareMap); // pinpoint
@@ -89,7 +89,12 @@ public class MainTeleop extends LinearOpMode{
 //                spindex.setDrumState("intake", 0);
 //            }
 
-            spindex.intake.setPower(gamepad2.right_trigger);
+            if (gamepad2.left_trigger > 0.1) {
+                spindex.intake.setPower(-gamepad2.left_trigger);
+            } else {
+                spindex.intake.setPower(gamepad2.right_trigger);
+            }
+
             //spindex.flick.setPower(gamepad2.left_trigger);
 
             Velocity requiredVelocity = vision.getRequiredVelocity();

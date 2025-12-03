@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.teamcode;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -22,7 +23,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
 
 
-@TeleOp
+@Disabled//@TeleOp
 public class DrumClass extends LinearOpMode {
 
     public void runOpMode(){

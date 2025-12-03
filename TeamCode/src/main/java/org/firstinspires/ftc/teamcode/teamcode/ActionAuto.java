@@ -34,7 +34,7 @@ public final class ActionAuto extends LinearOpMode {
         Outtake outtake;
 
         public BallHandler(HardwareMap hardwareMap) {
-            spindex = new Spindex(hardwareMap);
+            spindex = new Spindex(hardwareMap, true);
             spindex.ballStates = new String[]{"green", "purple", "purple"};
 
             outtake = new Outtake(hardwareMap);
