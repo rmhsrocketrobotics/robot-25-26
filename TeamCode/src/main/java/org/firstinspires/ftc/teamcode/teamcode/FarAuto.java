@@ -13,7 +13,6 @@ import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.teamcode.MecanumDrive;
@@ -23,7 +22,8 @@ import org.firstinspires.ftc.teamcode.teamcode.subsystems.Velocity;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Vision;
 
 @Autonomous
-public final class FarRedAuto extends LinearOpMode {
+public final class FarAuto extends LinearOpMode {
+    public boolean isRedAlliance = false;
 
     public class BallHandler { // combination of spindex and outtake
         Spindex spindex;
@@ -73,6 +73,11 @@ public final class FarRedAuto extends LinearOpMode {
 
                 spindex.update(outtake);
                 outtake.update();
+
+                outtake.printTelemetry(telemetry);
+                spindex.printTelemetry(telemetry);
+
+                telemetry.update();
 
                 return !spindex.shouldSwitchToIntake;
             }
@@ -134,36 +139,74 @@ public final class FarRedAuto extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
-        Pose2d beginPose = new Pose2d(61, 10, Math.toRadians(180));
-        MecanumDrive drive = new MecanumDrive(hardwareMap, beginPose);
+        MecanumDrive drive;
         Vision vision = new Vision(hardwareMap, true);
         BallHandler ballHandler = new BallHandler(hardwareMap);
 
-        double startToGoalAngle = angleBetweenPoints(new Vector2d(56, 0), new Vector2d(-66, 60));
+        Pose2d beginPose;
 
         // path actions: (.build() must be called in order for any of these to become actual actions)
         // IMPORTANT: for all of the following functions:
         // "first balls" are the PRELOAD;
         // "second balls" are the FIRST set of balls we PICK UP;
         // "third balls" are the SECOND set of balls we PICK UP
-        TrajectoryActionBuilder startToLaunchZone = drive.actionBuilder(beginPose)
-                .splineTo(new Vector2d(51, 13), startToGoalAngle);
+        TrajectoryActionBuilder startToLaunchZone;
+        TrajectoryActionBuilder launchZoneToSecondBalls;
+        TrajectoryActionBuilder secondBallsToLaunchZone;
+        TrajectoryActionBuilder launchZoneToThirdBalls;
+        TrajectoryActionBuilder thirdBallsToLaunchZone;
+        if (isRedAlliance) {
+            beginPose = new Pose2d(61, 10, Math.toRadians(180));
+            drive = new MecanumDrive(hardwareMap, beginPose);
 
-        TrajectoryActionBuilder launchZoneToSecondBalls = startToLaunchZone.endTrajectory().fresh()
-                .splineTo(new Vector2d(36, 38), pi/2)
-                .splineTo(new Vector2d(36, 46), pi/2);
+            double startToGoalAngle = angleBetweenPoints(new Vector2d(56, 0), new Vector2d(-66, 60));
 
-        TrajectoryActionBuilder secondBallsToLaunchZone = launchZoneToSecondBalls.endTrajectory().fresh()
-                .setReversed(true)
-                .splineTo(new Vector2d(56, 10), startToGoalAngle + pi);
+            startToLaunchZone = drive.actionBuilder(beginPose)
+                    .splineTo(new Vector2d(51, 13), startToGoalAngle);
 
-        TrajectoryActionBuilder launchZoneToThirdBalls = secondBallsToLaunchZone.endTrajectory().fresh()
-                .setReversed(false).splineTo(new Vector2d(13, 37), pi/2)
-                .splineTo(new Vector2d(13, 46), pi/2);
+            launchZoneToSecondBalls = startToLaunchZone.endTrajectory().fresh()
+                    .splineTo(new Vector2d(36, 38), pi/2)
+                    .splineTo(new Vector2d(36, 46), pi/2);
 
-        TrajectoryActionBuilder thirdBallsToLaunchZone = launchZoneToThirdBalls.endTrajectory().fresh()
-                .setReversed(true)
-                .splineTo(new Vector2d(56, 10), startToGoalAngle+pi);
+            secondBallsToLaunchZone = launchZoneToSecondBalls.endTrajectory().fresh()
+                    .setReversed(true)
+                    .splineTo(new Vector2d(56, 10), startToGoalAngle + pi);
+
+            launchZoneToThirdBalls = secondBallsToLaunchZone.endTrajectory().fresh()
+                    .setReversed(false)
+                    .splineTo(new Vector2d(13, 37), pi/2)
+                    .splineTo(new Vector2d(13, 46), pi/2);
+
+            thirdBallsToLaunchZone = launchZoneToThirdBalls.endTrajectory().fresh()
+                    .setReversed(true)
+                    .splineTo(new Vector2d(56, 10), startToGoalAngle+pi);
+        } else {
+            beginPose = new Pose2d(61, -8, Math.toRadians(180));
+            drive = new MecanumDrive(hardwareMap, beginPose);
+
+            double startToGoalAngle = angleBetweenPoints(new Vector2d(56, 0), new Vector2d(-66, -60));
+
+            startToLaunchZone = drive.actionBuilder(beginPose)
+                    .splineTo(new Vector2d(51,  -13),startToGoalAngle)
+                    .waitSeconds(1);
+
+            launchZoneToSecondBalls = startToLaunchZone.endTrajectory().fresh()
+                    .splineTo(new Vector2d(36, -38), 3*pi/2)
+                    .splineTo(new Vector2d(36, -46), 3*pi/2);
+
+            secondBallsToLaunchZone = launchZoneToSecondBalls.endTrajectory().fresh()
+                    .setReversed(true)
+                    .splineTo(new Vector2d(56, -10), startToGoalAngle - pi);
+
+            launchZoneToThirdBalls = secondBallsToLaunchZone.endTrajectory().fresh()
+                    .setReversed(false)
+                    .splineTo(new Vector2d(13, -37), 3*pi/2)
+                    .splineTo(new Vector2d(13, -46), 3*pi/2);
+
+            thirdBallsToLaunchZone = launchZoneToThirdBalls.endTrajectory().fresh()
+                    .setReversed(true)
+                    .splineTo(new Vector2d(56, -10), startToGoalAngle + pi);
+        }
 
         Velocity launchVelocity = new Velocity(6.25, 45);
 
@@ -193,6 +236,7 @@ public final class FarRedAuto extends LinearOpMode {
         }
 
         ballHandler.obeliskId = vision.obeliskId;
+        ballHandler.init();
 
         Actions.runBlocking(runAutonomous);
 

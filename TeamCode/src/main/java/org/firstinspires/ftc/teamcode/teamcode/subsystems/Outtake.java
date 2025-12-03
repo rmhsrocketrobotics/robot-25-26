@@ -57,6 +57,7 @@ public class Outtake {
         double outtakeVelocity = outtake1.getVelocity();
         telemetry.addData("outtake target ticks/sec", targetTicksPerSecond);
         telemetry.addData("outtake ticks/sec", outtakeVelocity);
+        telemetry.addData("atTargetSpeed()", atTargetSpeed());
         //telemetry.addData("outtake rev/min", (outtakeVelocity * 60) / 28);
     }
 
@@ -76,8 +77,8 @@ public class Outtake {
 //        }
         double minTargetTicksPerSecond = targetTicksPerSecond - tolerance;
 
-        if (targetTicksPerSecond > 2000) {
-            minTargetTicksPerSecond = 2000 - tolerance;
+        if (targetTicksPerSecond > 1700) {
+            minTargetTicksPerSecond = 1700 - tolerance;
         }
 
         double maxTargetTicksPerSecond = targetTicksPerSecond + tolerance;
@@ -96,7 +97,7 @@ public class Outtake {
 
     public void setOuttakeToSpeed(double speed) {
         // change meters per second into ticks per second
-        double metersPerSecond = CustomMath.clamp(speed, 4.7, 6.5);
+        double metersPerSecond = CustomMath.clamp(speed, 4.9, 6.5);
         targetTicksPerSecond = metersPerSecondToTicksPerSecondQuadratic(metersPerSecond);
     }
 
