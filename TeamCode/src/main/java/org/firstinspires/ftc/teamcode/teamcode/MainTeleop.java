@@ -113,7 +113,7 @@ public class MainTeleop extends LinearOpMode{
             gamepad2Last.copy(gamepad2);
 
             spindex.update(outtake);
-            outtake.update();
+            outtake.update(spindex);
             vision.update(odometry.currentBearing);
             odometry.update();
 

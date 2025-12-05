@@ -86,13 +86,19 @@ public class Outtake {
         return (currentTicksPerSecond > minTargetTicksPerSecond) && (currentTicksPerSecond < maxTargetTicksPerSecond);
     }
 
-    public void update() {
+    public void update(Spindex spindex) {
 //        if (aboveMaxPowerThreshold()) {
 //            setOuttakePower(-0.9);
 //        } else {
 //            setOuttakeVelocityTPS(targetTicksPerSecond);
 //        }
-        setOuttakeVelocityTPS(targetTicksPerSecond);
+
+
+        if (spindex.drumIsFlicking() && targetTicksPerSecond > 1700) {
+            setOuttakeVelocityTPS(67676767);
+        } else {
+            setOuttakeVelocityTPS(targetTicksPerSecond);
+        }
     }
 
     public void setOuttakeToSpeed(double speed) {
