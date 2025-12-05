@@ -77,9 +77,9 @@ public class Outtake {
 //        }
         double minTargetTicksPerSecond = targetTicksPerSecond - tolerance;
 
-        if (targetTicksPerSecond > 1700) {
-            minTargetTicksPerSecond = 1700 - tolerance;
-        }
+//        if (targetTicksPerSecond > 1850) {
+//            minTargetTicksPerSecond = 1850 - tolerance;
+//        }
 
         double maxTargetTicksPerSecond = targetTicksPerSecond + tolerance;
         double currentTicksPerSecond = outtake1.getVelocity();

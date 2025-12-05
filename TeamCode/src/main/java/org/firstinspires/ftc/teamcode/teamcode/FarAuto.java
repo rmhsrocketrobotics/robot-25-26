@@ -4,12 +4,16 @@ import androidx.annotation.NonNull;
 
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
+import com.acmerobotics.roadrunner.Arclength;
 import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.Pose2dDual;
+import com.acmerobotics.roadrunner.PosePath;
 import com.acmerobotics.roadrunner.RaceAction;
 import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
 import com.acmerobotics.roadrunner.Vector2d;
+import com.acmerobotics.roadrunner.VelConstraint;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -35,7 +39,7 @@ public final class FarAuto extends LinearOpMode {
             spindex.ballStates = new String[]{"green", "purple", "purple"};
 
             outtake = new Outtake(hardwareMap);
-            outtake.tolerance = 150;
+            outtake.tolerance = 100;
         }
 
         public void init() {
@@ -67,8 +71,8 @@ public final class FarAuto extends LinearOpMode {
                         spindex.queueBall("purple");
                         spindex.queueBall("green");
                     }
-                    outtake.setOuttakeToSpeed(6.25);
-                    outtake.setHoodServoToAngle(45);
+                    outtake.setOuttakeToSpeed(6.5);
+                    outtake.setHoodServoToAngle(50);
                 }
 
                 spindex.update(outtake);
@@ -94,7 +98,10 @@ public final class FarAuto extends LinearOpMode {
                 if (!initialized) {
                     initialized = true;
 
-                    spindex.ballStates = new String[] {};
+                    outtake.targetTicksPerSecond = 0;
+                    outtake.update();
+
+                    spindex.ballStates = new String[] {"empty", "empty", "empty"};
                     spindex.setDrumState("intake", 0);
                     spindex.intake.setPower(1);
                 }
@@ -120,11 +127,14 @@ public final class FarAuto extends LinearOpMode {
                 if (!initialized) {
                     initialized = true;
 
+                    spindex.intake.setPower(0);
+
                     spindex.setDrumState("outtake", 0);
                     spindex.update(outtake);
 
-                    outtake.setOuttakeToSpeed(6.25);
-                    outtake.setHoodServoToAngle(45);
+                    outtake.setOuttakeToSpeed(6.5);
+                    outtake.setHoodServoToAngle(50);
+                    outtake.update();
                 }
 
                 return true;
@@ -144,6 +154,20 @@ public final class FarAuto extends LinearOpMode {
         BallHandler ballHandler = new BallHandler(hardwareMap);
 
         Pose2d beginPose;
+
+        VelConstraint slowSpeed = new VelConstraint() {
+            @Override
+            public double maxRobotVel(@NonNull Pose2dDual<Arclength> pose2dDual, @NonNull PosePath posePath, double v) {
+                return 20;
+            }
+        };
+
+        VelConstraint slowerSpeed = new VelConstraint() {
+            @Override
+            public double maxRobotVel(@NonNull Pose2dDual<Arclength> pose2dDual, @NonNull PosePath posePath, double v) {
+                return 10;
+            }
+        };
 
         // path actions: (.build() must be called in order for any of these to become actual actions)
         // IMPORTANT: for all of the following functions:
@@ -184,28 +208,28 @@ public final class FarAuto extends LinearOpMode {
             beginPose = new Pose2d(61, -8, Math.toRadians(180));
             drive = new MecanumDrive(hardwareMap, beginPose);
 
-            double startToGoalAngle = angleBetweenPoints(new Vector2d(56, 0), new Vector2d(-66, -60));
+            double startToGoalAngle = angleBetweenPoints(new Vector2d(56, -10), new Vector2d(-66, -58));
 
             startToLaunchZone = drive.actionBuilder(beginPose)
-                    .splineTo(new Vector2d(51,  -13),startToGoalAngle)
-                    .waitSeconds(1);
+                    .splineTo(new Vector2d(56, -10),startToGoalAngle);
 
             launchZoneToSecondBalls = startToLaunchZone.endTrajectory().fresh()
-                    .splineTo(new Vector2d(36, -38), 3*pi/2)
-                    .splineTo(new Vector2d(36, -46), 3*pi/2);
+                    .splineTo(new Vector2d(36, -38), 3*pi/2, slowSpeed)
+                    .splineTo(new Vector2d(36, -60), 3*pi/2, slowerSpeed)
+                    .waitSeconds(2);
 
             secondBallsToLaunchZone = launchZoneToSecondBalls.endTrajectory().fresh()
                     .setReversed(true)
-                    .splineTo(new Vector2d(56, -10), startToGoalAngle - pi);
+                    .splineTo(new Vector2d(56, -15), startToGoalAngle - pi);
 
             launchZoneToThirdBalls = secondBallsToLaunchZone.endTrajectory().fresh()
                     .setReversed(false)
-                    .splineTo(new Vector2d(13, -37), 3*pi/2)
-                    .splineTo(new Vector2d(13, -46), 3*pi/2);
+                    .splineTo(new Vector2d(13, -37), 3*pi/2, slowSpeed)
+                    .splineTo(new Vector2d(13, -50), 3*pi/2, slowerSpeed);
 
             thirdBallsToLaunchZone = launchZoneToThirdBalls.endTrajectory().fresh()
                     .setReversed(true)
-                    .splineTo(new Vector2d(56, -10), startToGoalAngle + pi);
+                    .splineTo(new Vector2d(56, -15), startToGoalAngle + pi);
         }
 
         Velocity launchVelocity = new Velocity(6.25, 45);
@@ -239,6 +263,7 @@ public final class FarAuto extends LinearOpMode {
         ballHandler.init();
 
         Actions.runBlocking(runAutonomous);
+        //Actions.runBlocking(new SequentialAction(startToLaunchZone.build(), launchZoneToSecondBalls.build()));
 
 //        Actions.runBlocking(
 //                drive.actionBuilder(beginPose)

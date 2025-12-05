@@ -30,14 +30,14 @@ public class MeepMeepTesting {
     public static void main(String[] args) {
         MeepMeep meepMeep = new MeepMeep(700);
 
-        RoadRunnerBotEntity myBot = testPathRightRed(meepMeep);
+        RoadRunnerBotEntity myBot = testPathRightBlue(meepMeep);
 
         Image img = null;
-        try { img = ImageIO.read(new File("MeepMeepTesting/src/main/java/com/example/meepmeeptesting/decode lightwebfield.png")); }
+        try { img = ImageIO.read(new File("MeepMeepTesting/src/main/java/com/example/meepmeeptesting/decode webfield.png")); }
         catch(IOException e) {}
 
         meepMeep.setBackground(img)
-                .setDarkMode(true)
+                .setDarkMode(false)
                 .setBackgroundAlpha(0.95f)
                 .addEntity(myBot)
                 .start();
@@ -159,7 +159,7 @@ public class MeepMeepTesting {
     public static RoadRunnerBotEntity testPathRightBlue(MeepMeep meepMeepRightBlue) {
         double startToBallOneAngle = angleBetweenPoints(new Vector2d(56, 0), new Vector2d(38, -46));
         System.out.println(Math.toDegrees(startToBallOneAngle));
-        double startToGoalAngle = angleBetweenPoints(new Vector2d(56, 0), new Vector2d(-66, -60));
+        double startToGoalAngle = angleBetweenPoints(new Vector2d(56, -10), new Vector2d(-66, -58));
         System.out.println(Math.toDegrees(startToGoalAngle));
         double startToBallTwoAngle = angleBetweenPoints(new Vector2d(56, 0), new Vector2d(13, -43));
         System.out.println(Math.toDegrees(startToGoalAngle));
@@ -169,17 +169,17 @@ public class MeepMeepTesting {
         return new DefaultBotBuilder(meepMeepRightBlue)
                 // Set bot constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
                 .setConstraints(40, 50, Math.toRadians(180), Math.toRadians(180), 14.5)
-                .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(61, -10, Math.toRadians(180)))
-                        .splineTo(new Vector2d(51, -13),startToGoalAngle)
+                .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(61, -8, Math.toRadians(180)))
+                        .splineTo(new Vector2d(56, -10),startToGoalAngle)
 
                         .waitSeconds(3)
 
                         .splineTo(new Vector2d(36, -38),3*pi/2)
-                        .splineTo(new Vector2d(36, -46), 3*pi/2)
+                        .splineTo(new Vector2d(36, -60), 3*pi/2)
 
                         .waitSeconds(3)
 
-                        .setReversed(true).splineTo(new Vector2d(56, -10), startToGoalAngle - pi)
+                        .setReversed(true).splineTo(new Vector2d(56, -15), startToGoalAngle - pi)
 
                         .waitSeconds(3)
 
