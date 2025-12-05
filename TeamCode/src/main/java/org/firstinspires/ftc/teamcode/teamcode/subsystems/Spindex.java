@@ -42,14 +42,14 @@ public class Spindex {
 
     // time it takes to go from position 0 to position 1 on the drum servo
     // (setting too low will mean the sensor sees the same ball multiple times)
-    final double switchCooldownConstant = 1.3;
+    final double switchCooldownConstant = 1.3;//1.75;
 
     double switchCooldown = switchCooldownConstant;
 
     private ElapsedTime flickTimer;
 
     final double flickTime = 1.2; // time that the robot will try to flick the ball up for
-    final double postFlickTime = 0.25; // time that the robot will wait after flicking before doing anything else
+    final double postFlickTime = 0.5; // og: 0.25; // time that the robot will wait after flicking before doing anything else
 
     public boolean shouldSwitchToIntake = false;
     public boolean shouldSwitchToOuttake = false;
@@ -305,6 +305,7 @@ public class Spindex {
                 ballStates[drumPosition] = "empty";
             } else {
                 flickTimer.reset();
+                flick.setPower(0);
             }
         } else {
             flick.setPower(0);

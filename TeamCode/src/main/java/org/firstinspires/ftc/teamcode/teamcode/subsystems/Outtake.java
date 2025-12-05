@@ -44,8 +44,11 @@ public class Outtake {
     }
 
     public void setOuttakePower(double power) {
-        outtake1.setPower(-power);
-        outtake2.setPower(-power);
+        if (power < 0) {
+            power = 0;
+        }
+        outtake1.setPower(power);
+        outtake2.setPower(power);
     }
 
     private void setOuttakeVelocityTPS(double ticksPerSecond) {
@@ -72,6 +75,7 @@ public class Outtake {
 //    }
 
     public boolean atTargetSpeed() {
+
 //        if (aboveMaxPowerThreshold()) {
 //            return outtake1.getVelocity() > 1600;
 //        }
@@ -94,16 +98,16 @@ public class Outtake {
 //        }
 
 
-        if (spindex.drumIsFlicking() && targetTicksPerSecond > 1700) {
-            setOuttakeVelocityTPS(67676767);
+        if (targetTicksPerSecond > 1800) {
+            setOuttakePower(1);
         } else {
             setOuttakeVelocityTPS(targetTicksPerSecond);
         }
     }
 
-    public void setOuttakeToSpeed(double speed) {
+    public void setOuttakeToSpeed(double speed, double lowerLimit) {
         // change meters per second into ticks per second
-        double metersPerSecond = CustomMath.clamp(speed, 4.9, 6.5);
+        double metersPerSecond = CustomMath.clamp(speed, lowerLimit, 6.5);
         targetTicksPerSecond = metersPerSecondToTicksPerSecondQuadratic(metersPerSecond);
     }
 
@@ -111,8 +115,8 @@ public class Outtake {
         // all angles are in degrees above the horizon
         double maxDegrees = 60;
         double minDegrees = 45;
-        double maxPosition = 0.55;
-        double minPosition = 0;
+        double maxPosition = 0.45;
+        double minPosition = 0.1;
 
         degrees = CustomMath.clamp(degrees, minDegrees, maxDegrees);
         double percentRaised = 1 - ( (degrees - minDegrees) / (maxDegrees - minDegrees) );

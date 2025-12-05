@@ -30,7 +30,7 @@ public class MeepMeepTesting {
     public static void main(String[] args) {
         MeepMeep meepMeep = new MeepMeep(700);
 
-        RoadRunnerBotEntity myBot = testPathLeftRed(meepMeep);
+        RoadRunnerBotEntity myBot = testPathLeftBlue(meepMeep);
 
         Image img = null;
         try { img = ImageIO.read(new File("MeepMeepTesting/src/main/java/com/example/meepmeeptesting/decode webfield.png")); }
@@ -149,7 +149,7 @@ public class MeepMeepTesting {
     }
     //starts on the right side, aims towards blue goal
     public static RoadRunnerBotEntity testPathRightBlue(MeepMeep meepMeepRightBlue) {
-        Vector2d launchPosition = new Vector2d(56, -14.5);
+        Vector2d launchPosition = new Vector2d(54, -15);
         double launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-66, -58));
 
         return new DefaultBotBuilder(meepMeepRightBlue)
@@ -161,7 +161,7 @@ public class MeepMeepTesting {
                         .waitSeconds(3)
 
                         .splineTo(new Vector2d(36, -28),3*pi/2)
-                        .splineTo(new Vector2d(36, -45), 3*pi/2) // change to slow mode
+                        .splineTo(new Vector2d(36, -55), 3*pi/2) // change to slow mode
 
                         .waitSeconds(3)
 
@@ -171,7 +171,7 @@ public class MeepMeepTesting {
 
                         .setReversed(false)
                         .splineTo(new Vector2d(13, -28), 3*pi/2)
-                        .splineTo(new Vector2d(13, -45), 3*pi/2) // change to slow mode
+                        .splineTo(new Vector2d(13, -55), 3*pi/2) // change to slow mode
 
                         .waitSeconds(3)
 
@@ -195,13 +195,13 @@ public class MeepMeepTesting {
 
     //starts on the left side, aims towards blue goal
     public static RoadRunnerBotEntity testPathLeftBlue(MeepMeep meepMeepLeftBlue) {
-        Vector2d launchPosition = new Vector2d(-25, -20);
+        Vector2d launchPosition = new Vector2d(-25, -25);
         double launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-66, -58));
 
-        Vector2d ball1PickupPosition = new Vector2d(-11, -45);
+        Vector2d ball1PickupPosition = new Vector2d(-11, -52);
         double ball1ToLaunchAngle = angleBetweenPoints(ball1PickupPosition, launchPosition);
 
-        Vector2d ball2PickupPosition = new Vector2d(13, -45);
+        Vector2d ball2PickupPosition = new Vector2d(13, -52);
         double ball2ToLaunchAngle = angleBetweenPoints(ball2PickupPosition, launchPosition);
 
         return new DefaultBotBuilder(meepMeepLeftBlue)
@@ -216,7 +216,7 @@ public class MeepMeepTesting {
 
                         .setReversed(false)
                         .setTangent(0)
-                        .splineToSplineHeading(new Pose2d(-11, -20, 3*pi/2), 0)
+                        .splineToSplineHeading(new Pose2d(-11, -25, 3*pi/2), 0)
                         .setTangent(3*pi/2)
                         .splineTo(ball1PickupPosition, 3*pi/2)
 
@@ -228,7 +228,7 @@ public class MeepMeepTesting {
 
                         .setReversed(false)
                         .setTangent(0)
-                        .splineToSplineHeading(new Pose2d(13, -20, 3*pi/2), 0)
+                        .splineToSplineHeading(new Pose2d(13, -25, 3*pi/2), 0)
                         .setTangent(3*pi/2)
                         .splineTo(ball2PickupPosition, 3*pi/2)
 

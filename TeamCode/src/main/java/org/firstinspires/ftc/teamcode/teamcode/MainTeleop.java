@@ -110,6 +110,14 @@ public class MainTeleop extends LinearOpMode{
                 outtakeMode(requiredVelocity);
             }
 
+//            if (gamepad2.y) {
+//                outtake.setOuttakePower(1);
+//            } else if (gamepad2.x) {
+//                outtake.setOuttakePower(0.5);
+//            } else if (gamepad2.a) {
+//                outtake.setOuttakePower(0);
+//            }
+
             gamepad2Last.copy(gamepad2);
 
             spindex.update(outtake);
@@ -148,7 +156,7 @@ public class MainTeleop extends LinearOpMode{
 
         //vision.detectGoalAprilTag();
 
-        outtake.setOuttakeToSpeed(requiredVelocity.speed);
+        outtake.setOuttakeToSpeed(requiredVelocity.speed, 3.5);
 
         if (gamepad2.left_bumper && !gamepad2Last.left_bumper) {
             spindex.queueBall("purple");
