@@ -33,7 +33,7 @@ public class MeepMeepTrajSeq {
         RoadRunnerBotEntity myBot = testPathLeftRed(meepMeep);
 
         Image img = null;
-        try { img = ImageIO.read(new File("MeepMeepTesting/src/main/java/com/example/meepmeeptesting/decode webfield.png")); }
+        try { img = ImageIO.read(new File("MeepMeepTesting/src/main/java/com/example/meepmeeptesting/decode lightwebfield.png")); }
         catch(IOException e) {}
 
         meepMeep.setBackground(img)
