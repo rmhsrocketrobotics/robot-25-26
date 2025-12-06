@@ -106,7 +106,7 @@ public final class MainAuto extends LinearOpMode {
 
                     outtake.targetTicksPerSecond = 0;
 
-                    spindex.ballStates = new String[] {"empty", "empty", "empty"};
+                    //spindex.ballStates = new String[] {"empty", "empty", "empty"};
                     spindex.setDrumState("intake", 0);
                     spindex.intake.setPower(1);
                 }
