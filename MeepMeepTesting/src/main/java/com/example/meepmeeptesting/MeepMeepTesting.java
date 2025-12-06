@@ -196,7 +196,7 @@ public class MeepMeepTesting {
     //starts on the left side, aims towards blue goal
     public static RoadRunnerBotEntity testPathLeftBlue(MeepMeep meepMeepLeftBlue) {
         Vector2d launchPosition = new Vector2d(-25, -25);
-        double launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-66, -58));
+        double launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-60, -58));
 
         Vector2d ball1PickupPosition = new Vector2d(-11, -52);
         double ball1ToLaunchAngle = angleBetweenPoints(ball1PickupPosition, launchPosition);

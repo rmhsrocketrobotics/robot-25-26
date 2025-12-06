@@ -48,8 +48,8 @@ public class Spindex {
 
     private ElapsedTime flickTimer;
 
-    final double flickTime = 1.2; // time that the robot will try to flick the ball up for
-    final double postFlickTime = 0.5; // og: 0.25; // time that the robot will wait after flicking before doing anything else
+    public double flickTime = 1.2; // time that the robot will try to flick the ball up for
+    public double postFlickTime = 0.5; // og: 0.25; // time that the robot will wait after flicking before doing anything else
 
     public boolean shouldSwitchToIntake = false;
     public boolean shouldSwitchToOuttake = false;

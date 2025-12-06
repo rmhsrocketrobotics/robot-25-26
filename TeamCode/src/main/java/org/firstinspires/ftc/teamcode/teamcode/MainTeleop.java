@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Odometry;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Velocity;
@@ -30,6 +31,9 @@ public class MainTeleop extends LinearOpMode{
 
         drivetrain = new Drivetrain(hardwareMap); // wheels
         spindex = new Spindex(hardwareMap, false); // drumServo, intake, flick
+        spindex.flickTime = 1;
+        spindex.postFlickTime = 0.4;
+
         outtake = new Outtake(hardwareMap); // outtake, hoodServo
         vision = new Vision(hardwareMap, false); // camera
         odometry = new Odometry(hardwareMap); // pinpoint

@@ -25,7 +25,7 @@ import org.firstinspires.ftc.teamcode.teamcode.subsystems.Spindex;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Velocity;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Vision;
 
-@Autonomous
+@Autonomous(preselectTeleOp = "MainTeleop")
 public final class MainAuto extends LinearOpMode {
     public boolean isRedAlliance = false;
     public boolean isFar = false;
@@ -166,6 +166,9 @@ public final class MainAuto extends LinearOpMode {
         Vision vision = new Vision(hardwareMap, true);
         BallHandler ballHandler = new BallHandler(hardwareMap);
 
+        ballHandler.spindex.flickTime = 1;
+        ballHandler.spindex.postFlickTime = 0.4;
+
         lowVelocity = new VelConstraint() {
             @Override
             public double maxRobotVel(@NonNull Pose2dDual<Arclength> pose2dDual, @NonNull PosePath posePath, double v) {
@@ -295,16 +298,18 @@ public final class MainAuto extends LinearOpMode {
     }
 
     public void redClosePath() {
+        int ballPickupYPos = 27;
+
         Pose2d beginPose = new Pose2d(-61, 36, Math.toRadians(180));
         MecanumDrive drive = new MecanumDrive(hardwareMap, beginPose);
 
-        Vector2d launchPosition = new Vector2d(-25, 20);
+        Vector2d launchPosition = new Vector2d(-25, ballPickupYPos);
         double launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-66, 58));
 
-        Vector2d ball1PickupPosition = new Vector2d(-11, 45);
+        Vector2d ball1PickupPosition = new Vector2d(-11, 52);
         double ball1ToLaunchAngle = angleBetweenPoints(ball1PickupPosition, launchPosition);
 
-        Vector2d ball2PickupPosition = new Vector2d(13, 45);
+        Vector2d ball2PickupPosition = new Vector2d(13, 52);
         double ball2ToLaunchAngle = angleBetweenPoints(ball2PickupPosition, launchPosition);
 
         startToLaunchZone = drive.actionBuilder(beginPose)
@@ -314,7 +319,7 @@ public final class MainAuto extends LinearOpMode {
         launchZoneToSecondBalls = startToLaunchZone.endTrajectory().fresh()
                 .setReversed(false)
                 .setTangent(0)
-                .splineToSplineHeading(new Pose2d(-11, 20, pi/2), 0)
+                .splineToSplineHeading(new Pose2d(-11, ballPickupYPos, pi/2), 0)
                 .setTangent(pi/2)
                 .splineTo(ball1PickupPosition, pi/2, lowVelocity); // slow mode
 
@@ -325,7 +330,7 @@ public final class MainAuto extends LinearOpMode {
         launchZoneToThirdBalls = secondBallsToLaunchZone.endTrajectory().fresh()
                 .setReversed(false)
                 .setTangent(0)
-                .splineToSplineHeading(new Pose2d(13, 20, pi/2), 0)
+                .splineToSplineHeading(new Pose2d(13, ballPickupYPos, pi/2), 0)
                 .setTangent(pi/2)
                 .splineTo(ball2PickupPosition, pi/2, lowVelocity); // slow mode
 
@@ -336,11 +341,13 @@ public final class MainAuto extends LinearOpMode {
     }
 
     public void blueClosePath() {
+        int ballPickupYPos = -27;
+
         Pose2d beginPose = new Pose2d(-61, -36, Math.toRadians(180));
         MecanumDrive drive = new MecanumDrive(hardwareMap, beginPose);
 
-        Vector2d launchPosition = new Vector2d(-25, -25);
-        double launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-66, -58));
+        Vector2d launchPosition = new Vector2d(-25, ballPickupYPos);
+        double launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-60, -58));
 
         Vector2d ball1PickupPosition = new Vector2d(-11, -52);
         double ball1ToLaunchAngle = angleBetweenPoints(ball1PickupPosition, launchPosition);
@@ -355,7 +362,7 @@ public final class MainAuto extends LinearOpMode {
         launchZoneToSecondBalls = startToLaunchZone.endTrajectory().fresh()
                 .setReversed(false)
                 .setTangent(0)
-                .splineToSplineHeading(new Pose2d(-11, -25, 3*pi/2), 0)
+                .splineToSplineHeading(new Pose2d(-11, ballPickupYPos, 3*pi/2), 0)
                 .setTangent(3*pi/2)
                 .splineTo(ball1PickupPosition, 3*pi/2, lowVelocity); // slow mode
 
@@ -366,7 +373,7 @@ public final class MainAuto extends LinearOpMode {
         launchZoneToThirdBalls = secondBallsToLaunchZone.endTrajectory().fresh()
                 .setReversed(false)
                 .setTangent(0)
-                .splineToSplineHeading(new Pose2d(13, -25, 3*pi/2), 0)
+                .splineToSplineHeading(new Pose2d(13, ballPickupYPos, 3*pi/2), 0)
                 .setTangent(3*pi/2)
                 .splineTo(ball2PickupPosition, 3*pi/2, lowVelocity); // slow mode
 

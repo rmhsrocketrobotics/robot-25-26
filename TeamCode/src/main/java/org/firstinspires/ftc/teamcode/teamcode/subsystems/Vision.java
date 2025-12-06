@@ -194,11 +194,22 @@ public class Vision {
         }
 
         public static Velocity calculateBallLaunchVelocity(double distanceFromBucket) {
-            double startSpeed = calculateStartSpeed(g, distanceFromBucket, h, theta);
-            // these calculations actually work in reverse, so "endSpeed" and "endDirection" are actually the speed and direction that we need the ball to START with
-            double endSpeed = calculateEndSpeed(startSpeed, g, distanceFromBucket, h, theta);
-            double endDirection = calculateEndDirection(startSpeed, g, distanceFromBucket, h, theta);
-            return new Velocity(endSpeed, -endDirection);
+            boolean hardCoding = true;
+            if (hardCoding) {
+                if (distanceFromBucket < 1.5) {
+                    return new Velocity(4.3, 55);
+                } else {
+                    return new Velocity(6.3, 45);
+                }
+
+            } else {
+                double startSpeed = calculateStartSpeed(g, distanceFromBucket, h, theta);
+                // these calculations actually work in reverse, so "endSpeed" and "endDirection" are actually the speed and direction that we need the ball to START with
+                double endSpeed = calculateEndSpeed(startSpeed, g, distanceFromBucket, h, theta);
+                double endDirection = calculateEndDirection(startSpeed, g, distanceFromBucket, h, theta);
+                return new Velocity(endSpeed, -endDirection);
+            }
+
         }
     }
 }
