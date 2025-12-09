@@ -1,7 +1,6 @@
 package org.firstinspires.ftc.teamcode.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Odometry;
@@ -11,9 +10,7 @@ import org.firstinspires.ftc.teamcode.teamcode.subsystems.Spindex;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Outtake;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Drivetrain;
 
-@TeleOp(group = "!main")
-
-public class MainTeleopRed extends LinearOpMode{
+public class MainTeleop extends LinearOpMode{
     String state;
     Drivetrain drivetrain;
     Spindex spindex;
@@ -22,6 +19,10 @@ public class MainTeleopRed extends LinearOpMode{
     Odometry odometry;
     Gamepad gamepad1Last;
     Gamepad gamepad2Last;
+
+    public boolean allianceIsRed() {
+        return true;
+    }
 
     @Override
     public void runOpMode() {
@@ -33,7 +34,7 @@ public class MainTeleopRed extends LinearOpMode{
         spindex.postFlickTime = 0.4;
 
         outtake = new Outtake(hardwareMap); // outtake, hoodServo
-        vision = new Vision(hardwareMap, true); // camera
+        vision = new Vision(hardwareMap, allianceIsRed()); // camera
         odometry = new Odometry(hardwareMap); // pinpoint
 
         gamepad1Last = new Gamepad();

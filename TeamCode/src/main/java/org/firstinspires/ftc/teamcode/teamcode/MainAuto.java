@@ -15,7 +15,6 @@ import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.VelConstraint;
 import com.acmerobotics.roadrunner.ftc.Actions;
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
@@ -25,10 +24,15 @@ import org.firstinspires.ftc.teamcode.teamcode.subsystems.Spindex;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Velocity;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Vision;
 
-@Autonomous(preselectTeleOp = "MainTeleopBlue")
-public final class MainAutoBlue extends LinearOpMode {
-    public boolean isRedAlliance = false;
-    public boolean isFar = false;
+public class MainAuto extends LinearOpMode {
+
+    public boolean allianceIsRed() {
+        return true;
+    }
+
+    public boolean useFarAuto() {
+        return true;
+    }
 
     public class BallHandler { // combination of spindex and outtake
         Spindex spindex;
@@ -103,7 +107,6 @@ public final class MainAutoBlue extends LinearOpMode {
             public RunActiveIntake(boolean resetDrum) {
                 this.resetDrum = resetDrum;
             }
-
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
                 if (!initialized) {
@@ -170,7 +173,7 @@ public final class MainAutoBlue extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
-        Vision vision = new Vision(hardwareMap, true);
+        Vision vision = new Vision(hardwareMap, allianceIsRed());
         BallHandler ballHandler = new BallHandler(hardwareMap);
 
         ballHandler.spindex.flickTime = 1;
@@ -190,18 +193,18 @@ public final class MainAutoBlue extends LinearOpMode {
         // "third balls" are the SECOND set of balls we PICK UP
         // just moved all of the path building into functions but this still applies
 
-        if (isRedAlliance && isFar) {
+        if (allianceIsRed() && useFarAuto()) {
             redFarPath();
-        } else if (!isRedAlliance && isFar) {
+        } else if (!allianceIsRed() && useFarAuto()) {
             blueFarPath();
-        } else if (isRedAlliance && !isFar) {
+        } else if (allianceIsRed() && !useFarAuto()) {
             redClosePath();
-        } else if (!isRedAlliance && !isFar) {
+        } else if (!allianceIsRed() && !useFarAuto()) {
             blueClosePath();
         }
 
         Velocity launchVelocity;
-        if (isFar) {
+        if (useFarAuto()) {
             launchVelocity = new Velocity(6.3, 45);
         } else {
             launchVelocity = new Velocity(4.3, 55);
@@ -227,9 +230,6 @@ public final class MainAutoBlue extends LinearOpMode {
                 getSecondBalls, returnToLaunchZoneWithSecondBalls, launchSecondBalls,
                 getThirdBalls, returnToLaunchZoneWithThirdBalls, launchThirdBalls
         );
-
-//        Action runAutonomous = new SequentialAction(
-//                launchFirstBalls, getSecondBalls);
 
         // this is in place of a waitForStart() call
         while (opModeInInit() && !isStopRequested()) {
@@ -314,12 +314,15 @@ public final class MainAutoBlue extends LinearOpMode {
         MecanumDrive drive = new MecanumDrive(hardwareMap, beginPose);
 
         Vector2d launchPosition = new Vector2d(-25, ballPickupYPos);
-        double launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-66, 58));
+        double launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-58, 58));
 
-        Vector2d ball1PickupPosition = new Vector2d(-11, 52);
+        Vector2d launchPositionFinal = new Vector2d(-50, ballPickupYPos);
+        double launchToGoalAngleFinal = angleBetweenPoints(launchPositionFinal, new Vector2d(-58, 58));
+
+        Vector2d ball1PickupPosition = new Vector2d(-11, 55);
         double ball1ToLaunchAngle = angleBetweenPoints(ball1PickupPosition, launchPosition);
 
-        Vector2d ball2PickupPosition = new Vector2d(13, 52);
+        Vector2d ball2PickupPosition = new Vector2d(13, 61);
         double ball2ToLaunchAngle = angleBetweenPoints(ball2PickupPosition, launchPosition);
 
         startToLaunchZone = drive.actionBuilder(beginPose)
@@ -345,8 +348,8 @@ public final class MainAutoBlue extends LinearOpMode {
                 .splineTo(ball2PickupPosition, pi/2, lowVelocity); // slow mode
 
         thirdBallsToLaunchZone = launchZoneToThirdBalls.endTrajectory().fresh()
-                .setTangent(ball2ToLaunchAngle)
-                .splineToSplineHeading(new Pose2d(launchPosition, launchToGoalAngle), ball2ToLaunchAngle);
+                .setTangent(3*pi/2)
+                .splineToSplineHeading(new Pose2d(launchPositionFinal, launchToGoalAngleFinal), pi);
 
     }
 
