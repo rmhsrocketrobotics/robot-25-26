@@ -97,7 +97,7 @@ public class Vision {
     public void detectGoalAprilTag(double currentBearing) {
         List<AprilTagDetection> detections = aprilTag.getDetections();
         for (AprilTagDetection detection : detections) {
-            if ( (isRedAlliance && detection.id == 24) || (!isRedAlliance && detection.id == 20) ) {
+            if ( (detection.id == 24) || (detection.id == 20) ) {
                 targetAbsoluteBearing = currentBearing + detection.ftcPose.bearing;
 
                 double range = detection.ftcPose.range / 39.37;

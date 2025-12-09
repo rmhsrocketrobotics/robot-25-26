@@ -101,18 +101,18 @@ public class MeepMeepTesting {
     //starts on the left side, aims towards red goal
     public static RoadRunnerBotEntity testPathLeftRed(MeepMeep meepMeepLeftRed) {
         Vector2d launchPosition = new Vector2d(-25, 20);
-        double launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-66, 58));
+        double launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-58, 58));
 
-        Vector2d ball1PickupPosition = new Vector2d(-11, 45);
+        Vector2d ball1PickupPosition = new Vector2d(-11, 55);
         double ball1ToLaunchAngle = angleBetweenPoints(ball1PickupPosition, launchPosition);
 
-        Vector2d ball2PickupPosition = new Vector2d(13, 45);
+        Vector2d ball2PickupPosition = new Vector2d(13, 59);
         double ball2ToLaunchAngle = angleBetweenPoints(ball2PickupPosition, launchPosition);
 
         return new DefaultBotBuilder(meepMeepLeftRed)
                 // Set bot constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
                 .setConstraints(40, 50, Math.toRadians(180), Math.toRadians(180), 14.5)
-                .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(-61, 36, Math.toRadians(180)))
+                .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(-61, 39, Math.toRadians(180)))
 
 
                         .setReversed(true)
@@ -198,10 +198,10 @@ public class MeepMeepTesting {
         Vector2d launchPosition = new Vector2d(-25, -25);
         double launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-60, -58));
 
-        Vector2d ball1PickupPosition = new Vector2d(-11, -52);
+        Vector2d ball1PickupPosition = new Vector2d(-11, -55);
         double ball1ToLaunchAngle = angleBetweenPoints(ball1PickupPosition, launchPosition);
 
-        Vector2d ball2PickupPosition = new Vector2d(13, -52);
+        Vector2d ball2PickupPosition = new Vector2d(13, -55);
         double ball2ToLaunchAngle = angleBetweenPoints(ball2PickupPosition, launchPosition);
 
         return new DefaultBotBuilder(meepMeepLeftBlue)
@@ -212,7 +212,11 @@ public class MeepMeepTesting {
                         .setReversed(true)
                         .splineTo(launchPosition, launchToGoalAngle - pi)
 
+
+
                         .waitSeconds(3)
+
+                        .setTangent(pi).splineToSplineHeading(new Pose2d(-58, -25, pi), pi)
 
                         .setReversed(false)
                         .setTangent(0)

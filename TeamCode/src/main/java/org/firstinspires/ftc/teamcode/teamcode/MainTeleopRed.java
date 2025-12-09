@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Odometry;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Velocity;
@@ -11,11 +10,10 @@ import org.firstinspires.ftc.teamcode.teamcode.subsystems.Vision;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Spindex;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Outtake;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Drivetrain;
-import org.firstinspires.ftc.vision.VisionPortal;
 
 @TeleOp(group = "!main")
 
-public class MainTeleop extends LinearOpMode{
+public class MainTeleopRed extends LinearOpMode{
     String state;
     Drivetrain drivetrain;
     Spindex spindex;
@@ -35,7 +33,7 @@ public class MainTeleop extends LinearOpMode{
         spindex.postFlickTime = 0.4;
 
         outtake = new Outtake(hardwareMap); // outtake, hoodServo
-        vision = new Vision(hardwareMap, false); // camera
+        vision = new Vision(hardwareMap, true); // camera
         odometry = new Odometry(hardwareMap); // pinpoint
 
         gamepad1Last = new Gamepad();

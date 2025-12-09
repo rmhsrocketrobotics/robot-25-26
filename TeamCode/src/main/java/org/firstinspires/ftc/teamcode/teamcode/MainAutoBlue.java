@@ -25,8 +25,8 @@ import org.firstinspires.ftc.teamcode.teamcode.subsystems.Spindex;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Velocity;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Vision;
 
-@Autonomous(preselectTeleOp = "MainTeleop")
-public final class MainAuto extends LinearOpMode {
+@Autonomous(preselectTeleOp = "MainTeleopBlue")
+public final class MainAutoBlue extends LinearOpMode {
     public boolean isRedAlliance = false;
     public boolean isFar = false;
 
@@ -98,6 +98,11 @@ public final class MainAuto extends LinearOpMode {
 
         public class RunActiveIntake implements Action {
             private boolean initialized = false;
+            private boolean resetDrum;
+
+            public RunActiveIntake(boolean resetDrum) {
+                this.resetDrum = resetDrum;
+            }
 
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
@@ -107,7 +112,9 @@ public final class MainAuto extends LinearOpMode {
                     outtake.targetTicksPerSecond = 0;
 
                     //spindex.ballStates = new String[] {"empty", "empty", "empty"};
-                    spindex.setDrumState("intake", 0);
+                    if (this.resetDrum) {
+                        spindex.setDrumState("intake", 0);
+                    }
                     spindex.intake.setPower(1);
                 }
                 spindex.update(outtake);
@@ -116,8 +123,8 @@ public final class MainAuto extends LinearOpMode {
                 return true;
             }
         }
-        public Action runActiveIntake() {
-            return new RunActiveIntake();
+        public Action runActiveIntake(boolean resetDrum) {
+            return new RunActiveIntake(resetDrum);
         }
 
         public class ReadyOuttake implements Action {
@@ -172,7 +179,7 @@ public final class MainAuto extends LinearOpMode {
         lowVelocity = new VelConstraint() {
             @Override
             public double maxRobotVel(@NonNull Pose2dDual<Arclength> pose2dDual, @NonNull PosePath posePath, double v) {
-                return 6;
+                return 10;
             }
         };
 
@@ -204,14 +211,14 @@ public final class MainAuto extends LinearOpMode {
         // path actions combined with other actions
         Action launchFirstBalls = new ParallelAction(startToLaunchZone.build(), ballHandler.launchAllBalls(launchVelocity));
 
-        Action getSecondBalls = new RaceAction(launchZoneToSecondBalls.build(), ballHandler.runActiveIntake());
+        Action getSecondBalls = new RaceAction(launchZoneToSecondBalls.build(), ballHandler.runActiveIntake(true));
 //        Action returnToLaunchZoneWithSecondBalls = new RaceAction(secondBallsToLaunchZone.build(), ballHandler.readyOuttake(launchVelocity));
-        Action returnToLaunchZoneWithSecondBalls = new RaceAction(secondBallsToLaunchZone.build(), ballHandler.runActiveIntake());
+        Action returnToLaunchZoneWithSecondBalls = new RaceAction(secondBallsToLaunchZone.build(), ballHandler.runActiveIntake(false));
         Action launchSecondBalls = ballHandler.launchAllBalls(launchVelocity);
 
-        Action getThirdBalls = new RaceAction(launchZoneToThirdBalls.build(), ballHandler.runActiveIntake());
+        Action getThirdBalls = new RaceAction(launchZoneToThirdBalls.build(), ballHandler.runActiveIntake(true));
 //        Action returnToLaunchZoneWithThirdBalls = new RaceAction(thirdBallsToLaunchZone.build(), ballHandler.readyOuttake(launchVelocity));
-        Action returnToLaunchZoneWithThirdBalls = new RaceAction(thirdBallsToLaunchZone.build(), ballHandler.runActiveIntake());
+        Action returnToLaunchZoneWithThirdBalls = new RaceAction(thirdBallsToLaunchZone.build(), ballHandler.runActiveIntake(false));
         Action launchThirdBalls = ballHandler.launchAllBalls(launchVelocity);
 
         // combine all of the above actions into one big long sequential action
@@ -220,6 +227,9 @@ public final class MainAuto extends LinearOpMode {
                 getSecondBalls, returnToLaunchZoneWithSecondBalls, launchSecondBalls,
                 getThirdBalls, returnToLaunchZoneWithThirdBalls, launchThirdBalls
         );
+
+//        Action runAutonomous = new SequentialAction(
+//                launchFirstBalls, getSecondBalls);
 
         // this is in place of a waitForStart() call
         while (opModeInInit() && !isStopRequested()) {
@@ -349,10 +359,13 @@ public final class MainAuto extends LinearOpMode {
         Vector2d launchPosition = new Vector2d(-25, ballPickupYPos);
         double launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-60, -58));
 
-        Vector2d ball1PickupPosition = new Vector2d(-11, -52);
+        Vector2d launchPositionFinal = new Vector2d(-50, ballPickupYPos);
+        double launchToGoalAngleFinal = angleBetweenPoints(launchPositionFinal, new Vector2d(-58, -58));
+
+        Vector2d ball1PickupPosition = new Vector2d(-11, -55);
         double ball1ToLaunchAngle = angleBetweenPoints(ball1PickupPosition, launchPosition);
 
-        Vector2d ball2PickupPosition = new Vector2d(13, -52);
+        Vector2d ball2PickupPosition = new Vector2d(13, -61);
         double ball2ToLaunchAngle = angleBetweenPoints(ball2PickupPosition, launchPosition);
 
         startToLaunchZone = drive.actionBuilder(beginPose)
@@ -360,6 +373,8 @@ public final class MainAuto extends LinearOpMode {
                 .splineTo(launchPosition, launchToGoalAngle - pi);
 
         launchZoneToSecondBalls = startToLaunchZone.endTrajectory().fresh()
+//                .setTangent(pi)
+//                .splineToSplineHeading(new Pose2d(-58, -27, pi), pi);
                 .setReversed(false)
                 .setTangent(0)
                 .splineToSplineHeading(new Pose2d(-11, ballPickupYPos, 3*pi/2), 0)
@@ -378,7 +393,7 @@ public final class MainAuto extends LinearOpMode {
                 .splineTo(ball2PickupPosition, 3*pi/2, lowVelocity); // slow mode
 
         thirdBallsToLaunchZone = launchZoneToThirdBalls.endTrajectory().fresh()
-                .setTangent(ball2ToLaunchAngle)
-                .splineToSplineHeading(new Pose2d(launchPosition, launchToGoalAngle), ball2ToLaunchAngle);
+                .setTangent(pi/2)
+                .splineToSplineHeading(new Pose2d(launchPositionFinal, launchToGoalAngleFinal), pi);
     }
 }
