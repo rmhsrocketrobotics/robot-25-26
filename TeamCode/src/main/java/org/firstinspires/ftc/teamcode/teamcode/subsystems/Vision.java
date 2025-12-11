@@ -7,17 +7,13 @@ import static java.lang.Math.sqrt;
 import static java.lang.Math.tan;
 import static java.lang.Math.toDegrees;
 import static java.lang.Math.toRadians;
-import static java.lang.Thread.sleep;
 
-import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagGameDatabase;
@@ -34,7 +30,7 @@ public class Vision {
     private double targetAbsoluteBearing = 0;
     public int obeliskId = 22; // guess that the obelisk is 22 if we aren't able to detect it
     private final boolean isRedAlliance;
-    private double goalDistance = 0;
+    public double goalDistance = 0;
     public boolean seenGoalAprilTag = false;
     public Vision(HardwareMap hardwareMap, boolean isRedAlliance) {
 
@@ -101,7 +97,10 @@ public class Vision {
                 targetAbsoluteBearing = currentBearing + detection.ftcPose.bearing;
 
                 double range = detection.ftcPose.range / 39.37;
-                goalDistance = Math.sqrt((range * range) - (0.4572 * 0.4572)); // triangles
+
+                // TODO: figure out which one of these is correct (does ftcPose.range return actual distance or just distance on the x and y axis?? idk)
+                goalDistance = range;
+                //goalDistance = Math.sqrt((range * range) - (0.4572 * 0.4572)); // triangles
 
                 seenGoalAprilTag = true;
             }

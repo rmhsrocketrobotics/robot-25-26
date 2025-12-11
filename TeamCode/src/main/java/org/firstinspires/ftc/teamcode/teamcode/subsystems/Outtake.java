@@ -98,11 +98,12 @@ public class Outtake {
 //        }
 
 
-        if (targetTicksPerSecond > 1800) {
-            setOuttakePower(1);
-        } else {
-            setOuttakeVelocityTPS(targetTicksPerSecond);
-        }
+//        if (targetTicksPerSecond > 1800) {
+//            setOuttakePower(1);
+//        } else {
+//            setOuttakeVelocityTPS(targetTicksPerSecond);
+//        }
+        setOuttakeVelocityTPS(targetTicksPerSecond);
     }
 
     public void setOuttakeToSpeed(double speed, double lowerLimit) {

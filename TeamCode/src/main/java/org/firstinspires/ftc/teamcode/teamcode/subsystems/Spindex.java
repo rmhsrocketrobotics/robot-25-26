@@ -42,7 +42,7 @@ public class Spindex {
 
     // time it takes to go from position 0 to position 1 on the drum servo
     // (setting too low will mean the sensor sees the same ball multiple times)
-    final double switchCooldownConstant = 1.3;//1.75;
+    public double switchCooldownConstant = 1.3;//1.75;
 
     double switchCooldown = switchCooldownConstant;
 
