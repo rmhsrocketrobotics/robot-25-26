@@ -25,7 +25,7 @@ public class Spindex {
 
     public DcMotor intake;
 
-    DcMotor flick;
+    public DcMotor flick;
 
     NormalizedColorSensor intakeColorSensor;
 

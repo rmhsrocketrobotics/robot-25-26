@@ -26,12 +26,10 @@ public class MainTeleop extends LinearOpMode{
 
     @Override
     public void runOpMode() {
-        state = "intake"; // states are: "intake", "transition", and "outtake"
+        state = "intake"; // states are: "intake" and "outtake"
 
         drivetrain = new Drivetrain(hardwareMap); // wheels
         spindex = new Spindex(hardwareMap, false); // drumServo, intake, flick
-        spindex.flickTime = 1;
-        spindex.postFlickTime = 0.4;
 
         outtake = new Outtake(hardwareMap); // outtake, hoodServo
         vision = new Vision(hardwareMap, allianceIsRed()); // camera
@@ -85,9 +83,12 @@ public class MainTeleop extends LinearOpMode{
             // literally all of the rest of this code is for gamepad 2:
             //spindex.flick.setPower(gamepad2.left_trigger);
 
-//            if (gamepad2.y && !gamepad2Last.y) {
-//                spindex.incrementDrumPosition();
-//            }
+            if (gamepad2.y && !gamepad2Last.y) { // TODO recomment this when done testing
+                spindex.incrementDrumPosition();
+            }
+            if (gamepad2.x) {
+                spindex.flick.setPower(1);
+            }
 //            if (gamepad2.x && !gamepad2Last.x) {
 //                spindex.setDrumState("intake", 0);
 //            }
@@ -123,7 +124,7 @@ public class MainTeleop extends LinearOpMode{
 
             gamepad2Last.copy(gamepad2);
 
-            spindex.update(outtake);
+            //spindex.update(outtake); TODO uncomment this once done testing
             outtake.update(spindex);
             vision.update(odometry.currentBearing);
             odometry.update();
@@ -159,7 +160,8 @@ public class MainTeleop extends LinearOpMode{
 
         //vision.detectGoalAprilTag();
 
-        outtake.setOuttakeToSpeed(requiredVelocity.speed, 3.5);
+        //outtake.setOuttakeToSpeed(requiredVelocity.speed, 3.5); // TODO uncomment when done testing
+        outtake.setOuttakeToSpeed(6.5, 3.5);
 
         if (gamepad2.left_bumper && !gamepad2Last.left_bumper) {
             spindex.queueBall("purple");

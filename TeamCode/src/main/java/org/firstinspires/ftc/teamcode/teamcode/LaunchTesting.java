@@ -34,12 +34,10 @@ public class LaunchTesting extends LinearOpMode{
 
     @Override
     public void runOpMode() {
-        state = "intake"; // states are: "intake", "transition", and "outtake"
+        state = "intake"; // states are: "intake" and "outtake"
 
         drivetrain = new Drivetrain(hardwareMap); // wheels
         spindex = new Spindex(hardwareMap, false); // drumServo, intake, flick
-        spindex.flickTime = 1;
-        spindex.postFlickTime = 0.4;
 
         outtake = new Outtake(hardwareMap); // outtake, hoodServo
         vision = new Vision(hardwareMap, allianceIsRed()); // camera
