@@ -16,7 +16,7 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.hardware.configuration.typecontainers.MotorConfigurationType;
 
 @Config
-@Disabled//@TeleOp
+@TeleOp
 public class VeloPIDTuner extends LinearOpMode {
     public static PIDFCoefficients MOTOR_VELO_PID = new PIDFCoefficients(25, 0, 0, 19);
 

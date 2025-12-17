@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.teamcode;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
@@ -34,6 +36,10 @@ public class LaunchTesting extends LinearOpMode{
 
     @Override
     public void runOpMode() {
+        /// uncomment this to turn on graphing on ftc dashboard
+        FtcDashboard dashboard = FtcDashboard.getInstance();
+        telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
+
         state = "intake"; // states are: "intake" and "outtake"
 
         drivetrain = new Drivetrain(hardwareMap); // wheels
@@ -71,7 +77,6 @@ public class LaunchTesting extends LinearOpMode{
             } else if (gamepad1.y && !gamepad1Last.y) {
                 outtakeSpeed -= 100;
             }
-            outtake.targetTicksPerSecond = outtakeSpeed;
 
             if (gamepad1.dpad_right && !gamepad1Last.dpad_right) {
                 outtake.tolerance += 10;
@@ -131,10 +136,12 @@ public class LaunchTesting extends LinearOpMode{
             vision.update(odometry.currentBearing);
             odometry.update();
 
-//            outtake.printTelemetry(telemetry);
+            outtake.printTelemetry(telemetry);
 //            vision.printTelemetry(telemetry);
             telemetry.addData("state", state);
             telemetry.update();
+
+            sleep(10);
         }
     }
 
@@ -165,7 +172,10 @@ public class LaunchTesting extends LinearOpMode{
             state = "intake";
             spindex.setDrumState("intake", 0);
 
+            outtake.targetTicksPerSecond = 0;
+
             return;
         }
+        outtake.targetTicksPerSecond = outtakeSpeed;
     }
 }

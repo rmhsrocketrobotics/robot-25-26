@@ -19,7 +19,7 @@ public class Outtake {
     public double targetTicksPerSecond;
 
     // the outtake must be going at +- this t/s for atTargetSpeed() to return true
-    public double tolerance = 150;
+    public double tolerance = 50;
     public Outtake(HardwareMap hardwareMap) {
         outtake1 = hardwareMap.get(DcMotorEx.class, "outtake1");
         outtake1.setDirection(DcMotor.Direction.REVERSE);
@@ -75,19 +75,23 @@ public class Outtake {
 //    }
 
     public boolean atTargetSpeed() {
-
-//        if (aboveMaxPowerThreshold()) {
-//            return outtake1.getVelocity() > 1600;
+//
+////        if (aboveMaxPowerThreshold()) {
+////            return outtake1.getVelocity() > 1600;
+////        }
+//        double minTargetTicksPerSecond = targetTicksPerSecond - tolerance;
+//
+//        if (targetTicksPerSecond > 1900) {
+//            minTargetTicksPerSecond = 1900 - tolerance;
 //        }
-        double minTargetTicksPerSecond = targetTicksPerSecond - tolerance;
-
-//        if (targetTicksPerSecond > 1850) {
-//            minTargetTicksPerSecond = 1850 - tolerance;
-//        }
-
-        double maxTargetTicksPerSecond = targetTicksPerSecond + tolerance;
-        double currentTicksPerSecond = outtake1.getVelocity();
-        return (currentTicksPerSecond > minTargetTicksPerSecond) && (currentTicksPerSecond < maxTargetTicksPerSecond);
+//
+//        double maxTargetTicksPerSecond = targetTicksPerSecond + tolerance;
+//        double currentTicksPerSecond = outtake1.getVelocity();
+//        return (currentTicksPerSecond > minTargetTicksPerSecond) && (currentTicksPerSecond < maxTargetTicksPerSecond);
+        if (targetTicksPerSecond > 1900) {
+            return outtake1.getVelocity() > 1900;
+        }
+        return outtake1.getVelocity() > targetTicksPerSecond;
     }
 
     public void update(Spindex spindex) {
