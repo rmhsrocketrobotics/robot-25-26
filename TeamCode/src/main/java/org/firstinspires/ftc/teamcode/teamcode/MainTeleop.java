@@ -93,13 +93,15 @@ public class MainTeleop extends LinearOpMode{
 //                spindex.setDrumState("intake", 0);
 //            }
 
-            if (gamepad2.left_trigger > 0.1) {
+            if (gamepad2.left_trigger > 0.1) { // backspin intake
                 spindex.intake.setPower(-gamepad2.left_trigger);
-            } else {
-                spindex.intake.setPower(gamepad2.right_trigger);
-            }
 
-            //spindex.flick.setPower(gamepad2.left_trigger);
+            } else if ((gamepad2.right_trigger > 0.1)) { // spin intake
+                spindex.intake.setPower(gamepad2.right_trigger);
+
+            } else {
+                spindex.intake.setPower(0);
+            }
 
             Velocity requiredVelocity = vision.getRequiredVelocity();
             telemetry.addData("target speed m/s", requiredVelocity.speed);
@@ -140,12 +142,10 @@ public class MainTeleop extends LinearOpMode{
     public void intakeMode() {
         if ((gamepad2.dpad_up && !gamepad2Last.dpad_up) || spindex.shouldSwitchToOuttake) {
             state = "outtake";
-            spindex.setDrumState("outtake", 0);
-            //vision.seenGoalAprilTag = false;
-            spindex.ballQueue.clear();
+            spindex.forceSwitchToStateOuttake();
             return;
         } else if (gamepad2.dpad_down && !gamepad2Last.dpad_down) {
-            spindex.setDrumState("intake", 0);
+            spindex.forceSwitchToStateIntake();
             return;
         }
     }
@@ -153,7 +153,7 @@ public class MainTeleop extends LinearOpMode{
     public void outtakeMode(Velocity requiredVelocity) {
         if ((gamepad2.dpad_down && !gamepad2Last.dpad_down) || spindex.shouldSwitchToIntake) {
             state = "intake";
-            spindex.setDrumState("intake", 0);
+            spindex.forceSwitchToStateIntake();
             outtake.targetTicksPerSecond = 0;
             return;
         }
@@ -161,7 +161,7 @@ public class MainTeleop extends LinearOpMode{
         //vision.detectGoalAprilTag();
 
         outtake.setOuttakeToSpeed(requiredVelocity.speed, 3.5);
-        outtake.setOuttakeToSpeed(6.5, 3.5);
+        //outtake.setOuttakeToSpeed(6.5, 3.5);
 
         if (gamepad2.left_bumper && !gamepad2Last.left_bumper) {
             spindex.queueBall("purple");

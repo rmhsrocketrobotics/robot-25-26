@@ -88,8 +88,8 @@ public class Outtake {
 //        double maxTargetTicksPerSecond = targetTicksPerSecond + tolerance;
 //        double currentTicksPerSecond = outtake1.getVelocity();
 //        return (currentTicksPerSecond > minTargetTicksPerSecond) && (currentTicksPerSecond < maxTargetTicksPerSecond);
-        if (targetTicksPerSecond > 1900) {
-            return outtake1.getVelocity() > 1900;
+        if (targetTicksPerSecond > 1850) {
+            return outtake1.getVelocity() > 1850;
         }
         return outtake1.getVelocity() > targetTicksPerSecond;
     }
