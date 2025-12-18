@@ -40,8 +40,8 @@ public class MainAuto extends LinearOpMode {
         public int obeliskId;
 
         public BallHandler(HardwareMap hardwareMap) {
-            spindex = new Spindex(hardwareMap, true);
-            spindex.ballStates = new String[]{"green", "purple", "purple"};
+            spindex = new Spindex(hardwareMap);
+            spindex.ballStates = new Spindex.BallState[]{Spindex.BallState.GREEN, Spindex.BallState.PURPLE, Spindex.BallState.PURPLE};
 
             outtake = new Outtake(hardwareMap);
             outtake.tolerance = 100;
@@ -175,9 +175,6 @@ public class MainAuto extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         Vision vision = new Vision(hardwareMap, allianceIsRed());
         BallHandler ballHandler = new BallHandler(hardwareMap);
-
-        ballHandler.spindex.flickTime = 1;
-        ballHandler.spindex.postFlickTime = 0.4;
 
         lowVelocity = new VelConstraint() {
             @Override

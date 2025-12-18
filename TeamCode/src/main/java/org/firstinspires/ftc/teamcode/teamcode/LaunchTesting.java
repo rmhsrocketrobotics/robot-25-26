@@ -43,7 +43,7 @@ public class LaunchTesting extends LinearOpMode{
         state = "intake"; // states are: "intake" and "outtake"
 
         drivetrain = new Drivetrain(hardwareMap); // wheels
-        spindex = new Spindex(hardwareMap, false); // drumServo, intake, flick
+        spindex = new Spindex(hardwareMap); // drumServo, intake, flick
 
         outtake = new Outtake(hardwareMap); // outtake, hoodServo
         vision = new Vision(hardwareMap, allianceIsRed()); // camera
@@ -95,16 +95,16 @@ public class LaunchTesting extends LinearOpMode{
             }
 
             if (gamepad2.x && !gamepad2Last.x) {
-                spindex.flickTime += 0.1;
+                spindex.outtakeTime += 0.05;
             } else if (gamepad2.y && !gamepad2Last.y) {
-                spindex.flickTime -= 0.1;
+                spindex.outtakeTime -= 0.05;
             }
-
-            if (gamepad2.dpad_right && !gamepad2Last.dpad_right) {
-                spindex.postFlickTime += 0.1;
-            } else if (gamepad2.dpad_left && !gamepad2Last.dpad_left) {
-                spindex.postFlickTime -= 0.1;
-            }
+//
+//            if (gamepad2.dpad_right && !gamepad2Last.dpad_right) {
+//                spindex.postFlickTime += 0.1;
+//            } else if (gamepad2.dpad_left && !gamepad2Last.dpad_left) {
+//                spindex.postFlickTime -= 0.1;
+//            }
 
             gamepad2Last.copy(gamepad2);
 
@@ -112,15 +112,15 @@ public class LaunchTesting extends LinearOpMode{
 
             telemetry.addLine();
 
-            telemetry.addData("hood servo position is", hoodServoPosition);
-            telemetry.addData("outtake speed is", outtakeSpeed);
-            telemetry.addData("outtake tolerance is", outtake.tolerance);
+            telemetry.addData("hood servo position (gp1 bumpers) is", hoodServoPosition);
+            telemetry.addData("outtake speed (gp1 x & y) is", outtakeSpeed);
+            telemetry.addData("outtake tolerance (gp1 dpad left & right) is", outtake.tolerance);
 
             telemetry.addLine();
 
-            telemetry.addData("the switch cooldown constant is", spindex.switchCooldownConstant);
-            telemetry.addData("the flick time is", spindex.flickTime);
-            telemetry.addData("the post flick time is", spindex.postFlickTime);
+            telemetry.addData("the switch cooldown constant (gp2 bumpers) is", spindex.switchCooldownConstant);
+            telemetry.addData("the outtake time (gp2 x & y) is", spindex.outtakeTime);
+//            telemetry.addData("the post flick time is", spindex.postFlickTime);
 
             telemetry.addLine("\n---------------------------\n");
 
