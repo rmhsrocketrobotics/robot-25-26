@@ -19,14 +19,14 @@ public class Outtake {
     public double targetTicksPerSecond;
 
     // the outtake must be going at +- this t/s for atTargetSpeed() to return true
-    public double tolerance = 50;
+    public double tolerance = 25;
     public Outtake(HardwareMap hardwareMap) {
         outtake1 = hardwareMap.get(DcMotorEx.class, "outtake1");
         outtake1.setDirection(DcMotor.Direction.REVERSE);
         outtake2 = hardwareMap.get(DcMotorEx.class, "outtake2");
         hoodServo = hardwareMap.get(Servo.class, "hoodServo");
 
-        MOTOR_VELO_PID = new PIDFCoefficients(25, 0, 0, 19);
+        MOTOR_VELO_PID = new PIDFCoefficients(60, 0, 0, 19); // previously was at 25
 
         MotorConfigurationType motorConfigurationType = outtake1.getMotorType().clone();
         motorConfigurationType.setAchieveableMaxRPMFraction(1.0);
@@ -79,19 +79,21 @@ public class Outtake {
 ////        if (aboveMaxPowerThreshold()) {
 ////            return outtake1.getVelocity() > 1600;
 ////        }
-//        double minTargetTicksPerSecond = targetTicksPerSecond - tolerance;
-//
-//        if (targetTicksPerSecond > 1900) {
-//            minTargetTicksPerSecond = 1900 - tolerance;
-//        }
-//
-//        double maxTargetTicksPerSecond = targetTicksPerSecond + tolerance;
-//        double currentTicksPerSecond = outtake1.getVelocity();
-//        return (currentTicksPerSecond > minTargetTicksPerSecond) && (currentTicksPerSecond < maxTargetTicksPerSecond);
-        if (targetTicksPerSecond > 1850) {
-            return outtake1.getVelocity() > 1850;
+        double minTargetTicksPerSecond = targetTicksPerSecond - tolerance;
+
+        if (targetTicksPerSecond > 1650) {
+            minTargetTicksPerSecond = 1650 - tolerance;
         }
-        return outtake1.getVelocity() > targetTicksPerSecond;
+
+        double maxTargetTicksPerSecond = targetTicksPerSecond + tolerance;
+
+        double currentTicksPerSecond = outtake1.getVelocity();
+
+        return (currentTicksPerSecond > minTargetTicksPerSecond) && (currentTicksPerSecond < maxTargetTicksPerSecond);
+//        if (targetTicksPerSecond > 1700) {
+//            return outtake1.getVelocity() > 1700;
+//        }
+//        return outtake1.getVelocity() > targetTicksPerSecond;
     }
 
     public void update(Spindex spindex) {
@@ -102,12 +104,11 @@ public class Outtake {
 //        }
 
 
-//        if (targetTicksPerSecond > 1800) {
-//            setOuttakePower(1);
-//        } else {
-//            setOuttakeVelocityTPS(targetTicksPerSecond);
-//        }
-        setOuttakeVelocityTPS(targetTicksPerSecond);
+        if (targetTicksPerSecond > 1650) {
+            setOuttakePower(1);
+        } else {
+            setOuttakeVelocityTPS(targetTicksPerSecond);
+        }
     }
 
     public void setOuttakeToSpeed(double speed, double lowerLimit) {

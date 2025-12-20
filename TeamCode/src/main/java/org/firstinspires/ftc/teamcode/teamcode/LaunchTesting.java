@@ -136,6 +136,7 @@ public class LaunchTesting extends LinearOpMode{
             vision.update(odometry.currentBearing);
             odometry.update();
 
+            spindex.printTelemetry(telemetry);
             outtake.printTelemetry(telemetry);
 //            vision.printTelemetry(telemetry);
             telemetry.addData("state", state);
@@ -148,9 +149,9 @@ public class LaunchTesting extends LinearOpMode{
     public void intakeMode() {
         if (spindex.shouldSwitchToOuttake) {
             state = "outtake";
-            spindex.setDrumState("outtake", 0);
+            //spindex.setDrumState("outtake", 0);
             //vision.seenGoalAprilTag = false;
-            spindex.ballQueue.clear();
+            //spindex.ballQueue.clear();
 
             spindex.queueBall("green");
             spindex.queueBall("green");
@@ -170,7 +171,7 @@ public class LaunchTesting extends LinearOpMode{
     public void outtakeMode() {
         if (spindex.shouldSwitchToIntake) {
             state = "intake";
-            spindex.setDrumState("intake", 0);
+            //spindex.setDrumState("intake", 0);
 
             outtake.targetTicksPerSecond = 0;
 

@@ -107,7 +107,7 @@ public class MainTeleop extends LinearOpMode{
             telemetry.addData("target speed m/s", requiredVelocity.speed);
             telemetry.addData("target angle degrees", requiredVelocity.direction);
 
-            outtake.setHoodServoToAngle(requiredVelocity.direction);
+            outtake.setHoodServoToAngle(50);//outtake.setHoodServoToAngle(requiredVelocity.direction);
 
             // state specific code goes in these methods
             if (state.equals("intake")) {
@@ -160,7 +160,7 @@ public class MainTeleop extends LinearOpMode{
 
         //vision.detectGoalAprilTag();
 
-        outtake.setOuttakeToSpeed(requiredVelocity.speed, 3.5);
+        outtake.targetTicksPerSecond = 1400;//outtake.setOuttakeToSpeed(requiredVelocity.speed, 3.5);
         //outtake.setOuttakeToSpeed(6.5, 3.5);
 
         if (gamepad2.left_bumper && !gamepad2Last.left_bumper) {

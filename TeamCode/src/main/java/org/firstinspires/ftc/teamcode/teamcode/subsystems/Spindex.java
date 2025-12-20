@@ -55,12 +55,15 @@ public class Spindex {
 
     // time it takes to go from position 0.0 to position 1.0 on the drum servo
     // (setting too low will mean the sensor sees the same ball multiple times)
-    public double switchCooldownConstant = 1.2;//1.75;
+    public double switchCooldownConstant = 1.4;//1.75;
 
     double switchCooldown = switchCooldownConstant;
 
     public ElapsedTime outtakeTimer;
-    public double outtakeTime = 0.3;
+    public double outtakeTime = 0.6;
+
+    public ElapsedTime spinUpTimer;
+    public double spinUpTime = 0.6;
 
     public boolean shouldSwitchToIntake = false;
     public boolean shouldSwitchToOuttake = false;
@@ -93,6 +96,7 @@ public class Spindex {
     public void init() {
         switchCooldownTimer = new ElapsedTime();
         outtakeTimer = new ElapsedTime(676767);
+        spinUpTimer = new ElapsedTime(676767);
         updateDrumPosition();
     }
 
@@ -320,7 +324,7 @@ public class Spindex {
 
     public void forceSwitchToStateIntake() {
         spindexState = SpindexState.INTAKE;
-        setDrumState("intake", 0);
+        setDrumState("intake", 2);
 
         ballStates[0] = BallState.EMPTY;
         ballStates[1] = BallState.EMPTY;
@@ -343,30 +347,26 @@ public class Spindex {
         shouldSwitchToIntake = false;
         shouldSwitchToOuttake = false;
 
-        if (drumIsSwitching()) {
-            updateDrumPosition();
-            return;
-        }
-
         switch(spindexState) {
             case INTAKE:
                 boolean ballDetected = detectBallIntake();
-                if (ballDetected) { // auto move drum when ball detected
+                if (ballDetected && !drumIsSwitching()) { // auto move drum when ball detected
                     nextDrumPosition();
                 }
 
-                if (drumIsFull()) { // auto switch to spinning up state when drum is full
+                if (drumIsFull() && !drumIsSwitching()) { // auto switch to spinning up state when drum is full
                     shouldSwitchToOuttake = true;
                     spindexState = SpindexState.SPIN_UP;
                     setDrumState("intake", 0);
                     ballQueue.clear();
+                    spinUpTimer.reset();
                 }
 
                 flick.setPower(0);
                 break;
 
             case SPIN_UP:
-                if (outtake.atTargetSpeed() && !ballQueue.isEmpty()) { // auto switch to outtake state when ready to launch
+                if (spinUpTimer.seconds() > spinUpTime && outtake.atTargetSpeed() && !ballQueue.isEmpty() && !drumIsSwitching()) { // auto switch to outtake state when ready to launch
                     spindexState = SpindexState.OUTTAKE;
 
                     ballQueue.removeFirst();
@@ -382,11 +382,14 @@ public class Spindex {
                     outtakeTimer.reset();
                 }
 
-                flick.setPower(1);
+                if (!drumIsSwitching()) {
+                    flick.setPower(1);
+                }
+
                 break;
 
             case OUTTAKE:
-                if (outtakeTimer.seconds() > outtakeTime) { // auto switch back to intake or spin up state
+                if (outtakeTimer.seconds() > outtakeTime && !drumIsSwitching()) { // auto switch back to intake or spin up state
                     if (drumIsEmpty()) {
                         spindexState = SpindexState.INTAKE;
                         shouldSwitchToIntake = true;
