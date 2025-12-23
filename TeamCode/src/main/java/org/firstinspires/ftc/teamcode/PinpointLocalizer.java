@@ -48,6 +48,22 @@ public final class PinpointLocalizer implements Localizer {
         txWorldPinpoint = initialPose;
     }
 
+    public PinpointLocalizer(HardwareMap hardwareMap, Pose2d initialPose) {
+        driver = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
+
+        driver.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
+        driver.setOffsets(-155, 0, DistanceUnit.MM);
+
+        initialParDirection = GoBildaPinpointDriver.EncoderDirection.REVERSED;
+        initialPerpDirection = GoBildaPinpointDriver.EncoderDirection.FORWARD;
+
+        driver.setEncoderDirections(initialParDirection, initialPerpDirection);
+
+        driver.resetPosAndIMU();
+
+        txWorldPinpoint = initialPose;
+    }
+
     @Override
     public void setPose(Pose2d pose) {
         txWorldPinpoint = pose.times(txPinpointRobot.inverse());

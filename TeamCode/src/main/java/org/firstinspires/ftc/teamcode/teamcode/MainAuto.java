@@ -34,6 +34,18 @@ public class MainAuto extends LinearOpMode {
         return true;
     }
 
+    public class RecordPose implements Action {
+        @Override
+        public boolean run(@NonNull TelemetryPacket packet) {
+            PoseStorage.currentPose = drive.localizer.getPose();
+            return true;
+        }
+    }
+
+    public Action recordPose() {
+        return new RecordPose();
+    }
+
     public class BallHandler { // combination of spindex and outtake
         Spindex spindex;
         Outtake outtake;
@@ -164,6 +176,9 @@ public class MainAuto extends LinearOpMode {
 
     public final double pi = Math.PI;
 
+    Pose2d beginPose;
+    MecanumDrive drive;
+
     VelConstraint lowVelocity;
     TrajectoryActionBuilder startToLaunchZone;
     TrajectoryActionBuilder launchZoneToSecondBalls;
@@ -173,7 +188,7 @@ public class MainAuto extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
-        Vision vision = new Vision(hardwareMap, allianceIsRed());
+        //Vision vision = new Vision(hardwareMap, allianceIsRed());
         BallHandler ballHandler = new BallHandler(hardwareMap);
 
         lowVelocity = new VelConstraint() {
@@ -225,16 +240,17 @@ public class MainAuto extends LinearOpMode {
         );
 
         // this is in place of a waitForStart() call
-        while (opModeInInit() && !isStopRequested()) {
-            vision.detectObelisk();
-            telemetry.addData("obelisk", vision.obeliskId);
-            telemetry.addLine("21 is gpp; 22 is pgp; 23 is ppg");
-        }
+        waitForStart();
+//        while (opModeInInit() && !isStopRequested()) {
+//            vision.detectObelisk();
+//            telemetry.addData("obelisk", vision.obeliskId);
+//            telemetry.addLine("21 is gpp; 22 is pgp; 23 is ppg");
+//        }
 
-        ballHandler.obeliskId = vision.obeliskId;
+        ballHandler.obeliskId = 22;//vision.obeliskId;
         ballHandler.init();
 
-        Actions.runBlocking(runAutonomous);
+        Actions.runBlocking(new RaceAction(runAutonomous, recordPose()));
     }
 
     public double angleBetweenPoints(Vector2d point1, Vector2d point2) {
@@ -245,8 +261,8 @@ public class MainAuto extends LinearOpMode {
     }
 
     public void farPath() {
-        Pose2d beginPose = new Pose2d(61, 13.5, Math.toRadians(180));
-        MecanumDrive drive = new MecanumDrive(hardwareMap, beginPose);
+        beginPose = new Pose2d(61, 13.5, Math.toRadians(180));
+        drive = new MecanumDrive(hardwareMap, beginPose);
 
         Vector2d launchPosition = new Vector2d(56, 14.5);
         double launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-66, 58));
@@ -283,8 +299,8 @@ public class MainAuto extends LinearOpMode {
     public void closePath() {
         int ballPickupYPos = 27;
 
-        Pose2d beginPose = new Pose2d(-61, 36, Math.toRadians(180));
-        MecanumDrive drive = new MecanumDrive(hardwareMap, beginPose);
+        beginPose = new Pose2d(-61, 36, Math.toRadians(180));
+        drive = new MecanumDrive(hardwareMap, beginPose);
 
         Vector2d launchPosition = new Vector2d(-25, ballPickupYPos);
         double launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-58, 58));

@@ -8,12 +8,21 @@ import static java.lang.Math.tan;
 import static java.lang.Math.toDegrees;
 import static java.lang.Math.toRadians;
 
+import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Position;
+import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
+import org.firstinspires.ftc.teamcode.Localizer;
+import org.firstinspires.ftc.teamcode.PinpointLocalizer;
+import org.firstinspires.ftc.teamcode.teamcode.PoseStorage;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagGameDatabase;
@@ -26,59 +35,47 @@ import java.util.concurrent.TimeUnit;
 public class Vision {
     private boolean initialized = false;
     private AprilTagProcessor aprilTag;
-    public VisionPortal visionPortal;
-    private double targetAbsoluteBearing = 0;
+    private VisionPortal visionPortal;
+//    private double targetAbsoluteBearing = 0;
     public int obeliskId = 22; // guess that the obelisk is 22 if we aren't able to detect it
     private final boolean isRedAlliance;
     public double goalDistance = 0;
+    public boolean canSeeGoalAprilTag = false;
     public boolean seenGoalAprilTag = false;
+
+    Localizer localizer;
+    public double currentBearing = 0;
+
+    Vector2d goalPosition;
+
+
     public Vision(HardwareMap hardwareMap, boolean isRedAlliance) {
+        /// see ConceptAprilTagLocalization.java
 
-        AprilTagLibrary.Builder myAprilTagLibraryBuilder;
-        AprilTagProcessor.Builder myAprilTagProcessorBuilder;
-        AprilTagLibrary myAprilTagLibrary;
+        Position cameraPosition = new Position(DistanceUnit.INCH,
+                0, 6, 12, 0);
+        YawPitchRollAngles cameraOrientation = new YawPitchRollAngles(AngleUnit.DEGREES,
+                0, -90, 0, 0);
 
-        // Create a new AprilTagLibrary.Builder object and assigns it to a variable.
-        myAprilTagLibraryBuilder = new AprilTagLibrary.Builder();
+        aprilTag = new AprilTagProcessor.Builder()
+                .setCameraPose(cameraPosition, cameraOrientation)
+                .build();
 
-        // Add all the tags from the given AprilTagLibrary to the AprilTagLibrary.Builder.
-        // Get the AprilTagLibrary for the current season.
-        myAprilTagLibraryBuilder.addTags(AprilTagGameDatabase.getCurrentGameTagLibrary());
-
-        // Create a new AprilTagMetdata object and assign it to a variable.
-        //myAprilTagMetadata = new AprilTagMetadata(20, "please work i beg", 6.5, DistanceUnit.INCH);
-
-        // Add a tag to the AprilTagLibrary.Builder.
-        //myAprilTagLibraryBuilder.addTag(myAprilTagMetadata);
-
-        // Build the AprilTag library and assign it to a variable.
-        myAprilTagLibrary = myAprilTagLibraryBuilder.build();
-
-        // Create a new AprilTagProcessor.Builder object and assign it to a variable.
-        myAprilTagProcessorBuilder = new AprilTagProcessor.Builder();
-
-        // Set the tag library.
-        myAprilTagProcessorBuilder.setTagLibrary(myAprilTagLibrary);
-
-        // Build the AprilTag processor and assign it to a variable.
-        aprilTag = myAprilTagProcessorBuilder.build();
-
-        // Create the vision portal by using a builder.
-        VisionPortal.Builder builder = new VisionPortal.Builder();
-
-        // Set the camera (webcam vs. built-in RC phone camera).
-        builder.setCamera(hardwareMap.get(WebcamName.class, "camera"));
-
-        // Set and enable the processor.
-        builder.addProcessor(aprilTag);
-
-        // Build the Vision Portal, using the above settings.
-        visionPortal = builder.build();
-
-        // Disable or re-enable the aprilTag processor at any time.
+        visionPortal = new VisionPortal.Builder()
+                .setCamera(hardwareMap.get(WebcamName.class, "camera"))
+                .addProcessor(aprilTag)
+                .build();
         visionPortal.setProcessorEnabled(aprilTag, true);
 
         this.isRedAlliance = isRedAlliance;
+
+        localizer = new PinpointLocalizer(hardwareMap, PoseStorage.currentPose);
+
+        if (isRedAlliance) {
+            goalPosition = new Vector2d(-58, 55);
+        } else {
+            goalPosition = new Vector2d(-58, -55);
+        }
     }
 
     public void init() {
@@ -91,36 +88,42 @@ public class Vision {
     }
 
     public void detectGoalAprilTag(double currentBearing) {
-        List<AprilTagDetection> detections = aprilTag.getDetections();
-        for (AprilTagDetection detection : detections) {
+        canSeeGoalAprilTag = false;
+
+        for (AprilTagDetection detection : aprilTag.getDetections()) {
+
             if ( (detection.id == 24) || (detection.id == 20) ) {
-                targetAbsoluteBearing = currentBearing + detection.ftcPose.bearing;
+                double xPos = detection.robotPose.getPosition().x;
+                double yPos = detection.robotPose.getPosition().y;
+                double heading = detection.robotPose.getOrientation().getYaw();
+                localizer.setPose(new Pose2d(xPos, yPos, heading));
 
-                double range = detection.ftcPose.range / 39.37;
+//                targetAbsoluteBearing = currentBearing + detection.ftcPose.bearing;
 
-                // TODO: figure out which one of these is correct (does ftcPose.range return actual distance or just distance on the x and y axis?? idk)
-                goalDistance = range;
-                //goalDistance = Math.sqrt((range * range) - (0.4572 * 0.4572)); // triangles
+//                double range = detection.ftcPose.range / 39.37;
+//
+//                // TODO: figure out which one of these is correct (does ftcPose.range return actual distance or just distance on the x and y axis?? idk)
+//                goalDistance = range;
+//                //goalDistance = Math.sqrt((range * range) - (0.4572 * 0.4572)); // triangles
 
+
+                canSeeGoalAprilTag = true;
                 seenGoalAprilTag = true;
             }
         }
     }
 
-    private double getTargetRelativeBearing(double currentBearing) {
-        return targetAbsoluteBearing - currentBearing;
-    }
+//    private double getTargetRelativeBearing(double currentBearing) {
+//        return targetAbsoluteBearing - currentBearing;
+//    }
 
     /**
      * sets drivetrain powers to try to face the goal
      * */
-    public void faceGoal(Drivetrain drivetrain, double currentBearing) {
-        double bearingError = getTargetRelativeBearing(currentBearing);
-        if (!isRedAlliance) {
-            bearingError += 6;
-        } else {
-            bearingError -= 6;
-        }
+    public void faceGoal(Drivetrain drivetrain) {
+        double targetBearing = CustomMath.angleBetweenPoints(localizer.getPose().component1(), goalPosition);
+
+        double bearingError = targetBearing - localizer.getPose().component2().toDouble();
 
         double rotationPower = CustomMath.clamp(bearingError * 0.03, -0.25, 0.25);
         drivetrain.setDrivetrainPower(0, 0, -rotationPower);
@@ -142,11 +145,13 @@ public class Vision {
 
     public void printTelemetry(Telemetry telemetry) {
         telemetry.addData("obelisk id", obeliskId);
-        telemetry.addData("target absolute bearing", targetAbsoluteBearing);
+//        telemetry.addData("target absolute bearing", targetAbsoluteBearing);
         telemetry.addData("goal distance", goalDistance);
+
+        telemetry.addData("bearing", currentBearing);
     }
 
-    public void update(double currentBearing) {
+    public void update() {
         if (visionPortal.getCameraState() == VisionPortal.CameraState.STREAMING && !initialized) {
             init();
             initialized = true;
@@ -155,6 +160,13 @@ public class Vision {
         if (initialized) {
             detectGoalAprilTag(currentBearing);
         }
+
+        if (seenGoalAprilTag) {
+            goalDistance = CustomMath.distanceBetweenPoints(localizer.getPose().component1(), goalPosition);
+        }
+
+        localizer.update();
+        currentBearing = Math.toDegrees(localizer.getPose().heading.toDouble());
     }
 
     public Velocity getRequiredVelocity() {

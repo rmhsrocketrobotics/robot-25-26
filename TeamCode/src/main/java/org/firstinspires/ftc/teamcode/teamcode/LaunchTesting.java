@@ -7,7 +7,6 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Drivetrain;
-import org.firstinspires.ftc.teamcode.teamcode.subsystems.Odometry;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Outtake;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Spindex;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Velocity;
@@ -22,7 +21,6 @@ public class LaunchTesting extends LinearOpMode{
     Spindex spindex;
     Outtake outtake;
     Vision vision;
-    Odometry odometry;
     Gamepad gamepad1Last;
     Gamepad gamepad2Last;
 
@@ -47,7 +45,6 @@ public class LaunchTesting extends LinearOpMode{
 
         outtake = new Outtake(hardwareMap); // outtake, hoodServo
         vision = new Vision(hardwareMap, allianceIsRed()); // camera
-        odometry = new Odometry(hardwareMap); // pinpoint
 
         gamepad1Last = new Gamepad();
         gamepad2Last = new Gamepad();
@@ -133,8 +130,7 @@ public class LaunchTesting extends LinearOpMode{
 
             spindex.update(outtake);
             outtake.update(spindex);
-            vision.update(odometry.currentBearing);
-            odometry.update();
+            vision.update();
 
             spindex.printTelemetry(telemetry);
             outtake.printTelemetry(telemetry);
