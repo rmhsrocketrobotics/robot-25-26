@@ -21,8 +21,8 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.teamcode.MecanumDrive;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Outtake;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Spindex;
+import org.firstinspires.ftc.teamcode.teamcode.subsystems.State;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Velocity;
-import org.firstinspires.ftc.teamcode.teamcode.subsystems.Vision;
 
 public class MainAuto extends LinearOpMode {
 
@@ -76,8 +76,6 @@ public class MainAuto extends LinearOpMode {
                 if (!initialized) {
                     initialized = true;
 
-                    spindex.setDrumState("outtake", 0);
-
                     if (obeliskId == 21) {
                         spindex.queueBall("green");
                         spindex.queueBall("purple");
@@ -93,11 +91,12 @@ public class MainAuto extends LinearOpMode {
                         spindex.queueBall("purple");
                         spindex.queueBall("green");
                     }
+
                     outtake.setOuttakeToSpeed(launchVelocity.speed, 3.5);
                     outtake.setHoodServoToAngle(launchVelocity.direction);
                 }
 
-                spindex.update(outtake);
+                spindex.update(outtake, State.OUTTAKE);
                 outtake.update(spindex);
 
                 outtake.printTelemetry(telemetry);
@@ -126,13 +125,13 @@ public class MainAuto extends LinearOpMode {
 
                     outtake.targetTicksPerSecond = 0;
 
-                    //spindex.ballStates = new String[] {"empty", "empty", "empty"};
                     if (this.resetDrum) {
-                        spindex.setDrumState("intake", 0);
+                        spindex.recheckDrum();
                     }
-                    spindex.intake.setPower(1);
+
+                    spindex.intakeMotor.setPower(1);
                 }
-                spindex.update(outtake);
+                spindex.update(outtake, State.INTAKE);
                 outtake.update(spindex);
 
                 return true;
@@ -155,15 +154,14 @@ public class MainAuto extends LinearOpMode {
                 if (!initialized) {
                     initialized = true;
 
-                    spindex.intake.setPower(0);
-                    spindex.setDrumState("outtake", 0);
+                    spindex.intakeMotor.setPower(0);
 
                     outtake.setOuttakeToSpeed(launchVelocity.speed, 3.5);
                     outtake.setHoodServoToAngle(launchVelocity.direction);
 
                 }
 
-                spindex.update(outtake);
+                spindex.update(outtake, State.OUTTAKE);
                 outtake.update(spindex);
 
                 return true;

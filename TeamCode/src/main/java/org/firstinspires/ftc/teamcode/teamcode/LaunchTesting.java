@@ -9,14 +9,14 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Drivetrain;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Outtake;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Spindex;
-import org.firstinspires.ftc.teamcode.teamcode.subsystems.Velocity;
+import org.firstinspires.ftc.teamcode.teamcode.subsystems.State;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Vision;
 
 // this class is literally just a copy of mainteleop, but it has been changed to test the shooter
 // i deleted like most of the normal teleop code from here dw its fine probably
 @TeleOp
 public class LaunchTesting extends LinearOpMode{
-    String state;
+    State state;
     Drivetrain drivetrain;
     Spindex spindex;
     Outtake outtake;
@@ -38,7 +38,7 @@ public class LaunchTesting extends LinearOpMode{
         FtcDashboard dashboard = FtcDashboard.getInstance();
         telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
 
-        state = "intake"; // states are: "intake" and "outtake"
+        state = State.INTAKE;
 
         drivetrain = new Drivetrain(hardwareMap); // wheels
         spindex = new Spindex(hardwareMap); // drumServo, intake, flick
@@ -122,13 +122,17 @@ public class LaunchTesting extends LinearOpMode{
             telemetry.addLine("\n---------------------------\n");
 
             // state specific code goes in these methods
-            if (state.equals("intake")) {
-                intakeMode();
-            } else if (state.equals("outtake")) {
-                outtakeMode();
+            switch (state) {
+                case INTAKE:
+                    intakeMode();
+                    break;
+
+                case OUTTAKE:
+                    outtakeMode();
+                    break;
             }
 
-            spindex.update(outtake);
+            spindex.update(outtake, state);
             outtake.update(spindex);
             vision.update();
 
@@ -144,29 +148,27 @@ public class LaunchTesting extends LinearOpMode{
 
     public void intakeMode() {
         if (spindex.shouldSwitchToOuttake) {
-            state = "outtake";
+            state = State.OUTTAKE;
             //spindex.setDrumState("outtake", 0);
             //vision.seenGoalAprilTag = false;
             //spindex.ballQueue.clear();
 
-            spindex.queueBall("green");
-            spindex.queueBall("green");
-            spindex.queueBall("green");
+            spindex.shootAllBalls();
 
-            spindex.intake.setPower(0);
+            spindex.intakeMotor.setPower(0);
 
             return;
         }
         if (pauseIntake) {
-            spindex.intake.setPower(1);
+            spindex.intakeMotor.setPower(1);
         } else {
-            spindex.intake.setPower(0);
+            spindex.intakeMotor.setPower(0);
         }
     }
 
     public void outtakeMode() {
         if (spindex.shouldSwitchToIntake) {
-            state = "intake";
+            state = State.INTAKE;
             //spindex.setDrumState("intake", 0);
 
             outtake.targetTicksPerSecond = 0;

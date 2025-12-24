@@ -31,7 +31,7 @@ public class TuningController {
     public static double ZSTATE7_RANDOM_3_DURATION = 2 + 2;
     public static double ZSTATE8_REST_DURATION = 1 + 2;
 
-    enum State {
+    private enum State {
         RAMPING_UP,
         COASTING_1,
         RAMPING_DOWN,

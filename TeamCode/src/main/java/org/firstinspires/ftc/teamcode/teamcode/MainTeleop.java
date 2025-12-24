@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
+import org.firstinspires.ftc.teamcode.teamcode.subsystems.State;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Velocity;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Vision;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Spindex;
@@ -10,7 +11,7 @@ import org.firstinspires.ftc.teamcode.teamcode.subsystems.Outtake;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Drivetrain;
 
 public class MainTeleop extends LinearOpMode{
-    String state;
+    State state;
     Drivetrain drivetrain;
     Spindex spindex;
     Outtake outtake;
@@ -24,7 +25,7 @@ public class MainTeleop extends LinearOpMode{
 
     @Override
     public void runOpMode() {
-        state = "intake"; // states are: "intake" and "outtake"
+        state = State.INTAKE;
 
         drivetrain = new Drivetrain(hardwareMap); // wheels
         spindex = new Spindex(hardwareMap); // drumServo, intake, flick
@@ -91,13 +92,13 @@ public class MainTeleop extends LinearOpMode{
 //            }
 
             if (gamepad2.left_trigger > 0.1) { // backspin intake
-                spindex.intake.setPower(-gamepad2.left_trigger);
+                spindex.intakeMotor.setPower(-gamepad2.left_trigger);
 
             } else if ((gamepad2.right_trigger > 0.1)) { // spin intake
-                spindex.intake.setPower(gamepad2.right_trigger);
+                spindex.intakeMotor.setPower(gamepad2.right_trigger);
 
             } else {
-                spindex.intake.setPower(0);
+                spindex.intakeMotor.setPower(0);
             }
 
             Velocity requiredVelocity = vision.getRequiredVelocity();
@@ -107,10 +108,14 @@ public class MainTeleop extends LinearOpMode{
             outtake.setHoodServoToAngle(50);//outtake.setHoodServoToAngle(requiredVelocity.direction);
 
             // state specific code goes in these methods
-            if (state.equals("intake")) {
-                intakeMode();
-            } else if (state.equals("outtake")) {
-                outtakeMode(requiredVelocity);
+            switch (state) {
+                case INTAKE:
+                    intakeMode();
+                    break;
+
+                case OUTTAKE:
+                    outtakeMode(requiredVelocity);
+                    break;
             }
 
 //            if (gamepad2.y) {
@@ -123,33 +128,36 @@ public class MainTeleop extends LinearOpMode{
 
             gamepad2Last.copy(gamepad2);
 
-            spindex.update(outtake);
+            spindex.update(outtake, state);
             outtake.update(spindex);
             vision.update();
 
             //drivetrain.printTelemetry(telemetry);
             outtake.printTelemetry(telemetry);
             vision.printTelemetry(telemetry);
-            telemetry.addData("state", state);
+            if (state == State.INTAKE) {
+                telemetry.addLine("state: intake");
+            } else {
+                telemetry.addLine("state: outtake");
+            }
+
             telemetry.update();
         }
     }
 
     public void intakeMode() {
         if ((gamepad2.dpad_up && !gamepad2Last.dpad_up) || spindex.shouldSwitchToOuttake) {
-            state = "outtake";
-            spindex.forceSwitchToStateOuttake();
-            return;
+            state = State.OUTTAKE;
+
         } else if (gamepad2.dpad_down && !gamepad2Last.dpad_down) {
-            spindex.forceSwitchToStateIntake();
-            return;
+            spindex.recheckDrum();
         }
     }
 
     public void outtakeMode(Velocity requiredVelocity) {
         if ((gamepad2.dpad_down && !gamepad2Last.dpad_down) || spindex.shouldSwitchToIntake) {
-            state = "intake";
-            spindex.forceSwitchToStateIntake();
+            state = State.INTAKE;
+
             outtake.targetTicksPerSecond = 0;
             return;
         }
@@ -164,6 +172,9 @@ public class MainTeleop extends LinearOpMode{
         }
         if (gamepad2.right_bumper && !gamepad2Last.right_bumper) {
             spindex.queueBall("green");
+        }
+        if (gamepad2.y) {
+            spindex.shootAllBalls();
         }
     }
 }
