@@ -10,7 +10,7 @@ import org.firstinspires.ftc.teamcode.teamcode.subsystems.Spindex;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Outtake;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Drivetrain;
 
-public class MainTeleop extends LinearOpMode{
+public class MainTeleop extends LinearOpMode {
     State state;
     Drivetrain drivetrain;
     Spindex spindex;
@@ -59,7 +59,7 @@ public class MainTeleop extends LinearOpMode{
         while (opModeIsActive()) {
             // GAMEPAD 1 CODE:
             if (gamepad1.y && vision.seenGoalAprilTag) {
-                vision.faceGoal(drivetrain);
+                vision.faceGoal(drivetrain, telemetry);
             } else {
                 if (gamepad1.left_bumper) {
                     // speed mode

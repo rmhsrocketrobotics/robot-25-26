@@ -11,6 +11,7 @@ import static java.lang.Math.toRadians;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
@@ -36,19 +37,19 @@ public class Vision {
     private boolean initialized = false;
     private AprilTagProcessor aprilTag;
     private VisionPortal visionPortal;
-//    private double targetAbsoluteBearing = 0;
+    private Localizer localizer;
+    private final Vector2d goalPosition;
+    private AprilTagDetection latestDetection;
+    private Pose2d lastPose;
+    private boolean faceGoalCalledThisLoop = false;
+    private boolean faceGoalCalledLastLoop = false;
+    private ElapsedTime faceGoalTimer = new ElapsedTime();
+    private double faceGoalStartDistance;
+
     public int obeliskId = 22; // guess that the obelisk is 22 if we aren't able to detect it
-    private final boolean isRedAlliance;
     public double goalDistance = 0;
     public boolean canSeeGoalAprilTag = false;
     public boolean seenGoalAprilTag = false;
-
-    Localizer localizer;
-    public double currentBearing = 0;
-
-    Vector2d goalPosition;
-
-    private AprilTagDetection latestDetection;
 
 
     public Vision(HardwareMap hardwareMap, boolean isRedAlliance) {
@@ -69,9 +70,9 @@ public class Vision {
                 .build();
         visionPortal.setProcessorEnabled(aprilTag, true);
 
-        this.isRedAlliance = isRedAlliance;
-
         localizer = new PinpointLocalizer(hardwareMap, PoseStorage.currentPose);
+
+        lastPose = localizer.getPose();
 
         if (isRedAlliance) {
             goalPosition = new Vector2d(-58, 55);
@@ -80,7 +81,7 @@ public class Vision {
         }
     }
 
-    public void init() {
+    private void initCamera() {
         ExposureControl exposureControl = visionPortal.getCameraControl(ExposureControl.class);
         exposureControl.setMode(ExposureControl.Mode.Manual);
         exposureControl.setExposure(5, TimeUnit.MILLISECONDS);
@@ -89,7 +90,7 @@ public class Vision {
         gainControl.setGain(100);
     }
 
-    public void detectGoalAprilTag(double currentBearing) {
+    public void detectGoalAprilTag() {
         canSeeGoalAprilTag = false;
 
         for (AprilTagDetection detection : aprilTag.getDetections()) {
@@ -98,7 +99,7 @@ public class Vision {
                 latestDetection = detection;
 //                double xPos = detection.robotPose.getPosition().x;
 //                double yPos = detection.robotPose.getPosition().y;
-//                double heading = detection.robotPose.getOrientation().getYaw();
+//                double heading = detection.robotPose.getOrientation().getYaw(AngleUnit.RADIANS);
 //                localizer.setPose(new Pose2d(xPos, yPos, heading));
 
 //                targetAbsoluteBearing = currentBearing + detection.ftcPose.bearing;
@@ -123,12 +124,32 @@ public class Vision {
     /**
      * sets drivetrain powers to try to face the goal
      * */
-    public void faceGoal(Drivetrain drivetrain) {
+    public void faceGoal(Drivetrain drivetrain, Telemetry telemetry) {
+        faceGoalCalledThisLoop = true;
+
         double targetBearing = CustomMath.angleBetweenPoints(localizer.getPose().component1(), goalPosition);
+        double currentBearing = localizer.getPose().component2().toDouble();
 
-        double bearingError = targetBearing - localizer.getPose().component2().toDouble();
+        if (!faceGoalCalledLastLoop) {
+            faceGoalTimer.reset();
+            faceGoalStartDistance = targetBearing - currentBearing;
+        }
 
-        double rotationPower = CustomMath.clamp(bearingError * 0.03, -0.25, 0.25);
+        // use motion profiling to change targetBearing to a good value
+        double maxAcceleration = Math.PI / 2; // TODO: tune ts
+        double maxVelocity = Math.PI / 2;
+
+        // only use motion profiling if the error is bigger than 30 degrees
+        if (false){ //if (Math.abs(targetBearing - currentBearing) > Math.PI / 6) { // TODO: tune the proportional controller and then change this line back
+            targetBearing = CustomMath.motionProfile(maxAcceleration, maxVelocity, faceGoalStartDistance, faceGoalTimer.seconds());
+            telemetry.addLine("using motion profiling: true");
+        } else {
+            telemetry.addLine("using motion profiling: false");
+        }
+
+
+        double bearingError = targetBearing - currentBearing;
+        double rotationPower = CustomMath.clamp(bearingError, -0.5, 0.5);
         drivetrain.setDrivetrainPower(0, 0, -rotationPower);
     }
 
@@ -151,30 +172,34 @@ public class Vision {
 //        telemetry.addData("target absolute bearing", targetAbsoluteBearing);
         telemetry.addData("goal distance", goalDistance);
 
-        telemetry.addData("bearing", currentBearing);
+//        telemetry.addData("bearing", currentBearing);
 
         telemetry.addData("odo pose", "x: " + localizer.getPose().position.x + " y: " + localizer.getPose().position.y + " heading: " + localizer.getPose().heading.toDouble());
         if (canSeeGoalAprilTag) {
-            telemetry.addData("april tag pose", "x: " + latestDetection.robotPose.getPosition().x + " y: " + latestDetection.robotPose.getPosition().y + " heading: " + latestDetection.robotPose.getOrientation().toString());
+            telemetry.addData("april tag pose", "x: " + latestDetection.robotPose.getPosition().x + " y: " + latestDetection.robotPose.getPosition().y + " heading: " + latestDetection.robotPose.getOrientation().getYaw(AngleUnit.RADIANS));
         }
     }
 
     public void update() {
+        localizer.update();
+
         if (visionPortal.getCameraState() == VisionPortal.CameraState.STREAMING && !initialized) {
-            init();
+            initCamera();
             initialized = true;
         }
 
         if (initialized) {
-            detectGoalAprilTag(currentBearing);
+            detectGoalAprilTag();
         }
 
         if (seenGoalAprilTag) {
-            goalDistance = CustomMath.distanceBetweenPoints(localizer.getPose().component1(), goalPosition);
+            goalDistance = CustomMath.distanceBetweenPoints(localizer.getPose().component1(), goalPosition) / 39.37;
         }
 
-        localizer.update();
-        currentBearing = Math.toDegrees(localizer.getPose().heading.toDouble());
+        faceGoalCalledLastLoop = faceGoalCalledThisLoop;
+        faceGoalCalledThisLoop = false;
+
+        lastPose = localizer.getPose();
     }
 
     public Velocity getRequiredVelocity() {
