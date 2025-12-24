@@ -91,11 +91,11 @@ public class LaunchTesting extends LinearOpMode{
                 spindex.switchCooldownConstant -= 0.1;
             }
 
-            if (gamepad2.x && !gamepad2Last.x) {
-                spindex.outtakeTime += 0.05;
-            } else if (gamepad2.y && !gamepad2Last.y) {
-                spindex.outtakeTime -= 0.05;
-            }
+//            if (gamepad2.x && !gamepad2Last.x) {
+//                spindex.outtakeTime += 0.05;
+//            } else if (gamepad2.y && !gamepad2Last.y) {
+//                spindex.outtakeTime -= 0.05;
+//            }
 //
 //            if (gamepad2.dpad_right && !gamepad2Last.dpad_right) {
 //                spindex.postFlickTime += 0.1;
@@ -116,7 +116,7 @@ public class LaunchTesting extends LinearOpMode{
             telemetry.addLine();
 
             telemetry.addData("the switch cooldown constant (gp2 bumpers) is", spindex.switchCooldownConstant);
-            telemetry.addData("the outtake time (gp2 x & y) is", spindex.outtakeTime);
+            //telemetry.addData("the outtake time (gp2 x & y) is", spindex.outtakeTime);
 //            telemetry.addData("the post flick time is", spindex.postFlickTime);
 
             telemetry.addLine("\n---------------------------\n");

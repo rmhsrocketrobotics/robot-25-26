@@ -48,14 +48,16 @@ public class Vision {
 
     Vector2d goalPosition;
 
+    private AprilTagDetection latestDetection;
+
 
     public Vision(HardwareMap hardwareMap, boolean isRedAlliance) {
         /// see ConceptAprilTagLocalization.java
 
         Position cameraPosition = new Position(DistanceUnit.INCH,
-                0, 6, 12, 0);
+                0, 7, 12, 0);
         YawPitchRollAngles cameraOrientation = new YawPitchRollAngles(AngleUnit.DEGREES,
-                0, -90, 0, 0);
+                0, -90 + 22, 0, 0);
 
         aprilTag = new AprilTagProcessor.Builder()
                 .setCameraPose(cameraPosition, cameraOrientation)
@@ -93,10 +95,11 @@ public class Vision {
         for (AprilTagDetection detection : aprilTag.getDetections()) {
 
             if ( (detection.id == 24) || (detection.id == 20) ) {
-                double xPos = detection.robotPose.getPosition().x;
-                double yPos = detection.robotPose.getPosition().y;
-                double heading = detection.robotPose.getOrientation().getYaw();
-                localizer.setPose(new Pose2d(xPos, yPos, heading));
+                latestDetection = detection;
+//                double xPos = detection.robotPose.getPosition().x;
+//                double yPos = detection.robotPose.getPosition().y;
+//                double heading = detection.robotPose.getOrientation().getYaw();
+//                localizer.setPose(new Pose2d(xPos, yPos, heading));
 
 //                targetAbsoluteBearing = currentBearing + detection.ftcPose.bearing;
 
@@ -149,6 +152,11 @@ public class Vision {
         telemetry.addData("goal distance", goalDistance);
 
         telemetry.addData("bearing", currentBearing);
+
+        telemetry.addData("odo pose", "x: " + localizer.getPose().position.x + " y: " + localizer.getPose().position.y + " heading: " + localizer.getPose().heading.toDouble());
+        if (canSeeGoalAprilTag) {
+            telemetry.addData("april tag pose", "x: " + latestDetection.robotPose.getPosition().x + " y: " + latestDetection.robotPose.getPosition().y + " heading: " + latestDetection.robotPose.getOrientation().toString());
+        }
     }
 
     public void update() {

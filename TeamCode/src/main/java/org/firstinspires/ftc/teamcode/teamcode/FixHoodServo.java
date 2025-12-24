@@ -2,26 +2,15 @@ package org.firstinspires.ftc.teamcode.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.Gamepad;
-import com.qualcomm.robotcore.util.ElapsedTime;
-
-import org.firstinspires.ftc.teamcode.teamcode.subsystems.Odometry;
-import org.firstinspires.ftc.teamcode.teamcode.subsystems.Velocity;
-import org.firstinspires.ftc.teamcode.teamcode.subsystems.Vision;
-import org.firstinspires.ftc.teamcode.teamcode.subsystems.Spindex;
-import org.firstinspires.ftc.teamcode.teamcode.subsystems.Outtake;
-import org.firstinspires.ftc.teamcode.teamcode.subsystems.Drivetrain;
-import org.firstinspires.ftc.vision.VisionPortal;
+import com.qualcomm.robotcore.hardware.Servo;
 
 @TeleOp(group = "!main")
 
 public class FixHoodServo extends LinearOpMode{
 
-    Outtake outtake;
-
     @Override
     public void runOpMode() {
-        outtake = new Outtake(hardwareMap); // outtake, hoodServo
+        Servo servo = hardwareMap.get(Servo.class, "hoodServo");
 
         telemetry.setMsTransmissionInterval(200); //default 250
 
@@ -29,8 +18,8 @@ public class FixHoodServo extends LinearOpMode{
 
 
         while (opModeIsActive()) {
-            outtake.hoodServo.setPosition((gamepad2.left_stick_y / 2) + 0.5);
-            telemetry.addData("hood servo position", outtake.hoodServo.getPosition());
+            servo.setPosition((gamepad2.left_stick_y / 2) + 0.5);
+            telemetry.addData("hood servo position", servo.getPosition());
             telemetry.update();
         }
     }

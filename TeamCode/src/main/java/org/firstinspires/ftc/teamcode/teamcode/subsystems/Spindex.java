@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.PwmControl;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -40,7 +41,7 @@ public class Spindex {
 
     public DcMotor intake;
 
-    public DcMotor flick;
+    public Servo flick;
 
     NormalizedColorSensor intakeColorSensor;
 
@@ -59,14 +60,15 @@ public class Spindex {
 
     double switchCooldown = switchCooldownConstant;
 
-    public ElapsedTime outtakeTimer;
-    public double outtakeTime = 0.6;
-
-    public ElapsedTime spinUpTimer;
-    public double spinUpTime = 0.6;
+    public ElapsedTime flickTimer;
+    // time that the flick has to go up and down
+    public double flickTime = 0.7;
 
     public boolean shouldSwitchToIntake = false;
     public boolean shouldSwitchToOuttake = false;
+
+    private boolean forceSwitchIntake;
+    private boolean forceSwitchOuttake;
 
     /**
      * should run BEFORE waitForStart()
@@ -78,8 +80,7 @@ public class Spindex {
         intake = hardwareMap.get(DcMotor.class, "intake");
         //intake.setDirection(DcMotor.Direction.REVERSE);
 
-        flick = hardwareMap.get(DcMotor.class, "flick");
-        flick.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        flick = hardwareMap.get(Servo.class, "flick");
 
         intakeColorSensor = hardwareMap.get(NormalizedColorSensor.class, "intakeColorSensor");
         intakeColorSensor.setGain(15);
@@ -95,8 +96,7 @@ public class Spindex {
      * */
     public void init() {
         switchCooldownTimer = new ElapsedTime();
-        outtakeTimer = new ElapsedTime(676767);
-        spinUpTimer = new ElapsedTime(676767);
+        flickTimer = new ElapsedTime(676767);
         updateDrumPosition();
     }
 
@@ -161,6 +161,10 @@ public class Spindex {
 
     public boolean drumIsFull() {
         return ballStates[0] != BallState.EMPTY && ballStates[1] != BallState.EMPTY && ballStates[2] != BallState.EMPTY;
+    }
+
+    public boolean drumIsFlicking() {
+        return flickTimer.seconds() > flickTime;
     }
 
     public void setDrumState(String newDrumMode) {
@@ -323,21 +327,25 @@ public class Spindex {
     }
 
     public void forceSwitchToStateIntake() {
-        spindexState = SpindexState.INTAKE;
-        setDrumState("intake", 2);
+        forceSwitchIntake = true;
 
-        ballStates[0] = BallState.EMPTY;
-        ballStates[1] = BallState.EMPTY;
-        ballStates[2] = BallState.EMPTY;
-
-        flick.setPower(0);
+//        spindexState = SpindexState.INTAKE;
+//        setDrumState("intake", 2);
+//
+//        ballStates[0] = BallState.EMPTY;
+//        ballStates[1] = BallState.EMPTY;
+//        ballStates[2] = BallState.EMPTY;
+//
+//        //flick.setPower(0);
     }
 
     public void forceSwitchToStateOuttake() {
-        spindexState = SpindexState.SPIN_UP;
-        setDrumState("intake", 0);
-        ballQueue.clear();
-        flick.setPower(1);
+        forceSwitchOuttake = true;
+
+//        spindexState = SpindexState.SPIN_UP;
+//        setDrumState("intake", 0);
+//        ballQueue.clear();
+//        //flick.setPower(1);
     }
 
     /**
@@ -346,6 +354,12 @@ public class Spindex {
     public void update(Outtake outtake) {
         shouldSwitchToIntake = false;
         shouldSwitchToOuttake = false;
+
+        if (flickTimer.seconds() < (flickTime / 2)) {
+            flick.setPosition(0.2);
+        } else {
+            flick.setPosition(0.5);
+        }
 
         switch(spindexState) {
             case INTAKE:
@@ -357,39 +371,42 @@ public class Spindex {
                 if (drumIsFull() && !drumIsSwitching()) { // auto switch to spinning up state when drum is full
                     shouldSwitchToOuttake = true;
                     spindexState = SpindexState.SPIN_UP;
-                    setDrumState("intake", 0);
+                    setDrumState("outtake", 2);
                     ballQueue.clear();
-                    spinUpTimer.reset();
                 }
 
-                flick.setPower(0);
+                if (forceSwitchOuttake) {
+                    spindexState = SpindexState.SPIN_UP;
+                    setDrumState("outtake", 2);
+                    ballQueue.clear();
+                }
+
                 break;
 
             case SPIN_UP:
-                if (spinUpTimer.seconds() > spinUpTime && outtake.atTargetSpeed() && !ballQueue.isEmpty() && !drumIsSwitching()) { // auto switch to outtake state when ready to launch
+                if (!drumIsFlicking() && outtake.atTargetSpeed() && !ballQueue.isEmpty() && !drumIsSwitching()) { // auto switch to outtake state when ready to launch
                     spindexState = SpindexState.OUTTAKE;
 
                     ballQueue.removeFirst();
 
-                    if (drumInIntakeMode()) {
-                        setDrumState("outtake", 2);
-                    } else {
+                    if (ballStates[drumPosition] == BallState.EMPTY) {
                         nextDrumPosition();
                     }
 
                     ballStates[drumPosition] = BallState.EMPTY;
 
-                    outtakeTimer.reset();
+                    flickTimer.reset();
                 }
 
-                if (!drumIsSwitching()) {
-                    flick.setPower(1);
+                if (forceSwitchIntake) {
+                    spindexState = SpindexState.INTAKE;
+                    setDrumState("intake", 2);
                 }
 
                 break;
 
             case OUTTAKE:
-                if (outtakeTimer.seconds() > outtakeTime && !drumIsSwitching()) { // auto switch back to intake or spin up state
+                if (!drumIsFlicking() && !drumIsSwitching()) { // auto switch back to intake or spin up state
                     if (drumIsEmpty()) {
                         spindexState = SpindexState.INTAKE;
                         shouldSwitchToIntake = true;
@@ -400,11 +417,18 @@ public class Spindex {
                     }
                 }
 
-                flick.setPower(1);
+                if (forceSwitchIntake) {
+                    spindexState = SpindexState.INTAKE;
+                    setDrumState("intake", 2);
+                }
+
                 break;
         }
 
         updateDrumPosition();
+
+        forceSwitchIntake = false;
+        forceSwitchOuttake = false;
     }
 
     public void printTelemetry(Telemetry telemetry) {
