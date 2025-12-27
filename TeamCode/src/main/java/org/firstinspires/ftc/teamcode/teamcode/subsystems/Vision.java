@@ -70,7 +70,8 @@ public class Vision {
                 .build();
         visionPortal.setProcessorEnabled(aprilTag, true);
 
-        localizer = new PinpointLocalizer(hardwareMap, PoseStorage.currentPose);
+        localizer = new PinpointLocalizer(hardwareMap, new Pose2d(PoseStorage.currentPose.component1(), PoseStorage.currentPose.component2()));
+        PoseStorage.currentPose = new Pose2d(0, 0, 0);
 
         lastPose = localizer.getPose();
 

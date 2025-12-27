@@ -14,6 +14,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.teamcode.teamcode.PoseStorage;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -41,7 +42,7 @@ public class Spindex {
 
     private int drumPosition;
 
-    public BallState[] ballStates = {BallState.EMPTY, BallState.EMPTY, BallState.EMPTY};
+    public BallState[] ballStates = PoseStorage.ballStates.clone();
     public Deque<BallState> ballQueue = new ArrayDeque<>();
 
     private ElapsedTime switchCooldownTimer;
@@ -67,6 +68,8 @@ public class Spindex {
      * should run BEFORE waitForStart()
      * */
     public Spindex(HardwareMap hardwareMap) {
+        PoseStorage.ballStates = new BallState[]{BallState.EMPTY, BallState.EMPTY, BallState.EMPTY};
+
         drumServo = hardwareMap.get(ServoImplEx.class, "drumServo");
         drumServo.setPwmRange(new PwmControl.PwmRange(500, 2500));
 

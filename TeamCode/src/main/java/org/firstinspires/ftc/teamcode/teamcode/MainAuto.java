@@ -104,6 +104,8 @@ public class MainAuto extends LinearOpMode {
 
                 telemetry.update();
 
+                PoseStorage.ballStates = spindex.ballStates;
+
                 return !spindex.shouldSwitchToIntake;
             }
         }
@@ -134,6 +136,8 @@ public class MainAuto extends LinearOpMode {
                 spindex.update(outtake, State.INTAKE);
                 outtake.update(spindex);
 
+                PoseStorage.ballStates = spindex.ballStates;
+
                 return true;
             }
         }
@@ -163,6 +167,8 @@ public class MainAuto extends LinearOpMode {
 
                 spindex.update(outtake, State.OUTTAKE);
                 outtake.update(spindex);
+
+                PoseStorage.ballStates = spindex.ballStates;
 
                 return true;
             }
