@@ -19,7 +19,7 @@ public class FixHoodServo extends LinearOpMode{
 
         while (opModeIsActive()) {
             servo.setPosition((gamepad2.left_stick_y / 2) + 0.5);
-            telemetry.addData("hood servo position", servo.getPosition());
+            telemetry.addData("servo position", servo.getPosition());
             telemetry.update();
         }
     }

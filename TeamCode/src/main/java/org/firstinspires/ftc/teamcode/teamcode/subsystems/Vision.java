@@ -101,36 +101,29 @@ public class Vision {
 
         for (AprilTagDetection detection : aprilTag.getDetections()) {
 
-            if ( (detection.id == 24) || (detection.id == 20) ) {
-                double cameraPitchError = detection.robotPose.getOrientation().getPitch(AngleUnit.DEGREES);
-                if (Math.abs(cameraPitchError) > 0) {
-                    cameraPitch = cameraPitch + cameraPitchError;
-                    cameraOrientation = new YawPitchRollAngles(AngleUnit.DEGREES,
-                            0, -90 + cameraPitch, 0, 0);
-                    aprilTag = new AprilTagProcessor.Builder()
-                            .setCameraPose(cameraPosition, cameraOrientation)
-                            .build();
-                }
-
+            if ( ((detection.id == 24) || (detection.id == 20)) && detection.metadata != null ) {
                 latestDetection = detection;
                 double xPos = detection.robotPose.getPosition().x;
                 double yPos = detection.robotPose.getPosition().y;
                 double heading = detection.robotPose.getOrientation().getYaw(AngleUnit.RADIANS) - (Math.PI / 2);
                 localizer.setPose(new Pose2d(xPos, yPos, heading));
 
-//                targetAbsoluteBearing = currentBearing + detection.ftcPose.bearing;
-
-//                double range = detection.ftcPose.range / 39.37;
-//
-//                // TODO: figure out which one of these is correct (does ftcPose.range return actual distance or just distance on the x and y axis?? idk)
-//                goalDistance = range;
-//                //goalDistance = Math.sqrt((range * range) - (0.4572 * 0.4572)); // triangles
-
-
                 canSeeGoalAprilTag = true;
                 seenGoalAprilTag = true;
             }
         }
+    }
+
+    public double findPitchError() {
+        double cameraPitchError = 0;
+
+        for (AprilTagDetection detection : aprilTag.getDetections()) {
+            if ( ((detection.id == 24) || (detection.id == 20)) && detection.metadata != null ) {
+                cameraPitchError = detection.robotPose.getOrientation().getPitch(AngleUnit.DEGREES);
+            }
+        }
+
+        return cameraPitchError;
     }
 
 //    private double getTargetRelativeBearing(double currentBearing) {
