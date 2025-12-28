@@ -2,19 +2,29 @@ package org.firstinspires.ftc.teamcode.teamcode.subsystems;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 public class Drivetrain {
-    public DcMotor flMotor;
-    public DcMotor frMotor;
-    public DcMotor blMotor;
-    public DcMotor brMotor;
+    private DcMotor flMotor;
+    private DcMotor frMotor;
+    private DcMotor blMotor;
+    private DcMotor brMotor;
+    private Servo lBrake;
+    private Servo rBrake;
+    public boolean isBraking;
+
     public Drivetrain(HardwareMap hardwareMap) {
         flMotor = hardwareMap.get(DcMotor.class, "fl");
         frMotor = hardwareMap.get(DcMotor.class, "fr");
         blMotor = hardwareMap.get(DcMotor.class, "bl");
         brMotor = hardwareMap.get(DcMotor.class, "br");
+
+        lBrake = hardwareMap.get(Servo.class, "lBrake");
+        rBrake = hardwareMap.get(Servo.class, "rBrake");
+
+        isBraking = false;
 
         //change the direction of drivetrain motors so they're all facing the same way
         flMotor.setDirection(DcMotor.Direction.REVERSE);
@@ -57,6 +67,17 @@ public class Drivetrain {
         frMotor.setPower(yPower - xPower - rPower);
         blMotor.setPower(yPower - xPower + rPower);
         brMotor.setPower(yPower + xPower - rPower);
+    }
+
+    public void update() {
+//        if (isBraking) {
+//            lBrake.setPosition(0.5);
+//            rBrake.setPosition(0.5);
+//            isBraking = false;
+//        } else {
+//            lBrake.setPosition(0.5);
+//            rBrake.setPosition(0.5);
+//        }
     }
 
     public void printTelemetry(Telemetry telemetry) {
