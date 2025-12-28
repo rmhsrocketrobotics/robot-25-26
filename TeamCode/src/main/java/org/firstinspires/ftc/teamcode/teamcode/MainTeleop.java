@@ -134,6 +134,7 @@ public class MainTeleop extends LinearOpMode {
             vision.update();
 
             //drivetrain.printTelemetry(telemetry);
+            spindex.printTelemetry(telemetry);
             outtake.printTelemetry(telemetry);
             vision.printTelemetry(telemetry);
             if (state == State.INTAKE) {
@@ -165,7 +166,7 @@ public class MainTeleop extends LinearOpMode {
 
         //vision.detectGoalAprilTag();
 
-        outtake.targetTicksPerSecond = 1400;//outtake.setOuttakeToSpeed(requiredVelocity.speed, 3.5);
+        outtake.targetTicksPerSecond = 0;//outtake.targetTicksPerSecond = 1400;//outtake.setOuttakeToSpeed(requiredVelocity.speed, 3.5);
         //outtake.setOuttakeToSpeed(6.5, 3.5);
 
         if (gamepad2.left_bumper && !gamepad2Last.left_bumper) {

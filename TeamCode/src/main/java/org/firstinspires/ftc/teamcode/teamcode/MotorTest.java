@@ -10,7 +10,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
-@Disabled//@TeleOp
+@TeleOp
 
 public class MotorTest extends LinearOpMode{
 
@@ -55,24 +55,26 @@ public class MotorTest extends LinearOpMode{
 //                positionLastLoop = gecko.getCurrentPosition();
 //            }
 
+            outtake1.setPower(gamepad1.left_stick_y * 0.5);
+            outtake2.setPower(gamepad1.right_stick_y * 0.5);
 
             //gecko.setPower(-gamepad1.left_stick_y);
-            if (gamepad1.b) {
-                outtake1.setPower(-1);
-                outtake2.setPower(-1);
-            } else if (gamepad1.a) {
-                outtake1.setPower(-0.75);
-                outtake2.setPower(-0.75);
-            } else if (gamepad1.x) {
-                outtake1.setPower(-0.5);
-                outtake2.setPower(-0.5);
-            } else if (gamepad1.y) {
-                outtake1.setPower(-0.25);
-                outtake2.setPower(-0.25);
-            } else {
-                outtake1.setPower(0);
-                outtake2.setPower(0);
-            }
+//            if (gamepad1.b) {
+//                outtake1.setPower(-1);
+//                outtake2.setPower(-1);
+//            } else if (gamepad1.a) {
+//                outtake1.setPower(-0.75);
+//                outtake2.setPower(-0.75);
+//            } else if (gamepad1.x) {
+//                outtake1.setPower(-0.5);
+//                outtake2.setPower(-0.5);
+//            } else if (gamepad1.y) {
+//                outtake1.setPower(-0.25);
+//                outtake2.setPower(-0.25);
+//            } else {
+//                outtake1.setPower(0);
+//                outtake2.setPower(0);
+//            }
         }
     }
 

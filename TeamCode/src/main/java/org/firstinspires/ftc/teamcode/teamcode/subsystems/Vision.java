@@ -11,6 +11,7 @@ import static java.lang.Math.toRadians;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
@@ -51,15 +52,16 @@ public class Vision {
     public boolean canSeeGoalAprilTag = false;
     public boolean seenGoalAprilTag = false;
 
+    public Servo cameraServo;
+
+    private double cameraPitch = 22;
+    private Position cameraPosition = new Position(DistanceUnit.INCH,
+            0, 7, 12, 0);
+    private YawPitchRollAngles cameraOrientation = new YawPitchRollAngles(AngleUnit.DEGREES,
+            0, -90 + cameraPitch, 0, 0);
 
     public Vision(HardwareMap hardwareMap, boolean isRedAlliance) {
         /// see ConceptAprilTagLocalization.java
-
-        Position cameraPosition = new Position(DistanceUnit.INCH,
-                0, 7, 12, 0);
-        YawPitchRollAngles cameraOrientation = new YawPitchRollAngles(AngleUnit.DEGREES,
-                0, -90 + 22, 0, 0);
-
         aprilTag = new AprilTagProcessor.Builder()
                 .setCameraPose(cameraPosition, cameraOrientation)
                 .build();
@@ -80,15 +82,18 @@ public class Vision {
         } else {
             goalPosition = new Vector2d(-58, -55);
         }
+
+        cameraServo = hardwareMap.get(Servo.class, "cameraServo");
+        cameraServo.setPosition(0.84);
     }
 
     private void initCamera() {
-        ExposureControl exposureControl = visionPortal.getCameraControl(ExposureControl.class);
-        exposureControl.setMode(ExposureControl.Mode.Manual);
-        exposureControl.setExposure(5, TimeUnit.MILLISECONDS);
-
-        GainControl gainControl = visionPortal.getCameraControl(GainControl.class);
-        gainControl.setGain(100);
+//        ExposureControl exposureControl = visionPortal.getCameraControl(ExposureControl.class);
+//        exposureControl.setMode(ExposureControl.Mode.Manual);
+//        exposureControl.setExposure(5, TimeUnit.MILLISECONDS);
+//
+//        GainControl gainControl = visionPortal.getCameraControl(GainControl.class);
+//        gainControl.setGain(100);
     }
 
     public void detectGoalAprilTag() {
@@ -97,11 +102,21 @@ public class Vision {
         for (AprilTagDetection detection : aprilTag.getDetections()) {
 
             if ( (detection.id == 24) || (detection.id == 20) ) {
+                double cameraPitchError = detection.robotPose.getOrientation().getPitch(AngleUnit.DEGREES);
+                if (Math.abs(cameraPitchError) > 0) {
+                    cameraPitch = cameraPitch + cameraPitchError;
+                    cameraOrientation = new YawPitchRollAngles(AngleUnit.DEGREES,
+                            0, -90 + cameraPitch, 0, 0);
+                    aprilTag = new AprilTagProcessor.Builder()
+                            .setCameraPose(cameraPosition, cameraOrientation)
+                            .build();
+                }
+
                 latestDetection = detection;
-//                double xPos = detection.robotPose.getPosition().x;
-//                double yPos = detection.robotPose.getPosition().y;
-//                double heading = detection.robotPose.getOrientation().getYaw(AngleUnit.RADIANS);
-//                localizer.setPose(new Pose2d(xPos, yPos, heading));
+                double xPos = detection.robotPose.getPosition().x;
+                double yPos = detection.robotPose.getPosition().y;
+                double heading = detection.robotPose.getOrientation().getYaw(AngleUnit.RADIANS) - (Math.PI / 2);
+                localizer.setPose(new Pose2d(xPos, yPos, heading));
 
 //                targetAbsoluteBearing = currentBearing + detection.ftcPose.bearing;
 
@@ -128,7 +143,7 @@ public class Vision {
     public void faceGoal(Drivetrain drivetrain, Telemetry telemetry) {
         faceGoalCalledThisLoop = true;
 
-        double targetBearing = CustomMath.angleBetweenPoints(localizer.getPose().component1(), goalPosition);
+        double targetBearing = CustomMath.angleBetweenPoints(goalPosition, localizer.getPose().component1());
         double currentBearing = localizer.getPose().component2().toDouble();
 
         if (!faceGoalCalledLastLoop) {
@@ -175,6 +190,10 @@ public class Vision {
 
 //        telemetry.addData("bearing", currentBearing);
 
+        telemetry.addData("can see goal april tag", canSeeGoalAprilTag);
+
+        telemetry.addData("camera pitch", cameraPitch);
+
         telemetry.addData("odo pose", "x: " + localizer.getPose().position.x + " y: " + localizer.getPose().position.y + " heading: " + localizer.getPose().heading.toDouble());
         if (canSeeGoalAprilTag) {
             telemetry.addData("april tag pose", "x: " + latestDetection.robotPose.getPosition().x + " y: " + latestDetection.robotPose.getPosition().y + " heading: " + latestDetection.robotPose.getOrientation().getYaw(AngleUnit.RADIANS));
@@ -193,9 +212,7 @@ public class Vision {
             detectGoalAprilTag();
         }
 
-        if (seenGoalAprilTag) {
-            goalDistance = CustomMath.distanceBetweenPoints(localizer.getPose().component1(), goalPosition) / 39.37;
-        }
+        goalDistance = CustomMath.distanceBetweenPoints(localizer.getPose().component1(), goalPosition) / 39.37;
 
         faceGoalCalledLastLoop = faceGoalCalledThisLoop;
         faceGoalCalledThisLoop = false;

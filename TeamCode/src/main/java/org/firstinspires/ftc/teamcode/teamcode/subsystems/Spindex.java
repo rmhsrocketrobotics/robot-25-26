@@ -167,7 +167,7 @@ public class Spindex {
     }
 
     public boolean drumIsFlicking() {
-        return flickTimer.seconds() > flickTime;
+        return flickTimer.seconds() < flickTime;
     }
 
     public void setDrumState(String newDrumMode) {
@@ -202,9 +202,9 @@ public class Spindex {
 
     private void setFlickPosition(String position) {
         if (position.equals("up")) {
-            flickServo.setPosition(0.2);
+            flickServo.setPosition(0.25);
         } else if (position.equals("down")) {
-            flickServo.setPosition(0.5);
+            flickServo.setPosition(0.58);
         }
     }
 
@@ -249,7 +249,7 @@ public class Spindex {
         }
 
         // get distance from sensor
-        boolean ballDetected = ((DistanceSensor) intakeColorSensor).getDistance(DistanceUnit.CM) < 3;
+        boolean ballDetected = ((DistanceSensor) intakeColorSensor).getDistance(DistanceUnit.CM) < 4; // og value: 3 cm
 
         if (!ballDetected) { // could add && Objects.equals(ballStates[drumPosition], "empty") to this statement
             return false;
@@ -348,7 +348,7 @@ public class Spindex {
                 }
 
                 // flick ball when there is a ball in the queue and the outtake is at the target speed
-                if (!drumIsSwitching() && !drumIsFlicking() && outtake.atTargetSpeed()) {
+                if (!drumIsSwitching() && !drumIsFlicking() && outtake.atTargetSpeed() && !drumIsEmpty()) {
                     if (shootAll) {
                         if (ballStates[drumPosition] == BallState.EMPTY) {
                             nextDrumPosition();
