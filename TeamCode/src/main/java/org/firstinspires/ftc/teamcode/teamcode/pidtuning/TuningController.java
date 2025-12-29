@@ -22,9 +22,9 @@ public class TuningController {
     // alphabetical order. Thus, we preserve the actual order of the process
     // Then we append Z just because we want it to show below the MOTOR_ and TESTING_ because
     // these settings aren't as important
-    public static double ZSTATE1_RAMPING_UP_DURATION = 3.5 + 2;
+    public static double ZSTATE1_RAMPING_UP_DURATION = 0;//3.5 + 2;
     public static double ZSTATE2_COASTING_1_DURATION = 4 + 2;
-    public static double ZSTATE3_RAMPING_DOWN_DURATION = 2 + 2;
+    public static double ZSTATE3_RAMPING_DOWN_DURATION = 0;//2 + 2;
     public static double ZSTATE4_COASTING_2_DURATION = 2 + 2;
     public static double ZSTATE5_RANDOM_1_DURATION = 2 + 2;
     public static double ZSTATE6_RANDOM_2_DURATION = 2 + 2;
