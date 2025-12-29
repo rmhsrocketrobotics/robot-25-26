@@ -1,12 +1,11 @@
 // copied from https://github.com/NoahBres/VelocityPIDTuningTutorial
 
-package org.firstinspires.ftc.teamcode.teamcode;
+package org.firstinspires.ftc.teamcode.teamcode.pidtuning;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.hardware.lynx.LynxModule;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;

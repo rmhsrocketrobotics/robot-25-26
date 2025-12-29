@@ -1,6 +1,6 @@
 //copied from https://github.com/NoahBres/VelocityPIDTuningTutorial
 
-package org.firstinspires.ftc.teamcode.teamcode;
+package org.firstinspires.ftc.teamcode.teamcode.pidtuning;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.noahbres.jotai.StateMachine;
@@ -11,7 +11,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 public class TuningController {
     // f: 17, p: 10, i: 0, d: ??
     public static double MOTOR_TICKS_PER_REV = 28;
-    public static double MOTOR_MAX_RPM = 6000;
+    public static double MOTOR_MAX_RPM = 5400;
     public static double MOTOR_GEAR_RATIO = 1; // output (wheel) speed / input (motor) speed
 
     public static double TESTING_MAX_SPEED = 4000;//0.9 * MOTOR_MAX_RPM; // og 0.9
