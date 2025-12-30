@@ -3,44 +3,44 @@ package org.firstinspires.ftc.teamcode.teamcode.subsystems;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.VoltageSensor;
-import com.qualcomm.robotcore.hardware.configuration.typecontainers.MotorConfigurationType;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.teamcode.teamcode.pidtuning.VelocityPIDFController;
 
 public class Outtake {
     DcMotorEx outtake1;
     DcMotorEx outtake2;
     public Servo hoodServo;
-    PIDFCoefficients MOTOR_VELO_PID;
-    VoltageSensor batteryVoltageSensor;
+
+    private VelocityPIDFController veloController;
+    private double lastTargetTicksPerSecond;
     public double targetTicksPerSecond;
 
     // the outtake must be going at +- this t/s for atTargetSpeed() to return true
     public double tolerance = 25;
+
+    private final ElapsedTime veloTimer = new ElapsedTime();
+
     public Outtake(HardwareMap hardwareMap) {
         outtake1 = hardwareMap.get(DcMotorEx.class, "outtake1");
         outtake1.setDirection(DcMotor.Direction.REVERSE);
         outtake2 = hardwareMap.get(DcMotorEx.class, "outtake2");
+
         hoodServo = hardwareMap.get(Servo.class, "hoodServo");
 
-        MOTOR_VELO_PID = new PIDFCoefficients(60, 0, 0, 19); // previously was at 25
+        outtake1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        outtake2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        MotorConfigurationType motorConfigurationType = outtake1.getMotorType().clone();
-        motorConfigurationType.setAchieveableMaxRPMFraction(1.0);
-        outtake1.setMotorType(motorConfigurationType);
-        outtake2.setMotorType(motorConfigurationType);
+        veloController = new VelocityPIDFController(0.004, 0, 0.00065, 0, 0);
 
-        outtake1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        outtake2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
-        batteryVoltageSensor = hardwareMap.voltageSensor.iterator().next();
-        setPIDFCoefficients(outtake1, MOTOR_VELO_PID);
-        setPIDFCoefficients(outtake2, MOTOR_VELO_PID);
-
+        lastTargetTicksPerSecond = 0;
         targetTicksPerSecond = 0;
+    }
+
+    public void init() {
+        veloTimer.reset();
     }
 
     public void setOuttakePower(double power) {
@@ -51,97 +51,42 @@ public class Outtake {
         outtake2.setPower(power);
     }
 
-    private void setOuttakeVelocityTPS(double ticksPerSecond) {
-        outtake1.setVelocity(ticksPerSecond);
-        outtake2.setVelocity(ticksPerSecond);
-    }
-
     public void printTelemetry(Telemetry telemetry) {
         double outtakeVelocity = outtake1.getVelocity();
         telemetry.addData("outtake target ticks/sec", targetTicksPerSecond);
         telemetry.addData("outtake ticks/sec", outtakeVelocity);
         telemetry.addData("atTargetSpeed()", atTargetSpeed());
-        //telemetry.addData("outtake rev/min", (outtakeVelocity * 60) / 28);
+        //telemetry.addData("outtake rpm", (outtakeVelocity * 60) / 28);
     }
-
-    private void setPIDFCoefficients(DcMotorEx motor, PIDFCoefficients coefficients) {
-        motor.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(
-                coefficients.p, coefficients.i, coefficients.d, coefficients.f * 12 / batteryVoltageSensor.getVoltage()
-        ));
-    }
-
-//    private boolean aboveMaxPowerThreshold() {
-//        return targetTicksPerSecond > 1400-75;
-//    }
 
     public boolean atTargetSpeed() {
-//
-////        if (aboveMaxPowerThreshold()) {
-////            return outtake1.getVelocity() > 1600;
-////        }
+        double currentTicksPerSecond = outtake1.getVelocity();
         double minTargetTicksPerSecond = targetTicksPerSecond - tolerance;
+        double maxTargetTicksPerSecond = targetTicksPerSecond + tolerance;
 
         if (targetTicksPerSecond > 1650) {
             minTargetTicksPerSecond = 1650 - tolerance;
         }
 
-        double maxTargetTicksPerSecond = targetTicksPerSecond + tolerance;
-
-        double currentTicksPerSecond = outtake1.getVelocity();
-
         return (currentTicksPerSecond > minTargetTicksPerSecond) && (currentTicksPerSecond < maxTargetTicksPerSecond);
-//        if (targetTicksPerSecond > 1700) {
-//            return outtake1.getVelocity() > 1700;
-//        }
-//        return outtake1.getVelocity() > targetTicksPerSecond;
     }
 
-    public void update(Spindex spindex) {
-//        if (aboveMaxPowerThreshold()) {
-//            setOuttakePower(-0.9);
-//        } else {
-//            setOuttakeVelocityTPS(targetTicksPerSecond);
-//        }
+    public void update() {
+        double targetAcceleration = (targetTicksPerSecond - lastTargetTicksPerSecond) / veloTimer.seconds();
 
+        veloTimer.reset();
+        lastTargetTicksPerSecond = targetTicksPerSecond;
 
-        if (targetTicksPerSecond > 1650) {
-            setOuttakePower(1);
-        } else {
-            setOuttakeVelocityTPS(targetTicksPerSecond);
-        }
+        double motorPos = outtake1.getCurrentPosition();
+        double motorVelo = outtake1.getVelocity();
+
+        double power = veloController.update(motorPos, motorVelo, targetTicksPerSecond, targetAcceleration);
+        setOuttakePower(power);
     }
 
-    public void setOuttakeToSpeed(double speed, double lowerLimit) {
-        // change meters per second into ticks per second
-        double metersPerSecond = CustomMath.clamp(speed, lowerLimit, 6.5);
-        targetTicksPerSecond = metersPerSecondToTicksPerSecondQuadratic(metersPerSecond);
-    }
-
-    public void setHoodServoToAngle(double degrees) {
-        // all angles are in degrees above the horizon
-        double maxDegrees = 60;
-        double minDegrees = 45;
-        double maxPosition = 0.45;
-        double minPosition = 0.1;
-
-        degrees = CustomMath.clamp(degrees, minDegrees, maxDegrees);
-        double percentRaised = 1 - ( (degrees - minDegrees) / (maxDegrees - minDegrees) );
-        double position = (percentRaised * (maxPosition - minPosition)) + minPosition;
-
-        hoodServo.setPosition(position);
-    }
-
-    private double metersPerSecondToTicksPerSecondLinear(double metersPerSecond) {
-        // this calculation is based on https://www.desmos.com/calculator/ye3y2vp7c2
-        double m = 262.7892;
-        double b = -64.05544;
-        return (m * metersPerSecond) + b;
-    }
-
-    private double metersPerSecondToTicksPerSecondQuadratic(double metersPerSecond) {
-        double a = 90;//115;
-        double b = -533.53;//-754.72577;
-        double c = 1668.14 + 100;//2057.30175;
-        return (a * metersPerSecond * metersPerSecond) + (b * metersPerSecond) + (c);
+    /// set the speed of the outtake and the angle of the hood based the distance to the goal
+    /// this method works based off of empirical measurements
+    public void setSpeedAndHood(double metersFromGoal) {
+        // TODO actually make this a thing
     }
 }

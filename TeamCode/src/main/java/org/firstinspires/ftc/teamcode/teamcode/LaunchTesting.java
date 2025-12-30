@@ -54,6 +54,7 @@ public class LaunchTesting extends LinearOpMode{
         waitForStart();
 
         spindex.init();
+        outtake.init();
 
         while (opModeIsActive()) {
 
@@ -133,7 +134,7 @@ public class LaunchTesting extends LinearOpMode{
             }
 
             spindex.update(outtake, state);
-            outtake.update(spindex);
+            outtake.update();
             vision.update();
 
             spindex.printTelemetry(telemetry);

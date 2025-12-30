@@ -61,6 +61,7 @@ public class MainAuto extends LinearOpMode {
 
         public void init() {
             spindex.init();
+            outtake.init();
         }
 
         public class LaunchAllBalls implements Action {
@@ -92,12 +93,12 @@ public class MainAuto extends LinearOpMode {
                         spindex.queueBall("green");
                     }
 
-                    outtake.setOuttakeToSpeed(launchVelocity.speed, 3.5);
-                    outtake.setHoodServoToAngle(launchVelocity.direction);
+//                    outtake.setOuttakeToSpeed(launchVelocity.speed, 3.5); // TODO fix this once the new shooting system is done
+//                    outtake.setHoodServoToAngle(launchVelocity.direction);
                 }
 
                 spindex.update(outtake, State.OUTTAKE);
-                outtake.update(spindex);
+                outtake.update();
 
                 outtake.printTelemetry(telemetry);
                 spindex.printTelemetry(telemetry);
@@ -134,7 +135,7 @@ public class MainAuto extends LinearOpMode {
                     spindex.intakeMotor.setPower(1);
                 }
                 spindex.update(outtake, State.INTAKE);
-                outtake.update(spindex);
+                outtake.update();
 
                 PoseStorage.ballStates = spindex.ballStates;
 
@@ -160,13 +161,13 @@ public class MainAuto extends LinearOpMode {
 
                     spindex.intakeMotor.setPower(0);
 
-                    outtake.setOuttakeToSpeed(launchVelocity.speed, 3.5);
-                    outtake.setHoodServoToAngle(launchVelocity.direction);
+//                    outtake.setOuttakeToSpeed(launchVelocity.speed, 3.5); // TODO see above todo
+//                    outtake.setHoodServoToAngle(launchVelocity.direction);
 
                 }
 
                 spindex.update(outtake, State.OUTTAKE);
-                outtake.update(spindex);
+                outtake.update();
 
                 PoseStorage.ballStates = spindex.ballStates;
 

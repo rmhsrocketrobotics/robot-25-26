@@ -55,6 +55,7 @@ public class MainTeleop extends LinearOpMode {
         waitForStart();
 
         spindex.init();
+        outtake.init();
 
         while (opModeIsActive()) {
             // GAMEPAD 1 CODE:
@@ -101,12 +102,6 @@ public class MainTeleop extends LinearOpMode {
                 spindex.intakeMotor.setPower(0);
             }
 
-            Velocity requiredVelocity = vision.getRequiredVelocity();
-            telemetry.addData("target speed m/s", requiredVelocity.speed);
-            telemetry.addData("target angle degrees", requiredVelocity.direction);
-
-            outtake.setHoodServoToAngle(50);//outtake.setHoodServoToAngle(requiredVelocity.direction);
-
             // state specific code goes in these methods
             switch (state) {
                 case INTAKE:
@@ -114,7 +109,7 @@ public class MainTeleop extends LinearOpMode {
                     break;
 
                 case OUTTAKE:
-                    outtakeMode(requiredVelocity);
+                    outtakeMode();
                     break;
             }
 
@@ -130,7 +125,7 @@ public class MainTeleop extends LinearOpMode {
 
             drivetrain.update();
             spindex.update(outtake, state);
-            outtake.update(spindex);
+            outtake.update();
             vision.update();
 
             //drivetrain.printTelemetry(telemetry);
@@ -156,7 +151,7 @@ public class MainTeleop extends LinearOpMode {
         }
     }
 
-    public void outtakeMode(Velocity requiredVelocity) {
+    public void outtakeMode() {
         if ((gamepad2.dpad_down && !gamepad2Last.dpad_down) || spindex.shouldSwitchToIntake) {
             state = State.INTAKE;
 
@@ -164,10 +159,7 @@ public class MainTeleop extends LinearOpMode {
             return;
         }
 
-        //vision.detectGoalAprilTag();
-
-        outtake.targetTicksPerSecond = 0;//outtake.targetTicksPerSecond = 1400;//outtake.setOuttakeToSpeed(requiredVelocity.speed, 3.5);
-        //outtake.setOuttakeToSpeed(6.5, 3.5);
+        outtake.targetTicksPerSecond = 0;
 
         if (gamepad2.left_bumper && !gamepad2Last.left_bumper) {
             spindex.queueBall("purple");
