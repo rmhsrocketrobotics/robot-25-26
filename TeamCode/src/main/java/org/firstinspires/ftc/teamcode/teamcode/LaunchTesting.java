@@ -26,7 +26,7 @@ public class LaunchTesting extends LinearOpMode{
 
     boolean pauseIntake = false;
     double hoodServoPosition = 0;
-    double outtakeSpeed = 1000;
+    double outtakeSpeed = 1500;
 
     public boolean allianceIsRed() {
         return true;
@@ -49,7 +49,7 @@ public class LaunchTesting extends LinearOpMode{
         gamepad1Last = new Gamepad();
         gamepad2Last = new Gamepad();
 
-        telemetry.setMsTransmissionInterval(100); //default 250
+        telemetry.setMsTransmissionInterval(250); //default 250
 
         waitForStart();
 

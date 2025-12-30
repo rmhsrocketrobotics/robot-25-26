@@ -56,17 +56,17 @@ public class MotorTest extends LinearOpMode{
 
             //gecko.setPower(-gamepad1.left_stick_y);
             if (gamepad1.b) {
-                outtake1.setPower(-1);
-                outtake2.setPower(-1);
+                outtake1.setPower(1);
+                outtake2.setPower(1);
             } else if (gamepad1.a) {
-                outtake1.setPower(-0.75);
-                outtake2.setPower(-0.75);
+                outtake1.setPower(0.75);
+                outtake2.setPower(0.75);
             } else if (gamepad1.x) {
-                outtake1.setPower(-0.5);
-                outtake2.setPower(-0.5);
+                outtake1.setPower(0.5);
+                outtake2.setPower(0.5);
             } else if (gamepad1.y) {
-                outtake1.setPower(-0.25);
-                outtake2.setPower(-0.25);
+                outtake1.setPower(0.25);
+                outtake2.setPower(0.25);
             } else {
                 outtake1.setPower(0);
                 outtake2.setPower(0);
@@ -74,6 +74,8 @@ public class MotorTest extends LinearOpMode{
 
             telemetry.addData("outtake1 speed rpm", (outtake1.getVelocity() * 60) / 28);
             telemetry.addData("outtake2 speed rpm", (outtake2.getVelocity() * 60) / 28);
+            telemetry.addData("outtake1 speed tps", outtake1.getVelocity());
+            telemetry.addData("outtake2 speed tps", outtake2.getVelocity());
             telemetry.update();
         }
     }

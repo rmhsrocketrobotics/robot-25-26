@@ -13,10 +13,10 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 @Config
 @TeleOp
 public class LinkedMotorTuner extends LinearOpMode {
-    public static double kP = 0;
+    public static double kP = 0.004;
     public static double kD = 0;
 
-    public static double kV = 1 / TuningController.rpmToTicksPerSecond(TuningController.MOTOR_MAX_RPM);
+    public static double kV = 0.00065;//1 / TuningController.rpmToTicksPerSecond(TuningController.MOTOR_MAX_RPM);
     public static double kA = 0;
     public static double kStatic = 0;
 
@@ -44,6 +44,10 @@ public class LinkedMotorTuner extends LinearOpMode {
         TuningController tuningController = new TuningController();
 
         double lastTargetVelo = 0.0;
+
+        double lastKp = kP;
+        double lastKd = kD;
+
         double lastKv = kV;
         double lastKa = kA;
         double lastKstatic = kStatic;
@@ -77,7 +81,10 @@ public class LinkedMotorTuner extends LinearOpMode {
             myMotor1.setPower(power);
             myMotor2.setPower(power);
 
-            if(lastKv != kV || lastKa != kA || lastKstatic != kStatic) {
+            if (lastKp != kP || lastKd != kD || lastKv != kV || lastKa != kA || lastKstatic != kStatic) {
+                lastKp = kP;
+                lastKd = kD;
+
                 lastKv = kV;
                 lastKa = kA;
                 lastKstatic = kStatic;

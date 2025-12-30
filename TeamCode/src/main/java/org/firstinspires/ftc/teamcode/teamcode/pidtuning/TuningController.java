@@ -11,10 +11,10 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 public class TuningController {
     // f: 17, p: 10, i: 0, d: ??
     public static double MOTOR_TICKS_PER_REV = 28;
-    public static double MOTOR_MAX_RPM = 5400;
+    public static double MOTOR_MAX_RPM = 3700; // ours never goes above 4k??? // before this was 5400
     public static double MOTOR_GEAR_RATIO = 1; // output (wheel) speed / input (motor) speed
 
-    public static double TESTING_MAX_SPEED = 4000;//0.9 * MOTOR_MAX_RPM; // og 0.9
+    public static double TESTING_MAX_SPEED = 3250;//0.9 * MOTOR_MAX_RPM; // og 0.9
     public static double TESTING_MIN_SPEED = 1000;// 0.2 * MOTOR_MAX_RPM; // og 0.3
 
 
@@ -22,9 +22,9 @@ public class TuningController {
     // alphabetical order. Thus, we preserve the actual order of the process
     // Then we append Z just because we want it to show below the MOTOR_ and TESTING_ because
     // these settings aren't as important
-    public static double ZSTATE1_RAMPING_UP_DURATION = 0;//3.5 + 2;
+    public static double ZSTATE1_RAMPING_UP_DURATION = 1;//3.5 + 2;
     public static double ZSTATE2_COASTING_1_DURATION = 4 + 2;
-    public static double ZSTATE3_RAMPING_DOWN_DURATION = 0;//2 + 2;
+    public static double ZSTATE3_RAMPING_DOWN_DURATION = 1;//2 + 2;
     public static double ZSTATE4_COASTING_2_DURATION = 2 + 2;
     public static double ZSTATE5_RANDOM_1_DURATION = 2 + 2;
     public static double ZSTATE6_RANDOM_2_DURATION = 2 + 2;

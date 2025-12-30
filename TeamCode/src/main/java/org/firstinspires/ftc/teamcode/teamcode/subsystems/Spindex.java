@@ -30,7 +30,8 @@ public class Spindex {
     private ServoImplEx drumServo;
 
     final double[] intakePositions = {0, 0.3826, 0.7831};
-    final double[] outtakePositions = {0.5745, 0.975, 0.1823};
+    // final double[] outtakePositions = {0.5745, 0.975, 0.1823}; old values
+    final double[] outtakePositions = {0.5845, 1, 0.15};
 
     public DcMotor intakeMotor;
 
