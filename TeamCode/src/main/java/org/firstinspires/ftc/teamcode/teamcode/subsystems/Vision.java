@@ -38,7 +38,7 @@ public class Vision {
     private boolean initialized = false;
     private AprilTagProcessor aprilTag;
     private VisionPortal visionPortal;
-    private Localizer localizer;
+    private PinpointLocalizer localizer;
     private final Vector2d goalPosition;
     private AprilTagDetection latestDetection;
     private Pose2d lastPose;
@@ -46,6 +46,8 @@ public class Vision {
     private boolean faceGoalCalledLastLoop = false;
     private ElapsedTime faceGoalTimer = new ElapsedTime();
     private double faceGoalStartDistance;
+    private double faceGoalStartX;
+    private double faceGoalStartY;
 
     public int obeliskId = 22; // guess that the obelisk is 22 if we aren't able to detect it
     public double goalDistance = 0;
@@ -142,6 +144,9 @@ public class Vision {
         if (!faceGoalCalledLastLoop) {
             faceGoalTimer.reset();
             faceGoalStartDistance = targetBearing - currentBearing;
+
+            faceGoalStartX = localizer.driver.getPosX(DistanceUnit.INCH);
+            faceGoalStartY = localizer.driver.getPosY(DistanceUnit.INCH);
         }
 
         // use motion profiling to change targetBearing to a good value
@@ -156,10 +161,18 @@ public class Vision {
             telemetry.addLine("using motion profiling: false");
         }
 
-
         double bearingError = targetBearing - currentBearing;
         double rotationPower = CustomMath.clamp(bearingError, -0.5, 0.5);
-        drivetrain.setDrivetrainPower(0, 0, -rotationPower);
+
+        double xError = faceGoalStartX - localizer.driver.getPosX(DistanceUnit.INCH);
+        double xPower = CustomMath.clamp(xError * 0.25, -0.3, 0.3);
+
+        double yError = faceGoalStartY - localizer.driver.getPosY(DistanceUnit.INCH);
+        double yPower = CustomMath.clamp(yError * 0.25, -0.3, 0.3);
+
+        // ok so when the pinpoint odo system says "X," they mean forward-backward, but when the drivetrain class says "X," i mean left-right
+        // that's why this is sus and android studio gives a warning
+        drivetrain.setDrivetrainPower(xPower, yPower, -rotationPower);
     }
 
     /**
