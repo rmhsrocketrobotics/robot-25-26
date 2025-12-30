@@ -10,9 +10,9 @@ public class FixHoodServo extends LinearOpMode{
 
     @Override
     public void runOpMode() {
-        Servo servo = hardwareMap.get(Servo.class, "drumServo");
+        Servo servo = hardwareMap.get(Servo.class, "rBrake");
 
-        double[] outtakePositions = {0.5845, 1, 0.15};
+        double[] presetPositions = {0.25, 0.5, 0.75};
         double servoPosition = 0;
 
         telemetry.setMsTransmissionInterval(200); //default 250
@@ -22,13 +22,13 @@ public class FixHoodServo extends LinearOpMode{
 
         while (opModeIsActive()) {
             if (gamepad1.y) {
-                servoPosition = outtakePositions[0];
+                servoPosition = presetPositions[0];
             }
             if (gamepad1.x) {
-                servoPosition = outtakePositions[1];
+                servoPosition = presetPositions[1];
             }
             if (gamepad1.a) {
-                servoPosition = outtakePositions[2];
+                servoPosition = presetPositions[2];
             }
 
             if (gamepad1.rightBumperWasPressed()) {

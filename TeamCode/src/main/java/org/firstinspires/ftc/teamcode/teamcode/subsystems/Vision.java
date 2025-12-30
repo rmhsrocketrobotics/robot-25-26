@@ -10,6 +10,7 @@ import static java.lang.Math.toRadians;
 
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
+import com.arcrobotics.ftclib.controller.PDController;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -46,6 +47,8 @@ public class Vision {
     private boolean faceGoalCalledLastLoop = false;
     private ElapsedTime faceGoalTimer = new ElapsedTime();
     private double faceGoalStartDistance;
+    private PDController xController;
+    private PDController yController;
     private double faceGoalStartX;
     private double faceGoalStartY;
 
@@ -87,6 +90,9 @@ public class Vision {
 
         cameraServo = hardwareMap.get(Servo.class, "cameraServo");
         cameraServo.setPosition(0.84);
+
+        xController = new PDController(0.25, 0.03);
+        yController = new PDController(0.25, 0.03);
     }
 
     private void initCamera() {
@@ -147,6 +153,9 @@ public class Vision {
 
             faceGoalStartX = localizer.driver.getPosX(DistanceUnit.INCH);
             faceGoalStartY = localizer.driver.getPosY(DistanceUnit.INCH);
+
+            xController.reset();
+            yController.reset();
         }
 
         // use motion profiling to change targetBearing to a good value
@@ -155,24 +164,27 @@ public class Vision {
 
         // only use motion profiling if the error is bigger than 30 degrees
         if (false){ //if (Math.abs(targetBearing - currentBearing) > Math.PI / 6) { // TODO: tune the proportional controller and then change this line back
-            targetBearing = CustomMath.motionProfile(maxAcceleration, maxVelocity, faceGoalStartDistance, faceGoalTimer.seconds());
+            targetBearing = currentBearing + CustomMath.motionProfile(maxAcceleration, maxVelocity, faceGoalStartDistance, faceGoalTimer.seconds());
             telemetry.addLine("using motion profiling: true");
         } else {
             telemetry.addLine("using motion profiling: false");
         }
 
         double bearingError = targetBearing - currentBearing;
-        double rotationPower = CustomMath.clamp(bearingError, -0.5, 0.5);
 
-        double xError = faceGoalStartX - localizer.driver.getPosX(DistanceUnit.INCH);
-        double xPower = CustomMath.clamp(xError * 0.25, -0.3, 0.3);
+        // calculate rotation power using a p controller
+        double rotationPower = CustomMath.clamp(bearingError, -0.7, 0.7);
 
-        double yError = faceGoalStartY - localizer.driver.getPosY(DistanceUnit.INCH);
-        double yPower = CustomMath.clamp(yError * 0.25, -0.3, 0.3);
+        // calculate x and y power using a pd controller
+        double xPower = xController.calculate(localizer.driver.getPosX(DistanceUnit.INCH), faceGoalStartX);
+        xPower = CustomMath.clamp(xPower, -0.5, 0.5);
 
-        // ok so when the pinpoint odo system says "X," they mean forward-backward, but when the drivetrain class says "X," i mean left-right
+        double yPower = yController.calculate(localizer.driver.getPosY(DistanceUnit.INCH), faceGoalStartY);
+        yPower = CustomMath.clamp(yPower, -0.5, 0.5);
+
+        // ok so when the pinpoint odo system says "X," they mean forward-backward, but when the drivetrain class says "X," it means left-right
         // that's why this is sus and android studio gives a warning
-        drivetrain.setDrivetrainPower(xPower, yPower, -rotationPower);
+        drivetrain.setDrivetrainPower(xPower, -yPower, -rotationPower);
     }
 
     /**

@@ -20,8 +20,17 @@ public class CustomMath {
         return Math.atan2(dy, dx);
     }
 
-    public static double motionProfile(double maxAcceleration, double maxVelocity, double distance, double elapsedTime) {
+    public static double motionProfile(double maxAcceleration, double maxVelocity, double signedDistance, double elapsedTime) {
         // based on https://www.ctrlaltftc.com/advanced/motion-profiling
+
+        double distance = Math.abs(signedDistance);
+        double sign;
+
+        if (signedDistance < 0) {
+            sign = -1;
+        } else {
+            sign = 1;
+        }
 
         // Calculate the time it takes to accelerate to max velocity
         double accelerationDeltaTime = maxVelocity / maxAcceleration;
@@ -52,13 +61,13 @@ public class CustomMath {
         // check if we're still in the motion profile
         double entireDeltaTime = accelerationDeltaTime + cruiseDeltaTime + decelerationDeltaTime;
         if (elapsedTime > entireDeltaTime) {
-            return distance;
+            return distance * sign;
         }
 
         // if we're accelerating
         if (elapsedTime < accelerationDeltaTime) {
             // use the kinematic equation for acceleration
-            return 0.5 * maxAcceleration * elapsedTime * elapsedTime;
+            return (0.5 * maxAcceleration * elapsedTime * elapsedTime) * sign;
         }
 
         // if we're cruising
@@ -67,7 +76,7 @@ public class CustomMath {
             double cruiseCurrentDeltaTime = elapsedTime - accelerationDeltaTime;
 
             // use the kinematic equation for constant velocity
-            return accelerationDistance + (maxVelocity * cruiseCurrentDeltaTime);
+            return (accelerationDistance + (maxVelocity * cruiseCurrentDeltaTime)) * sign;
         }
 
         // if we're decelerating
@@ -76,6 +85,6 @@ public class CustomMath {
         decelerationTime = elapsedTime - decelerationTime;
 
         // use the kinematic equations to calculate the instantaneous desired position
-        return accelerationDistance + cruiseDistance + (maxVelocity * decelerationTime) - (0.5 * maxAcceleration * decelerationTime * decelerationTime);
+        return (accelerationDistance + cruiseDistance + (maxVelocity * decelerationTime) - (0.5 * maxAcceleration * decelerationTime * decelerationTime)) * sign;
     }
 }
