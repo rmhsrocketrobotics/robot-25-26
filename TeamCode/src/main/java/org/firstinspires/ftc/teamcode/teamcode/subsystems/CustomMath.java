@@ -87,4 +87,15 @@ public class CustomMath {
         // use the kinematic equations to calculate the instantaneous desired position
         return (accelerationDistance + cruiseDistance + (maxVelocity * decelerationTime) - (0.5 * maxAcceleration * decelerationTime * decelerationTime)) * sign;
     }
+
+    public static double odometryPodTicksToInches(double ticks) {
+        return ticks / 504.9;
+    }
+
+    public static Vector2d rotatePointAroundOrigin(Vector2d point, double angle) {
+        double rotatedX = (point.x * Math.cos(angle)) - (point.y * Math.sin(angle));
+        double rotatedY = (point.x * Math.sin(angle)) + (point.y * Math.cos(angle));
+        return new Vector2d(rotatedX, rotatedY);
+    }
+
 }

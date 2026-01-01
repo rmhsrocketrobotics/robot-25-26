@@ -49,8 +49,7 @@ public class Vision {
     private double faceGoalStartDistance;
     private PDController xController;
     private PDController yController;
-    private double faceGoalStartX;
-    private double faceGoalStartY;
+    private Vector2d faceGoalStartPosition;
 
     public int obeliskId = 22; // guess that the obelisk is 22 if we aren't able to detect it
     public double goalDistance = 0;
@@ -151,35 +150,42 @@ public class Vision {
             faceGoalTimer.reset();
             faceGoalStartDistance = targetBearing - currentBearing;
 
-            faceGoalStartX = localizer.driver.getPosX(DistanceUnit.INCH);
-            faceGoalStartY = localizer.driver.getPosY(DistanceUnit.INCH);
+            double faceGoalStartX = localizer.driver.getPosX(DistanceUnit.INCH); // TODO FJIX THIS DFKLSJFK
+            double faceGoalStartY = localizer.driver.getPosY(DistanceUnit.INCH);
+
+            faceGoalStartPosition = CustomMath.rotatePointAroundOrigin(new Vector2d(faceGoalStartX, faceGoalStartY), -localizer.driver.getHeading(AngleUnit.RADIANS));
 
             xController.reset();
             yController.reset();
         }
 
-        // use motion profiling to change targetBearing to a good value
-        double maxAcceleration = Math.PI / 2; // TODO: tune ts
-        double maxVelocity = Math.PI / 2;
-
-        // only use motion profiling if the error is bigger than 30 degrees
-        if (false){ //if (Math.abs(targetBearing - currentBearing) > Math.PI / 6) { // TODO: tune the proportional controller and then change this line back
-            targetBearing = currentBearing + CustomMath.motionProfile(maxAcceleration, maxVelocity, faceGoalStartDistance, faceGoalTimer.seconds());
-            telemetry.addLine("using motion profiling: true");
-        } else {
-            telemetry.addLine("using motion profiling: false");
-        }
+//        // use motion profiling to change targetBearing to a good value
+//        double maxAcceleration = Math.PI / 2; // TODO: tune ts
+//        double maxVelocity = Math.PI / 2;
+//
+//        // only use motion profiling if the error is bigger than 30 degrees
+//        if (false){ //if (Math.abs(targetBearing - currentBearing) > Math.PI / 6) { // TODO: tune the proportional controller and then change this line back
+//            targetBearing = currentBearing + CustomMath.motionProfile(maxAcceleration, maxVelocity, faceGoalStartDistance, faceGoalTimer.seconds());
+//            telemetry.addLine("using motion profiling: true");
+//        } else {
+//            telemetry.addLine("using motion profiling: false");
+//        }
 
         double bearingError = targetBearing - currentBearing;
+
+        // find current position relative to robot
+        double currentX = localizer.driver.getPosX(DistanceUnit.INCH);
+        double currentY = localizer.driver.getPosY(DistanceUnit.INCH);
+        Vector2d currentPosition = CustomMath.rotatePointAroundOrigin(new Vector2d(currentX, currentY), -localizer.driver.getHeading(AngleUnit.RADIANS));
 
         // calculate rotation power using a p controller
         double rotationPower = CustomMath.clamp(bearingError, -0.7, 0.7);
 
         // calculate x and y power using a pd controller
-        double xPower = xController.calculate(localizer.driver.getPosX(DistanceUnit.INCH), faceGoalStartX);
+        double xPower = xController.calculate(currentPosition.x, faceGoalStartPosition.x);
         xPower = CustomMath.clamp(xPower, -0.5, 0.5);
 
-        double yPower = yController.calculate(localizer.driver.getPosY(DistanceUnit.INCH), faceGoalStartY);
+        double yPower = yController.calculate(currentPosition.y, faceGoalStartPosition.y);
         yPower = CustomMath.clamp(yPower, -0.5, 0.5);
 
         // ok so when the pinpoint odo system says "X," they mean forward-backward, but when the drivetrain class says "X," it means left-right

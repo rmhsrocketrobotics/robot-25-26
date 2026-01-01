@@ -86,7 +86,7 @@ public class Outtake {
 
     /// set the speed of the outtake and the angle of the hood based the distance to the goal
     /// this method works based off of empirical measurements
-    public void setSpeedAndHood(double metersFromGoal) {
+    public void setOuttakeSpeedAndHoodAngle(double metersFromGoal) {
         // TODO actually make this a thing
     }
 }

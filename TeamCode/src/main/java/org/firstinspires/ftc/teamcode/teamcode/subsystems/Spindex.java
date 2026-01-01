@@ -31,7 +31,7 @@ public class Spindex {
 
     final double[] intakePositions = {0, 0.3826, 0.7831};
     // final double[] outtakePositions = {0.5745, 0.975, 0.1823}; old values
-    final double[] outtakePositions = {0.5845, 1, 0.15};
+    final double[] outtakePositions = {0.5845, 0.98, 0.15};
 
     public DcMotor intakeMotor;
 
@@ -349,7 +349,7 @@ public class Spindex {
                 }
 
                 // flick ball when there is a ball in the queue and the outtake is at the target speed
-                if (!drumIsSwitching() && !drumIsFlicking() && outtake.atTargetSpeed() && !drumIsEmpty()) {
+                if (!drumIsSwitching() && !drumIsFlicking() && !drumIsEmpty()) {
                     if (shootAll) {
                         if (ballStates[drumPosition] == BallState.EMPTY) {
                             nextDrumPosition();
@@ -366,14 +366,19 @@ public class Spindex {
                     }
                 }
 
-                // set the flick's position based on the flick timer, but make sure the drum is not switching
+                // set the flick's position based on the flick timer
                 if (flickTimer.seconds() < (flickTime / 2)) {
-                    if (!drumIsSwitching()) {
+
+                    // if we should be flicking, but the outtake isn't at the right speed, or the drum is still switching,
+                    // then we wait and keep the flick down
+                    // otherwise, raise the flick
+                    if (!drumIsSwitching() && outtake.atTargetSpeed()) {
                         setFlickPosition("up");
                     } else {
                         flickTimer.reset();
                         setFlickPosition("down");
                     }
+
                 } else {
                     setFlickPosition("down");
                 }
