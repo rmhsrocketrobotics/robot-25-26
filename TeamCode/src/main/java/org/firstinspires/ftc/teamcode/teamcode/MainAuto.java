@@ -66,10 +66,10 @@ public class MainAuto extends LinearOpMode {
 
         public class LaunchAllBalls implements Action {
             private boolean initialized = false;
-            Velocity launchVelocity;
+            private double launchDistance;
 
-            public LaunchAllBalls(Velocity launchVelocity) {
-                this.launchVelocity = launchVelocity;
+            public LaunchAllBalls(double launchDistance) {
+                this.launchDistance = launchDistance;
             }
 
             @Override
@@ -110,8 +110,8 @@ public class MainAuto extends LinearOpMode {
                 return !spindex.shouldSwitchToIntake;
             }
         }
-        public Action launchAllBalls(Velocity launchVelocity) {
-            return new LaunchAllBalls(launchVelocity);
+        public Action launchAllBalls(double launchDistance) {
+            return new LaunchAllBalls(launchDistance);
         }
 
         public class RunActiveIntake implements Action {
@@ -148,10 +148,10 @@ public class MainAuto extends LinearOpMode {
 
         public class ReadyOuttake implements Action {
             private boolean initialized = false;
-            public Velocity launchVelocity;
+            private double launchDistance;
 
-            public ReadyOuttake(Velocity launchVelocity) {
-                this.launchVelocity = launchVelocity;
+            public ReadyOuttake(double launchDistance) {
+                this.launchDistance = launchDistance;
             }
 
             @Override
@@ -174,8 +174,8 @@ public class MainAuto extends LinearOpMode {
                 return true;
             }
         }
-        public Action readyOuttake(Velocity launchVelocity) {
-            return new ReadyOuttake(launchVelocity);
+        public Action readyOuttake(double launchDistance) {
+            return new ReadyOuttake(launchDistance);
         }
     }
 
@@ -216,26 +216,26 @@ public class MainAuto extends LinearOpMode {
             closePath();
         }
 
-        Velocity launchVelocity;
+        double launchDistance;
         if (useFarAuto()) {
-            launchVelocity = new Velocity(6.3, 45);
+            launchDistance = 3; // TODO: actually get good values for this
         } else {
-            launchVelocity = new Velocity(4.3, 55);
+            launchDistance = 1.5;
         }
 
 
         // path actions combined with other actions
-        Action launchFirstBalls = new ParallelAction(startToLaunchZone.build(), ballHandler.launchAllBalls(launchVelocity));
+        Action launchFirstBalls = new ParallelAction(startToLaunchZone.build(), ballHandler.launchAllBalls(launchDistance));
 
         Action getSecondBalls = new RaceAction(launchZoneToSecondBalls.build(), ballHandler.runActiveIntake(true));
 //        Action returnToLaunchZoneWithSecondBalls = new RaceAction(secondBallsToLaunchZone.build(), ballHandler.readyOuttake(launchVelocity));
         Action returnToLaunchZoneWithSecondBalls = new RaceAction(secondBallsToLaunchZone.build(), ballHandler.runActiveIntake(false));
-        Action launchSecondBalls = ballHandler.launchAllBalls(launchVelocity);
+        Action launchSecondBalls = ballHandler.launchAllBalls(launchDistance);
 
         Action getThirdBalls = new RaceAction(launchZoneToThirdBalls.build(), ballHandler.runActiveIntake(true));
 //        Action returnToLaunchZoneWithThirdBalls = new RaceAction(thirdBallsToLaunchZone.build(), ballHandler.readyOuttake(launchVelocity));
         Action returnToLaunchZoneWithThirdBalls = new RaceAction(thirdBallsToLaunchZone.build(), ballHandler.runActiveIntake(false));
-        Action launchThirdBalls = ballHandler.launchAllBalls(launchVelocity);
+        Action launchThirdBalls = ballHandler.launchAllBalls(launchDistance);
 
         // combine all of the above actions into one big long sequential action
         Action runAutonomous = new SequentialAction(
@@ -243,6 +243,9 @@ public class MainAuto extends LinearOpMode {
                 getSecondBalls, returnToLaunchZoneWithSecondBalls, launchSecondBalls,
                 getThirdBalls, returnToLaunchZoneWithThirdBalls, launchThirdBalls
         );
+
+        // add pose recording to the auto action
+        runAutonomous = new RaceAction(runAutonomous, recordPose());
 
         // this is in place of a waitForStart() call
         waitForStart();
@@ -255,7 +258,7 @@ public class MainAuto extends LinearOpMode {
         ballHandler.obeliskId = 22;//vision.obeliskId;
         ballHandler.init();
 
-        Actions.runBlocking(new RaceAction(runAutonomous, recordPose()));
+        Actions.runBlocking(runAutonomous);
     }
 
     public double angleBetweenPoints(Vector2d point1, Vector2d point2) {
