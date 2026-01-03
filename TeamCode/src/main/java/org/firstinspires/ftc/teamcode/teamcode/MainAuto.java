@@ -419,8 +419,15 @@ class AutoVision {
     }
 
     public void faceCameraToObelisk(Pose2d cameraPose) {
+        // uhhh this code probably isn't right TODO fix
         double angleToObelisk = CustomMath.angleBetweenPoints(cameraPose.position, obeliskPosition);
-        double cameraAngle = angleToObelisk - cameraPose.heading.toDouble(); // uhhh this probably isn't right TODO fix
+        double cameraAngle = angleToObelisk - cameraPose.heading.toDouble();
+
+        if (Math.abs(cameraAngle + (2 * Math.PI)) < Math.abs(cameraAngle)) {
+            cameraAngle = cameraAngle + (2 * Math.PI);
+        } else if (Math.abs(cameraAngle - (2 * Math.PI)) < Math.abs(cameraAngle)) {
+            cameraAngle = cameraAngle - (2 * Math.PI);
+        }
 
         setCameraToAngle(-cameraAngle);
     }
