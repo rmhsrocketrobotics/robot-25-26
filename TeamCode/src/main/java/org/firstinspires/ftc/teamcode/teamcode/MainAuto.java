@@ -238,9 +238,9 @@ public class MainAuto extends LinearOpMode {
 
         double launchDistance;
         if (useFarAuto()) {
-            launchDistance = 3; // TODO: actually get good values for this
+            launchDistance = 3; // TODO: actually get a good value for this
         } else {
-            launchDistance = 1.5;
+            launchDistance = 1;
         }
 
 

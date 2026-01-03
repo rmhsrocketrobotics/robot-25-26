@@ -97,5 +97,4 @@ public class CustomMath {
         double rotatedY = (point.x * Math.sin(angle)) + (point.y * Math.cos(angle));
         return new Vector2d(rotatedX, rotatedY);
     }
-
 }

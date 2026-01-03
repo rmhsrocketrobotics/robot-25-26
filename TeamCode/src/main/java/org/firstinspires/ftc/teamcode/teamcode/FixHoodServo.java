@@ -10,7 +10,7 @@ public class FixHoodServo extends LinearOpMode{
 
     @Override
     public void runOpMode() {
-        Servo servo = hardwareMap.get(Servo.class, "rBrake");
+        Servo servo = hardwareMap.get(Servo.class, "cameraServo");
 
         double[] presetPositions = {0.25, 0.5, 0.75};
         double servoPosition = 0;
