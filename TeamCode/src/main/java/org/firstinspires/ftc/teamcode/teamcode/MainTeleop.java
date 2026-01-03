@@ -1,8 +1,12 @@
 package org.firstinspires.ftc.teamcode.teamcode;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
+import org.firstinspires.ftc.teamcode.Drawing;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.State;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Velocity;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Vision;
@@ -139,6 +143,11 @@ public class MainTeleop extends LinearOpMode {
             }
 
             telemetry.update();
+
+//            TelemetryPacket packet = new TelemetryPacket();
+//            packet.fieldOverlay().setStroke("#3F51B5");
+//            Drawing.drawRobot(packet.fieldOverlay(), vision.localizer.getPose());
+//            FtcDashboard.getInstance().sendTelemetryPacket(packet);
         }
     }
 
@@ -159,7 +168,7 @@ public class MainTeleop extends LinearOpMode {
             return;
         }
 
-        outtake.targetTicksPerSecond = 0;
+        outtake.setOuttakeVelocityAndHoodAngle(vision.goalDistance);
 
         if (gamepad2.left_bumper && !gamepad2Last.left_bumper) {
             spindex.queueBall("purple");

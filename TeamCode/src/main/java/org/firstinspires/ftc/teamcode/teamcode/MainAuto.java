@@ -17,12 +17,20 @@ import com.acmerobotics.roadrunner.VelConstraint;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.teamcode.MecanumDrive;
+import org.firstinspires.ftc.teamcode.teamcode.subsystems.CustomMath;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Outtake;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Spindex;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.State;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Velocity;
+import org.firstinspires.ftc.vision.VisionPortal;
+import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
+import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
+
+import java.util.List;
 
 public class MainAuto extends LinearOpMode {
 
@@ -49,19 +57,34 @@ public class MainAuto extends LinearOpMode {
     public class BallHandler { // combination of spindex and outtake
         Spindex spindex;
         Outtake outtake;
-        public int obeliskId;
+        AutoVision vision;
 
         public BallHandler(HardwareMap hardwareMap) {
             spindex = new Spindex(hardwareMap);
             spindex.ballStates = new Spindex.BallState[]{Spindex.BallState.GREEN, Spindex.BallState.PURPLE, Spindex.BallState.PURPLE};
 
             outtake = new Outtake(hardwareMap);
-            outtake.tolerance = 100;
+            //outtake.tolerance = 100;
+
+            vision = new AutoVision(hardwareMap);
         }
 
         public void init() {
             spindex.init();
             outtake.init();
+        }
+
+        public class TrackObelisk implements Action {
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                vision.faceCameraToObelisk(drive.localizer.getPose());
+                vision.detectObelisk();
+                return true;
+            }
+        }
+
+        public Action trackObelisk() {
+            return new TrackObelisk();
         }
 
         public class LaunchAllBalls implements Action {
@@ -77,24 +100,23 @@ public class MainAuto extends LinearOpMode {
                 if (!initialized) {
                     initialized = true;
 
-                    if (obeliskId == 21) {
+                    if (vision.obeliskId == 21) {
                         spindex.queueBall("green");
                         spindex.queueBall("purple");
                         spindex.queueBall("purple");
 
-                    } else if (obeliskId == 22) {
+                    } else if (vision.obeliskId == 22) {
                         spindex.queueBall("purple");
                         spindex.queueBall("green");
                         spindex.queueBall("purple");
 
-                    } else if (obeliskId == 23) {
+                    } else if (vision.obeliskId == 23) {
                         spindex.queueBall("purple");
                         spindex.queueBall("purple");
                         spindex.queueBall("green");
                     }
 
-//                    outtake.setOuttakeToSpeed(launchVelocity.speed, 3.5); // TODO fix this once the new shooting system is done
-//                    outtake.setHoodServoToAngle(launchVelocity.direction);
+                    outtake.setOuttakeVelocityAndHoodAngle(launchDistance);
                 }
 
                 spindex.update(outtake, State.OUTTAKE);
@@ -161,9 +183,7 @@ public class MainAuto extends LinearOpMode {
 
                     spindex.intakeMotor.setPower(0);
 
-//                    outtake.setOuttakeToSpeed(launchVelocity.speed, 3.5); // TODO see above todo
-//                    outtake.setHoodServoToAngle(launchVelocity.direction);
-
+                    outtake.setOuttakeVelocityAndHoodAngle(launchDistance);
                 }
 
                 spindex.update(outtake, State.OUTTAKE);
@@ -247,6 +267,9 @@ public class MainAuto extends LinearOpMode {
         // add pose recording to the auto action
         runAutonomous = new RaceAction(runAutonomous, recordPose());
 
+        // add auto camera tracking to the auto action
+        runAutonomous = new RaceAction(runAutonomous, ballHandler.trackObelisk());
+
         // this is in place of a waitForStart() call
         waitForStart();
 //        while (opModeInInit() && !isStopRequested()) {
@@ -255,7 +278,7 @@ public class MainAuto extends LinearOpMode {
 //            telemetry.addLine("21 is gpp; 22 is pgp; 23 is ppg");
 //        }
 
-        ballHandler.obeliskId = 22;//vision.obeliskId;
+//        ballHandler.obeliskId = 22;//vision.obeliskId;
         ballHandler.init();
 
         Actions.runBlocking(runAutonomous);
@@ -356,5 +379,67 @@ public class MainAuto extends LinearOpMode {
                 .setTangent(3*pi/2)
                 .splineToSplineHeading(new Pose2d(launchPositionFinal, launchToGoalAngleFinal), pi);
 
+    }
+}
+
+class AutoVision {
+    private AprilTagProcessor aprilTag;
+    private VisionPortal visionPortal;
+    public int obeliskId = 21;
+    private Servo cameraServo;
+    private final Vector2d obeliskPosition = new Vector2d(-72, 0);
+
+    public AutoVision(HardwareMap hardwareMap) {
+        // pretty sure that orientation doesn't matter for this
+        aprilTag = new AprilTagProcessor.Builder()
+                .build();
+
+        visionPortal = new VisionPortal.Builder()
+                .setCamera(hardwareMap.get(WebcamName.class, "camera"))
+                .addProcessor(aprilTag)
+                .build();
+        visionPortal.setProcessorEnabled(aprilTag, true);
+
+        cameraServo = hardwareMap.get(Servo.class, "cameraServo");
+        cameraServo.setPosition(0.84);
+    }
+
+    /**
+     * returns true if the obelisk has successfully been detected
+     * */
+    public boolean detectObelisk() {
+        List<AprilTagDetection> detections = aprilTag.getDetections();
+        for (AprilTagDetection detection : detections) {
+            if (detection.id == 21 || detection.id == 22 || detection.id == 23) {
+                obeliskId = detection.id;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void faceCameraToObelisk(Pose2d cameraPose) {
+        double angleToObelisk = CustomMath.angleBetweenPoints(cameraPose.position, obeliskPosition);
+        double cameraAngle = angleToObelisk - cameraPose.heading.toDouble(); // uhhh this probably isn't right TODO fix
+
+        setCameraToAngle(-cameraAngle);
+    }
+
+    /**
+     * zero is looking straight ahead,
+     * a positive angle is looking right,
+     * and a negative angle is looking left
+     * **/
+    private void setCameraToAngle(double cameraAngle) {
+        double cameraMinAngle = -Math.PI / 2;
+        double cameraMaxAngle = Math.PI / 2;
+        double servoMinPosition = 0.18;
+        double servoMaxPosition = 0.82;
+
+        cameraAngle = CustomMath.clamp(cameraAngle, cameraMinAngle, cameraMaxAngle);
+        double normalizedValue = (cameraAngle - cameraMinAngle) / (cameraMaxAngle - cameraMinAngle);
+        double servoPosition = (normalizedValue * (servoMaxPosition - servoMinPosition)) + servoMinPosition;
+
+        cameraServo.setPosition(servoPosition);
     }
 }
