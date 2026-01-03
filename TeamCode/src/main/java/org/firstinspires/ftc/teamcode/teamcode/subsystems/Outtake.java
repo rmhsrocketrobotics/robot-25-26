@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.teamcode.subsystems;
 
+import com.arcrobotics.ftclib.util.InterpLUT;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -19,9 +20,15 @@ public class Outtake {
     public double targetTicksPerSecond;
 
     // the outtake must be going at +- this t/s for atTargetSpeed() to return true
-    public double tolerance = 25;
+    public double tolerance = 40;
 
     private final ElapsedTime veloTimer = new ElapsedTime();
+
+    /// format: meters from goal -> outtake velocity (ticks per second)
+    private InterpLUT outtakeVelocityLUT = new InterpLUT();
+
+    /// format: meters from goal -> outtake angle (hood servo position)
+    private InterpLUT outtakeAngleLUT = new InterpLUT();
 
     public Outtake(HardwareMap hardwareMap) {
         outtake1 = hardwareMap.get(DcMotorEx.class, "outtake1");
@@ -34,6 +41,8 @@ public class Outtake {
         outtake2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         veloController = new VelocityPIDFController(0.004, 0, 0.00065, 0, 0);
+
+        setLUTValues();
 
         lastTargetTicksPerSecond = 0;
         targetTicksPerSecond = 0;
@@ -84,9 +93,43 @@ public class Outtake {
         setOuttakePower(power);
     }
 
+    private void setLUTValues() {
+        outtakeVelocityLUT.add(0.75, 1000);
+        outtakeAngleLUT.add(0.75, 0);
+
+        outtakeVelocityLUT.add(1, 1100);
+        outtakeAngleLUT.add(1, 0);
+
+        outtakeVelocityLUT.add(1.35, 1200);
+        outtakeAngleLUT.add(1.35, 0.25);
+
+        outtakeVelocityLUT.add(1.5, 1200);
+        outtakeAngleLUT.add(1.5, 0.35);
+
+        outtakeVelocityLUT.add(1.75, 1300);
+        outtakeAngleLUT.add(1.75, 0.35);
+
+        outtakeVelocityLUT.add(2, 1350);
+        outtakeAngleLUT.add(2, 0.4);
+
+        outtakeVelocityLUT.add(2.25, 1500);
+        outtakeAngleLUT.add(2.25, 0.4);
+
+        outtakeVelocityLUT.add(2.5, 1600);
+        outtakeAngleLUT.add(2.5, 0.45);
+
+        outtakeVelocityLUT.createLUT();
+        outtakeAngleLUT.createLUT();
+    }
+
     /// set the speed of the outtake and the angle of the hood based the distance to the goal
     /// this method works based off of empirical measurements
-    public void setOuttakeSpeedAndHoodAngle(double metersFromGoal) {
-        // TODO actually make this a thing
+    public void setOuttakeVelocityAndHoodAngle(double metersFromGoal) {
+        // clamp this to be a slightly smaller range than the values you entered into the LUT
+        // this is bc InterpLUT throws an error if input <= mX.get(0)
+        metersFromGoal = CustomMath.clamp(metersFromGoal, 0.75 + 0.0001, 2.5 - 0.0001);
+
+        targetTicksPerSecond = outtakeVelocityLUT.get(metersFromGoal);
+        hoodServo.setPosition(outtakeAngleLUT.get(metersFromGoal));
     }
 }

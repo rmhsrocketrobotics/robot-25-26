@@ -2,10 +2,12 @@ package org.firstinspires.ftc.teamcode.teamcode;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
+import org.firstinspires.ftc.teamcode.Drawing;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Drivetrain;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Outtake;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Spindex;
@@ -137,13 +139,18 @@ public class LaunchTesting extends LinearOpMode{
             outtake.update();
             vision.update();
 
+            telemetry.addData("can see goal april tag", vision.canSeeGoalAprilTag);
+
             spindex.printTelemetry(telemetry);
             outtake.printTelemetry(telemetry);
 //            vision.printTelemetry(telemetry);
             telemetry.addData("state", state);
             telemetry.update();
 
-            sleep(10);
+            TelemetryPacket packet = new TelemetryPacket();
+            packet.fieldOverlay().setStroke("#3F51B5");
+            Drawing.drawRobot(packet.fieldOverlay(), vision.localizer.getPose());
+            FtcDashboard.getInstance().sendTelemetryPacket(packet);
         }
     }
 
