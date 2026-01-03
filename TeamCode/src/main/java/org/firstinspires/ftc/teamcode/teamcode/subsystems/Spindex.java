@@ -64,6 +64,7 @@ public class Spindex {
     private State lastState = State.INTAKE;
 
     private boolean shootAll;
+    private boolean waitingToFlick = false;
 
     /**
      * should run BEFORE waitForStart()
@@ -346,45 +347,43 @@ public class Spindex {
                 // when switching to OUTTAKE mode, reset the drum's position
                 if (lastState == State.INTAKE) {
                     setDrumState("outtake", 2);
+                    waitingToFlick = false;
                 }
 
                 // flick ball when there is a ball in the queue and the outtake is at the target speed
-                if (!drumIsSwitching() && !drumIsFlicking() && !drumIsEmpty()) {
+                if (!drumIsSwitching() && !waitingToFlick && !drumIsFlicking() && !drumIsEmpty()) {
                     if (shootAll) {
                         if (ballStates[drumPosition] == BallState.EMPTY) {
                             nextDrumPosition();
                         }
 
                         ballStates[drumPosition] = BallState.EMPTY;
-                        flickTimer.reset();
+                        waitingToFlick = true;
 
                     } else if (!ballQueue.isEmpty()) {
                         setDrumStateToNextOuttake(ballQueue.removeFirst(), true);
 
                         ballStates[drumPosition] = BallState.EMPTY;
-                        flickTimer.reset();
+                        waitingToFlick = true;
                     }
+                }
+
+                // if we should be flicking, but the outtake isn't at the right speed, or the drum is still switching,
+                // then we wait and keep the flick down
+                if (waitingToFlick && !drumIsSwitching() && outtake.atTargetSpeed()) {
+                    flickTimer.reset();
+                    waitingToFlick = false;
                 }
 
                 // set the flick's position based on the flick timer
                 if (flickTimer.seconds() < (flickTime / 2)) {
-
-                    // if we should be flicking, but the outtake isn't at the right speed, or the drum is still switching,
-                    // then we wait and keep the flick down
-                    // otherwise, raise the flick
-                    if (!drumIsSwitching() && outtake.atTargetSpeed()) {
-                        setFlickPosition("up");
-                    } else {
-                        flickTimer.reset();
-                        setFlickPosition("down");
-                    }
-
+                    setFlickPosition("up");
                 } else {
                     setFlickPosition("down");
                 }
 
                 // suggest to swtich back to INTAKE when the drum is empty
-                if (!drumIsSwitching() && !drumIsFlicking() && drumIsEmpty()) {
+                if (!drumIsSwitching() && !waitingToFlick && !drumIsFlicking() && drumIsEmpty()) {
                     shouldSwitchToIntake = true;
                 }
 
