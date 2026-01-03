@@ -14,7 +14,7 @@ public class Drivetrain {
     private Servo lBrake;
     private Servo rBrake;
     public boolean isBraking;
-    private final double zeroPowerTolerance = 0.04;
+    private final double zeroPowerTolerance = 0.075; // TODO test ts more
 
     public Drivetrain(HardwareMap hardwareMap) {
         flMotor = hardwareMap.get(DcMotor.class, "fl");

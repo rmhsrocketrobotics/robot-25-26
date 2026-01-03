@@ -8,6 +8,8 @@ import static java.lang.Math.tan;
 import static java.lang.Math.toDegrees;
 import static java.lang.Math.toRadians;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.arcrobotics.ftclib.controller.PDController;
@@ -22,7 +24,9 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainCon
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
+import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
+import org.firstinspires.ftc.teamcode.Drawing;
 import org.firstinspires.ftc.teamcode.Localizer;
 import org.firstinspires.ftc.teamcode.PinpointLocalizer;
 import org.firstinspires.ftc.teamcode.teamcode.PoseStorage;
@@ -39,7 +43,7 @@ public class Vision {
     private boolean initialized = false;
     private AprilTagProcessor aprilTag;
     private VisionPortal visionPortal;
-    private PinpointLocalizer localizer;
+    public PinpointLocalizer localizer;
     private final Vector2d goalPosition;
     private AprilTagDetection latestDetection;
     private Pose2d lastPose;
@@ -88,7 +92,7 @@ public class Vision {
         }
 
         cameraServo = hardwareMap.get(Servo.class, "cameraServo");
-        cameraServo.setPosition(0.84);
+        cameraServo.setPosition(0.5);
 
         xController = new PDController(0.25, 0.03);
         yController = new PDController(0.25, 0.03);
@@ -112,7 +116,7 @@ public class Vision {
                 latestDetection = detection;
                 double xPos = detection.robotPose.getPosition().x;
                 double yPos = detection.robotPose.getPosition().y;
-                double heading = detection.robotPose.getOrientation().getYaw(AngleUnit.RADIANS) - (Math.PI / 2);
+                double heading = detection.robotPose.getOrientation().getYaw(AngleUnit.RADIANS) + (Math.PI / 2);
                 localizer.setPose(new Pose2d(xPos, yPos, heading));
 
                 canSeeGoalAprilTag = true;
@@ -143,17 +147,14 @@ public class Vision {
     public void faceGoal(Drivetrain drivetrain, Telemetry telemetry) {
         faceGoalCalledThisLoop = true;
 
-        double targetBearing = CustomMath.angleBetweenPoints(goalPosition, localizer.getPose().component1());
+        double targetBearing = CustomMath.angleBetweenPoints(localizer.getPose().component1(), goalPosition);
         double currentBearing = localizer.getPose().component2().toDouble();
 
         if (!faceGoalCalledLastLoop) {
             faceGoalTimer.reset();
             faceGoalStartDistance = targetBearing - currentBearing;
 
-            double faceGoalStartX = localizer.driver.getPosX(DistanceUnit.INCH); // TODO FJIX THIS DFKLSJFK
-            double faceGoalStartY = localizer.driver.getPosY(DistanceUnit.INCH);
-
-            faceGoalStartPosition = CustomMath.rotatePointAroundOrigin(new Vector2d(faceGoalStartX, faceGoalStartY), -localizer.driver.getHeading(AngleUnit.RADIANS));
+            faceGoalStartPosition = new Vector2d(localizer.driver.getPosX(DistanceUnit.INCH), localizer.driver.getPosY(DistanceUnit.INCH));
 
             xController.reset();
             yController.reset();
@@ -172,14 +173,17 @@ public class Vision {
 //        }
 
         double bearingError = targetBearing - currentBearing;
+        if (Math.abs(bearingError + (2 * Math.PI)) < Math.abs(bearingError)) {
+            bearingError = bearingError + (2 * Math.PI);
+        } else if (Math.abs(bearingError - (2 * Math.PI)) < Math.abs(bearingError)) {
+            bearingError = bearingError - (2 * Math.PI);
+        }
 
-        // find current position relative to robot
-        double currentX = localizer.driver.getPosX(DistanceUnit.INCH);
-        double currentY = localizer.driver.getPosY(DistanceUnit.INCH);
-        Vector2d currentPosition = CustomMath.rotatePointAroundOrigin(new Vector2d(currentX, currentY), -localizer.driver.getHeading(AngleUnit.RADIANS));
+        // find current position
+        Vector2d currentPosition = new Vector2d(localizer.driver.getPosX(DistanceUnit.INCH), localizer.driver.getPosY(DistanceUnit.INCH));
 
         // calculate rotation power using a p controller
-        double rotationPower = CustomMath.clamp(bearingError, -0.7, 0.7);
+        double rotationPower = CustomMath.clamp(bearingError * 1.2, -0.7, 0.7);
 
         // calculate x and y power using a pd controller
         double xPower = xController.calculate(currentPosition.x, faceGoalStartPosition.x);
@@ -188,23 +192,17 @@ public class Vision {
         double yPower = yController.calculate(currentPosition.y, faceGoalStartPosition.y);
         yPower = CustomMath.clamp(yPower, -0.5, 0.5);
 
+        // rotate powers relative to robot
+        Vector2d xyPower = CustomMath.rotatePointAroundOrigin(new Vector2d(xPower, yPower), -localizer.driver.getHeading(AngleUnit.RADIANS));
+
         // ok so when the pinpoint odo system says "X," they mean forward-backward, but when the drivetrain class says "X," it means left-right
         // that's why this is sus and android studio gives a warning
-        drivetrain.setDrivetrainPower(xPower, -yPower, -rotationPower);
-    }
-
-    /**
-     * returns true if the obelisk has successfully been detected
-     * */
-    public boolean detectObelisk() {
-        List<AprilTagDetection> detections = aprilTag.getDetections();
-        for (AprilTagDetection detection : detections) {
-            if (detection.id == 21 || detection.id == 22 || detection.id == 23) {
-                obeliskId = detection.id;
-                return true;
-            }
-        }
-        return false;
+        drivetrain.setDrivetrainPower(xyPower.x, -xyPower.y, -rotationPower);
+//        if (Math.abs(bearingError) > Math.PI / 4) {
+//            drivetrain.setDrivetrainPower(0, 0, -rotationPower);
+//        } else {
+//            drivetrain.setDrivetrainPower(xPower, -yPower, -rotationPower);
+//        }
     }
 
     public void printTelemetry(Telemetry telemetry) {
