@@ -115,7 +115,7 @@ public class Outtake {
         outtakeVelocityLUT.add(2.25, 1500);
         outtakeAngleLUT.add(2.25, 0.4);
 
-        outtakeVelocityLUT.add(2.5, 1600);
+        outtakeVelocityLUT.add(2.5, 1550);
         outtakeAngleLUT.add(2.5, 0.45);
 
         outtakeVelocityLUT.createLUT();

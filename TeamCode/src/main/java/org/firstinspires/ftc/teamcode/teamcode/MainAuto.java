@@ -255,7 +255,7 @@ public class MainAuto extends LinearOpMode {
         Action getThirdBalls = new RaceAction(launchZoneToThirdBalls.build(), ballHandler.runActiveIntake(true));
 //        Action returnToLaunchZoneWithThirdBalls = new RaceAction(thirdBallsToLaunchZone.build(), ballHandler.readyOuttake(launchVelocity));
         Action returnToLaunchZoneWithThirdBalls = new RaceAction(thirdBallsToLaunchZone.build(), ballHandler.runActiveIntake(false));
-        Action launchThirdBalls = ballHandler.launchAllBalls(launchDistance);
+        Action launchThirdBalls = ballHandler.launchAllBalls(0.7); // todo change when making far auto
 
         // combine all of the above actions into one big long sequential action
         Action runAutonomous = new SequentialAction(
@@ -350,7 +350,7 @@ public class MainAuto extends LinearOpMode {
             actionBuilder = drive.actionBuilder(beginPose);
         } else {
             actionBuilder = drive.actionBuilder(beginPose, pose2dDual -> new Pose2dDual<>(
-                    pose2dDual.position.x, pose2dDual.position.y.unaryMinus(), pose2dDual.heading.plus(Math.PI)));
+                    pose2dDual.position.x, pose2dDual.position.y.unaryMinus(), pose2dDual.heading.inverse()));
         }
 
         startToLaunchZone = actionBuilder
@@ -429,7 +429,7 @@ class AutoVision {
             cameraAngle = cameraAngle - (2 * Math.PI);
         }
 
-        setCameraToAngle(-cameraAngle);
+        setCameraToAngle(cameraAngle);
     }
 
     /**
