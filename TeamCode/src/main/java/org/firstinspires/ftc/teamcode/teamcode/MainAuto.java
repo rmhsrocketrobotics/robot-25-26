@@ -20,6 +20,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.MecanumDrive;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.CustomMath;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Outtake;
@@ -422,21 +423,19 @@ class AutoVision {
         double angleToObelisk = CustomMath.angleBetweenPoints(cameraPose.position, obeliskPosition);
         double cameraAngle = angleToObelisk - cameraPose.heading.toDouble();
 
-        if (Math.abs(cameraAngle + (2 * Math.PI)) < Math.abs(cameraAngle)) {
-            cameraAngle = cameraAngle + (2 * Math.PI);
-        } else if (Math.abs(cameraAngle - (2 * Math.PI)) < Math.abs(cameraAngle)) {
-            cameraAngle = cameraAngle - (2 * Math.PI);
-        }
+        cameraAngle = AngleUnit.normalizeRadians(cameraAngle);
 
         setCameraToAngle(cameraAngle);
     }
 
     /**
      * zero is looking straight ahead,
-     * a positive angle is looking right,
-     * and a negative angle is looking left
+     * a positive angle is looking left,
+     * and a negative angle is looking right
      * **/
     private void setCameraToAngle(double cameraAngle) {
+        cameraAngle = -cameraAngle;
+
         double cameraMinAngle = -Math.PI / 2;
         double cameraMaxAngle = Math.PI / 2;
         double servoMinPosition = 0.18;
