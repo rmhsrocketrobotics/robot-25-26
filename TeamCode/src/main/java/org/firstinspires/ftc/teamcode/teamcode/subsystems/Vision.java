@@ -187,10 +187,10 @@ public class Vision {
 
         // calculate x and y power using a pd controller
         double xPower = xController.calculate(currentPosition.x, faceGoalStartPosition.x);
-        xPower = CustomMath.clamp(xPower, -0.5, 0.5);
+        xPower = CustomMath.clamp(xPower, -0.7, 0.7);
 
         double yPower = yController.calculate(currentPosition.y, faceGoalStartPosition.y);
-        yPower = CustomMath.clamp(yPower, -0.5, 0.5);
+        yPower = CustomMath.clamp(yPower, -0.7, 0.7);
 
         // rotate powers relative to robot
         Vector2d xyPower = CustomMath.rotatePointAroundOrigin(new Vector2d(xPower, yPower), -localizer.driver.getHeading(AngleUnit.RADIANS));
@@ -198,11 +198,11 @@ public class Vision {
         // ok so when the pinpoint odo system says "X," they mean forward-backward, but when the drivetrain class says "X," it means left-right
         // that's why this is sus and android studio gives a warning
         drivetrain.setDrivetrainPower(xyPower.x, -xyPower.y, -rotationPower);
-//        if (Math.abs(bearingError) > Math.PI / 4) {
-//            drivetrain.setDrivetrainPower(0, 0, -rotationPower);
-//        } else {
-//            drivetrain.setDrivetrainPower(xPower, -yPower, -rotationPower);
-//        }
+
+        // brake if facing about the correct angle
+        if (Math.abs(bearingError) < Math.toRadians(15)) {
+            drivetrain.isBraking = true;
+        }
     }
 
     public void printTelemetry(Telemetry telemetry) {
