@@ -175,6 +175,7 @@ public class MainAuto extends LinearOpMode {
         public class ReadyOuttake implements Action {
             private boolean initialized = false;
             private double launchDistance;
+            private State currentState = State.INTAKE;
 
             public ReadyOuttake(double launchDistance) {
                 this.launchDistance = launchDistance;
@@ -185,12 +186,23 @@ public class MainAuto extends LinearOpMode {
                 if (!initialized) {
                     initialized = true;
 
-                    spindex.intakeMotor.setPower(0);
+                    spindex.update(outtake, currentState);
 
                     outtake.setOuttakeVelocityAndHoodAngle(launchDistance);
                 }
 
-                spindex.update(outtake, State.OUTTAKE);
+                if (spindex.shouldSwitchToOuttake && currentState == State.INTAKE) {
+                    currentState = State.OUTTAKE;
+                }
+
+                if (currentState == State.INTAKE) {
+                    spindex.intakeMotor.setPower(1);
+
+                } else if (currentState == State.OUTTAKE) {
+                    spindex.intakeMotor.setPower(0);
+                }
+
+                spindex.update(outtake, currentState);
                 outtake.update();
 
                 PoseStorage.ballStates = spindex.ballStates;
@@ -256,13 +268,13 @@ public class MainAuto extends LinearOpMode {
         Action launchFirstBalls = new ParallelAction(startToLaunchZone.build(), ballHandler.launchAllBalls(launchDistance));
 
         Action getSecondBalls = new RaceAction(launchZoneToSecondBalls.build(), ballHandler.runActiveIntake(true));
-//        Action returnToLaunchZoneWithSecondBalls = new RaceAction(secondBallsToLaunchZone.build(), ballHandler.readyOuttake(launchVelocity));
-        Action returnToLaunchZoneWithSecondBalls = new RaceAction(secondBallsToLaunchZone.build(), ballHandler.runActiveIntake(false));
+        Action returnToLaunchZoneWithSecondBalls = new RaceAction(secondBallsToLaunchZone.build(), ballHandler.readyOuttake(launchDistance));
+//        Action returnToLaunchZoneWithSecondBalls = new RaceAction(secondBallsToLaunchZone.build(), ballHandler.runActiveIntake(false));
         Action launchSecondBalls = ballHandler.launchAllBalls(launchDistance);
 
         Action getThirdBalls = new RaceAction(launchZoneToThirdBalls.build(), ballHandler.runActiveIntake(true));
-//        Action returnToLaunchZoneWithThirdBalls = new RaceAction(thirdBallsToLaunchZone.build(), ballHandler.readyOuttake(launchVelocity));
-        Action returnToLaunchZoneWithThirdBalls = new RaceAction(thirdBallsToLaunchZone.build(), ballHandler.runActiveIntake(false));
+        Action returnToLaunchZoneWithThirdBalls = new RaceAction(thirdBallsToLaunchZone.build(), ballHandler.readyOuttake(finalLaunchDistance));
+//        Action returnToLaunchZoneWithThirdBalls = new RaceAction(thirdBallsToLaunchZone.build(), ballHandler.runActiveIntake(false));
         Action launchThirdBalls = ballHandler.launchAllBalls(finalLaunchDistance);
 
         // combine all of the above actions into one big long sequential action
@@ -377,7 +389,7 @@ public class MainAuto extends LinearOpMode {
         launchZoneToSecondBalls = startToLaunchZone.endTrajectory().fresh()
                 .setReversed(false)
                 .setTangent(0)
-                .splineToSplineHeading(new Pose2d(-11, ballPickupYPos * flipConstant, (pi/2) * flipConstant), 0)
+                .splineToSplineHeading(new Pose2d(-11, (ballPickupYPos - 1) * flipConstant, (pi/2) * flipConstant), 0)
                 .setTangent((pi/2) * flipConstant)
                 .splineTo(ball1PickupPosition, (pi/2) * flipConstant, lowVelocity); // slow mode
 

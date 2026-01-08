@@ -31,7 +31,7 @@ public class Spindex {
 
     final double[] intakePositions = {0, 0.3826, 0.7831};
     // final double[] outtakePositions = {0.5745, 0.975, 0.1823}; old values
-    final double[] outtakePositions = {0.5845, 0.98, 0.15};
+    final double[] outtakePositions = {0.5845, 0.995, 0.15};
 
     public DcMotor intakeMotor;
 
@@ -50,13 +50,13 @@ public class Spindex {
 
     // time it takes to go from position 0.0 to position 1.0 on the drum servo
     // (setting too low will mean the sensor sees the same ball multiple times)
-    public double switchCooldownConstant = 0.7;//1.75;
+    public double switchCooldownConstant = 0.75;//1.75;
 
     double switchCooldown = switchCooldownConstant;
 
     public ElapsedTime flickTimer;
     // time that the flick has to go up and down
-    public double flickTime = 0.4;
+    public double flickTime = 0.55;
 
     public boolean shouldSwitchToIntake = false;
     public boolean shouldSwitchToOuttake = false;
@@ -64,7 +64,7 @@ public class Spindex {
     private State lastState = State.INTAKE;
 
     private boolean shootAll;
-    private boolean waitingToFlick = false;
+    public boolean waitingToFlick = false;
 
     /**
      * should run BEFORE waitForStart()
@@ -216,7 +216,7 @@ public class Spindex {
 
     private void setFlickPosition(String position) {
         if (position.equals("up")) {
-            flickServo.setPosition(0.25);
+            flickServo.setPosition(0.15);
         } else if (position.equals("down")) {
             flickServo.setPosition(0.5);
         }
@@ -226,7 +226,9 @@ public class Spindex {
      * shoot a ball
      * */
     private void setDrumStateToNextOuttake() {
-        for (int i = 0; i < ballStates.length; i++) {
+        int[] drumPositionOrder = {2, 0, 1};
+
+        for (int i : drumPositionOrder) {
             BallState ballState = ballStates[i];
             if (ballState != BallState.EMPTY) {
                 setDrumState("outtake", i);
@@ -365,9 +367,7 @@ public class Spindex {
                 // flick ball when there is a ball in the queue and the outtake is at the target speed
                 if (!drumIsSwitching() && !waitingToFlick && !drumIsFlicking() && !drumIsEmpty()) {
                     if (shootAll) {
-                        if (ballStates[drumPosition] == BallState.EMPTY) {
-                            nextDrumPosition();
-                        }
+                        setDrumStateToNextOuttake();
 
                         ballStates[drumPosition] = BallState.EMPTY;
                         waitingToFlick = true;

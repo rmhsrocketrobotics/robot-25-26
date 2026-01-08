@@ -68,7 +68,11 @@ public class Vision {
     private YawPitchRollAngles cameraOrientation = new YawPitchRollAngles(AngleUnit.DEGREES,
             0, -90 + cameraPitch, 0, 0);
 
+    private boolean isRedAlliance;
+
     public Vision(HardwareMap hardwareMap, boolean isRedAlliance) {
+        this.isRedAlliance = isRedAlliance;
+
         /// see ConceptAprilTagLocalization.java
         aprilTag = new AprilTagProcessor.Builder()
                 .setCameraPose(cameraPosition, cameraOrientation)
@@ -152,7 +156,13 @@ public class Vision {
     public void faceGoal(Drivetrain drivetrain, Telemetry telemetry) {
         faceGoalCalledThisLoop = true;
 
-        double targetBearing = CustomMath.angleBetweenPoints(localizer.getPose().component1(), goalPosition);
+        double targetBearing;
+        if (isRedAlliance) {
+            targetBearing = CustomMath.angleBetweenPoints(localizer.getPose().component1(), new Vector2d(-70, 65.5));
+        } else {
+            targetBearing = CustomMath.angleBetweenPoints(localizer.getPose().component1(), new Vector2d(-70, -65.5));
+        }
+
         double currentBearing = localizer.getPose().component2().toDouble();
 
         if (!faceGoalCalledLastLoop) {
