@@ -94,29 +94,35 @@ public class Outtake {
     }
 
     private void setLUTValues() {
-        outtakeVelocityLUT.add(0.75, 1000);
+        outtakeVelocityLUT.add(0.5, 1000);
+        outtakeAngleLUT.add(0.5, 0);
+
+        outtakeVelocityLUT.add(0.75, 1050);
         outtakeAngleLUT.add(0.75, 0);
 
-        outtakeVelocityLUT.add(1, 1100);
-        outtakeAngleLUT.add(1, 0);
+        outtakeVelocityLUT.add(1, 1150);
+        outtakeAngleLUT.add(1, 0.25);
 
-        outtakeVelocityLUT.add(1.35, 1200);
-        outtakeAngleLUT.add(1.35, 0.25);
+        outtakeVelocityLUT.add(1.25, 1200);
+        outtakeAngleLUT.add(1.25, 0.25);
 
         outtakeVelocityLUT.add(1.5, 1200);
-        outtakeAngleLUT.add(1.5, 0.35);
+        outtakeAngleLUT.add(1.5, 0.4);
 
         outtakeVelocityLUT.add(1.75, 1300);
-        outtakeAngleLUT.add(1.75, 0.35);
+        outtakeAngleLUT.add(1.75, 0.4);
 
         outtakeVelocityLUT.add(2, 1350);
         outtakeAngleLUT.add(2, 0.4);
 
-        outtakeVelocityLUT.add(2.25, 1500);
+        outtakeVelocityLUT.add(2.25, 1400);
         outtakeAngleLUT.add(2.25, 0.4);
 
-        outtakeVelocityLUT.add(2.5, 1550);
-        outtakeAngleLUT.add(2.5, 0.45);
+        outtakeVelocityLUT.add(2.5, 1400);
+        outtakeAngleLUT.add(2.5, 0.4);
+
+        outtakeVelocityLUT.add(2.9, 1500);
+        outtakeAngleLUT.add(2.9, 0.4);
 
         outtakeVelocityLUT.createLUT();
         outtakeAngleLUT.createLUT();
