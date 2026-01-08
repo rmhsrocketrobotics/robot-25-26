@@ -72,6 +72,8 @@ public class MainAuto extends LinearOpMode {
 
         public void init() {
             spindex.init();
+            spindex.setDrumState("outtake", 2);
+
             outtake.init();
         }
 
@@ -80,6 +82,7 @@ public class MainAuto extends LinearOpMode {
             public boolean run(@NonNull TelemetryPacket packet) {
                 vision.faceCameraToObelisk(drive.localizer.getPose());
                 vision.detectObelisk();
+                telemetry.addData("obelisk id", vision.obeliskId);
                 return true;
             }
         }
@@ -211,6 +214,7 @@ public class MainAuto extends LinearOpMode {
     TrajectoryActionBuilder secondBallsToLaunchZone;
     TrajectoryActionBuilder launchZoneToThirdBalls;
     TrajectoryActionBuilder thirdBallsToLaunchZone;
+    TrajectoryActionBuilder launchZoneToEndPosition;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -238,10 +242,13 @@ public class MainAuto extends LinearOpMode {
         }
 
         double launchDistance;
+        double finalLaunchDistance;
         if (useFarAuto()) {
-            launchDistance = 3; // TODO: actually get a good value for this
+            launchDistance = 2.5;
+            finalLaunchDistance = launchDistance;
         } else {
-            launchDistance = 1;
+            launchDistance = 0.9;
+            finalLaunchDistance = 0.6;
         }
 
 
@@ -256,7 +263,7 @@ public class MainAuto extends LinearOpMode {
         Action getThirdBalls = new RaceAction(launchZoneToThirdBalls.build(), ballHandler.runActiveIntake(true));
 //        Action returnToLaunchZoneWithThirdBalls = new RaceAction(thirdBallsToLaunchZone.build(), ballHandler.readyOuttake(launchVelocity));
         Action returnToLaunchZoneWithThirdBalls = new RaceAction(thirdBallsToLaunchZone.build(), ballHandler.runActiveIntake(false));
-        Action launchThirdBalls = ballHandler.launchAllBalls(0.7); // todo change when making far auto
+        Action launchThirdBalls = ballHandler.launchAllBalls(finalLaunchDistance);
 
         // combine all of the above actions into one big long sequential action
         Action runAutonomous = new SequentialAction(
@@ -264,6 +271,11 @@ public class MainAuto extends LinearOpMode {
                 getSecondBalls, returnToLaunchZoneWithSecondBalls, launchSecondBalls,
                 getThirdBalls, returnToLaunchZoneWithThirdBalls, launchThirdBalls
         );
+
+        // if this is a far auto, add the park pathing
+        if (useFarAuto()) {
+            runAutonomous = new SequentialAction(runAutonomous, launchZoneToEndPosition.build());
+        }
 
         // add pose recording to the auto action
         runAutonomous = new RaceAction(runAutonomous, recordPose());
@@ -299,11 +311,11 @@ public class MainAuto extends LinearOpMode {
             flipConstant = -1;
         }
 
-        beginPose = new Pose2d(61, 13.5, Math.toRadians(180) * flipConstant);
+        beginPose = new Pose2d(61, 13.5 * flipConstant, Math.toRadians(180) * flipConstant);
         drive = new MecanumDrive(hardwareMap, beginPose);
 
-        Vector2d launchPosition = new Vector2d(56, 14.5 * flipConstant);
-        double launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-66, 58 * flipConstant));
+        Vector2d launchPosition = new Vector2d(50.5, 14.5 * flipConstant);
+        double launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-66, 60 * flipConstant));
 
         TrajectoryActionBuilder actionBuilder = drive.actionBuilder(beginPose);
 
@@ -312,7 +324,7 @@ public class MainAuto extends LinearOpMode {
 
         launchZoneToSecondBalls = startToLaunchZone.endTrajectory().fresh()
                 .splineTo(new Vector2d(36, 28 * flipConstant), (pi/2) * flipConstant)
-                .splineTo(new Vector2d(36, 45 * flipConstant), (pi/2) * flipConstant, lowVelocity); // slow mode
+                .splineTo(new Vector2d(36, 61 * flipConstant), (pi/2) * flipConstant, lowVelocity); // slow mode
 
         secondBallsToLaunchZone = launchZoneToSecondBalls.endTrajectory().fresh()
                 .setReversed(true)
@@ -321,11 +333,15 @@ public class MainAuto extends LinearOpMode {
         launchZoneToThirdBalls = secondBallsToLaunchZone.endTrajectory().fresh()
                 .setReversed(false)
                 .splineTo(new Vector2d(13, 28 * flipConstant), (pi/2) * flipConstant)
-                .splineTo(new Vector2d(13, 45 * flipConstant), (pi/2) * flipConstant, lowVelocity); // slow mode
+                .splineTo(new Vector2d(13, 61 * flipConstant), (pi/2) * flipConstant, lowVelocity); // slow mode
 
         thirdBallsToLaunchZone = launchZoneToThirdBalls.endTrajectory().fresh()
                 .setReversed(true)
                 .splineTo(launchPosition, launchToGoalAngle - pi);
+
+        launchZoneToEndPosition = thirdBallsToLaunchZone.endTrajectory().fresh() // only for far auto
+                .setReversed(false)
+                .splineTo(new Vector2d(20, 40 * flipConstant), pi);
     }
 
     public void closePath() {
@@ -344,7 +360,7 @@ public class MainAuto extends LinearOpMode {
         double launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-58, 58 * flipConstant));
 
         Vector2d launchPositionFinal = new Vector2d(-50, ballPickupYPos * flipConstant);
-        double launchToGoalAngleFinal = angleBetweenPoints(launchPositionFinal, new Vector2d(-58, 58 * flipConstant));
+        double launchToGoalAngleFinal = angleBetweenPoints(launchPositionFinal, new Vector2d(-58, 60 * flipConstant));
 
         Vector2d ball1PickupPosition = new Vector2d(-11, 55 * flipConstant);
         double ball1ToLaunchAngle = angleBetweenPoints(ball1PickupPosition, launchPosition);
