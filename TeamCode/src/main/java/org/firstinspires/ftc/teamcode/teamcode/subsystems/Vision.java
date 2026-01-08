@@ -62,7 +62,7 @@ public class Vision {
 
     public Servo cameraServo;
 
-    private double cameraPitch = 22;
+    private double cameraPitch = 14;
     private Position cameraPosition = new Position(DistanceUnit.INCH,
             0, 7, 12, 0);
     private YawPitchRollAngles cameraOrientation = new YawPitchRollAngles(AngleUnit.DEGREES,
@@ -87,15 +87,20 @@ public class Vision {
 
         if (isRedAlliance) {
             goalPosition = new Vector2d(-58, 55);
+            //goalPosition = new Vector2d(-65, 60); possible new goal position???
         } else {
             goalPosition = new Vector2d(-58, -55);
         }
 
         cameraServo = hardwareMap.get(Servo.class, "cameraServo");
-        cameraServo.setPosition(0.5);
+
 
         xController = new PDController(0.25, 0.03);
         yController = new PDController(0.25, 0.03);
+    }
+
+    public void init() {
+        cameraServo.setPosition(0.5);
     }
 
     private void initCamera() {

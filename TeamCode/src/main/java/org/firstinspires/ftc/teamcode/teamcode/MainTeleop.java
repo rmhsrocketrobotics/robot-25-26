@@ -60,6 +60,7 @@ public class MainTeleop extends LinearOpMode {
 
         spindex.init();
         outtake.init();
+        vision.init();
 
         while (opModeIsActive()) {
             // GAMEPAD 1 CODE:

@@ -28,10 +28,10 @@ public class LaunchTesting extends LinearOpMode{
 
     boolean pauseIntake = false;
     double hoodServoPosition = 0;
-    double outtakeSpeed = 1500;
+    double outtakeSpeed = 1400;
 
     public boolean allianceIsRed() {
-        return true;
+        return false;
     }
 
     @Override
@@ -73,9 +73,9 @@ public class LaunchTesting extends LinearOpMode{
             outtake.hoodServo.setPosition(hoodServoPosition);
 
             if (gamepad1.x && !gamepad1Last.x) {
-                outtakeSpeed += 100;
+                outtakeSpeed += 50;
             } else if (gamepad1.y && !gamepad1Last.y) {
-                outtakeSpeed -= 100;
+                outtakeSpeed -= 50;
             }
 
             if (gamepad1.dpad_right && !gamepad1Last.dpad_right) {
@@ -94,11 +94,11 @@ public class LaunchTesting extends LinearOpMode{
                 spindex.switchCooldownConstant -= 0.1;
             }
 
-//            if (gamepad2.x && !gamepad2Last.x) {
-//                spindex.outtakeTime += 0.05;
-//            } else if (gamepad2.y && !gamepad2Last.y) {
-//                spindex.outtakeTime -= 0.05;
-//            }
+            if (gamepad2.x && !gamepad2Last.x) {
+                spindex.flickTime += 0.05;
+            } else if (gamepad2.y && !gamepad2Last.y) {
+                spindex.flickTime -= 0.05;
+            }
 //
 //            if (gamepad2.dpad_right && !gamepad2Last.dpad_right) {
 //                spindex.postFlickTime += 0.1;
@@ -119,7 +119,7 @@ public class LaunchTesting extends LinearOpMode{
             telemetry.addLine();
 
             telemetry.addData("the switch cooldown constant (gp2 bumpers) is", spindex.switchCooldownConstant);
-            //telemetry.addData("the outtake time (gp2 x & y) is", spindex.outtakeTime);
+            telemetry.addData("the flick time (gp2 x & y) is", spindex.flickTime);
 //            telemetry.addData("the post flick time is", spindex.postFlickTime);
 
             telemetry.addLine("\n---------------------------\n");
