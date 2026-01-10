@@ -31,7 +31,7 @@ public class Spindex {
 
     final double[] intakePositions = {0, 0.3826, 0.7831};
     // final double[] outtakePositions = {0.5745, 0.975, 0.1823}; old values
-    final double[] outtakePositions = {0.5845, 0.995, 0.15};
+    final double[] outtakePositions = {0.5845, 0.98, 0.18};
 
     public DcMotor intakeMotor;
 
@@ -50,7 +50,7 @@ public class Spindex {
 
     // time it takes to go from position 0.0 to position 1.0 on the drum servo
     // (setting too low will mean the sensor sees the same ball multiple times)
-    public double switchCooldownConstant = 0.75;//1.75;
+    public double switchCooldownConstant = 1;//1.75;
 
     double switchCooldown = switchCooldownConstant;
 

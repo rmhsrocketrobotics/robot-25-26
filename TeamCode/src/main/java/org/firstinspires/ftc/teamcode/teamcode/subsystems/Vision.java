@@ -158,9 +158,9 @@ public class Vision {
 
         double targetBearing;
         if (isRedAlliance) {
-            targetBearing = CustomMath.angleBetweenPoints(localizer.getPose().component1(), new Vector2d(-70, 65.5));
+            targetBearing = CustomMath.angleBetweenPoints(localizer.getPose().component1(), new Vector2d(-70, 67));
         } else {
-            targetBearing = CustomMath.angleBetweenPoints(localizer.getPose().component1(), new Vector2d(-70, -65.5));
+            targetBearing = CustomMath.angleBetweenPoints(localizer.getPose().component1(), new Vector2d(-70, -67));
         }
 
         double currentBearing = localizer.getPose().component2().toDouble();
@@ -198,7 +198,7 @@ public class Vision {
         Vector2d currentPosition = new Vector2d(localizer.driver.getPosX(DistanceUnit.INCH), localizer.driver.getPosY(DistanceUnit.INCH));
 
         // calculate rotation power using a p controller
-        double rotationPower = CustomMath.clamp(bearingError * 1.2, -0.7, 0.7);
+        double rotationPower = CustomMath.clamp(bearingError * 1.6, -0.7, 0.7);
 
         // calculate x and y power using a pd controller
         double xPower = xController.calculate(currentPosition.x, faceGoalStartPosition.x);

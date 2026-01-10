@@ -86,14 +86,14 @@ public class Drivetrain {
     }
 
     public void update() {
-//        if (isBraking) {
-//            lBrake.setPosition(0.35);
-//            rBrake.setPosition(0.42);
-//            isBraking = false;
-//        } else {
-//            lBrake.setPosition(0.6);
-//            rBrake.setPosition(0.3);
-//        }
+        if (isBraking) {
+            lBrake.setPosition(0.4);
+            rBrake.setPosition(0.5);
+            isBraking = false;
+        } else {
+            lBrake.setPosition(0.6);
+            rBrake.setPosition(0.3);
+        }
     }
 
     public void printTelemetry(Telemetry telemetry) {

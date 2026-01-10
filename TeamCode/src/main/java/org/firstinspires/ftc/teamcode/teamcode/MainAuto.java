@@ -256,7 +256,7 @@ public class MainAuto extends LinearOpMode {
         double launchDistance;
         double finalLaunchDistance;
         if (useFarAuto()) {
-            launchDistance = 2.5;
+            launchDistance = 2.7;
             finalLaunchDistance = launchDistance;
         } else {
             launchDistance = 0.9;
@@ -372,7 +372,7 @@ public class MainAuto extends LinearOpMode {
         double launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-58, 58 * flipConstant));
 
         Vector2d launchPositionFinal = new Vector2d(-50, ballPickupYPos * flipConstant);
-        double launchToGoalAngleFinal = angleBetweenPoints(launchPositionFinal, new Vector2d(-58, 60 * flipConstant));
+        double launchToGoalAngleFinal = angleBetweenPoints(launchPositionFinal, new Vector2d(-65, 65 * flipConstant));
 
         Vector2d ball1PickupPosition = new Vector2d(-11, 55 * flipConstant);
         double ball1ToLaunchAngle = angleBetweenPoints(ball1PickupPosition, launchPosition);
@@ -389,7 +389,7 @@ public class MainAuto extends LinearOpMode {
         launchZoneToSecondBalls = startToLaunchZone.endTrajectory().fresh()
                 .setReversed(false)
                 .setTangent(0)
-                .splineToSplineHeading(new Pose2d(-11, (ballPickupYPos - 1) * flipConstant, (pi/2) * flipConstant), 0)
+                .splineToSplineHeading(new Pose2d(-11, (ballPickupYPos - 2.5) * flipConstant, (pi/2) * flipConstant), 0)
                 .setTangent((pi/2) * flipConstant)
                 .splineTo(ball1PickupPosition, (pi/2) * flipConstant, lowVelocity); // slow mode
 
@@ -429,7 +429,6 @@ class AutoVision {
         visionPortal.setProcessorEnabled(aprilTag, true);
 
         cameraServo = hardwareMap.get(Servo.class, "cameraServo");
-        cameraServo.setPosition(0.84);
     }
 
     /**

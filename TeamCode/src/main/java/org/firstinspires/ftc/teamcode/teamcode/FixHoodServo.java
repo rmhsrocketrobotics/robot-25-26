@@ -2,7 +2,9 @@ package org.firstinspires.ftc.teamcode.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.PwmControl;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.ServoImplEx;
 
 @TeleOp(group = "!main")
 
@@ -10,7 +12,10 @@ public class FixHoodServo extends LinearOpMode{
 
     @Override
     public void runOpMode() {
-        Servo servo = hardwareMap.get(Servo.class, "flick");
+//        ServoImplEx servo = hardwareMap.get(ServoImplEx.class, "drumServo");
+//        servo.setPwmRange(new PwmControl.PwmRange(500, 2500));
+
+        Servo servo = hardwareMap.get(Servo.class, "rBrake");
 
         double[] presetPositions = {0.25, 0.5, 0.75};
         double servoPosition = 0;
