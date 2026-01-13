@@ -21,6 +21,8 @@ public class FixCamera extends LinearOpMode {
 
         waitForStart();
 
+        vision.init();
+
         while (opModeIsActive()) {
             vision.update();
 

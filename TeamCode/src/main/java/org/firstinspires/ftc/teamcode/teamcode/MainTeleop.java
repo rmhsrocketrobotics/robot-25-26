@@ -48,7 +48,7 @@ public class MainTeleop extends LinearOpMode {
 //        imu.initialize(parameters);
 //        imu.resetYaw();
 
-        telemetry.setMsTransmissionInterval(200); //default 250
+//        telemetry.setMsTransmissionInterval(200); //default 250
         //telemetry.setNumDecimalPlaces(0, 5);
 
 //        //this is in place of a waitForStart() call
@@ -134,14 +134,14 @@ public class MainTeleop extends LinearOpMode {
             vision.update();
 
             //drivetrain.printTelemetry(telemetry);
-            spindex.printTelemetry(telemetry);
-            outtake.printTelemetry(telemetry);
-            vision.printTelemetry(telemetry);
-            if (state == State.INTAKE) {
-                telemetry.addLine("state: intake");
-            } else {
-                telemetry.addLine("state: outtake");
-            }
+//            spindex.printTelemetry(telemetry);
+//            outtake.printTelemetry(telemetry);
+//            vision.printTelemetry(telemetry);
+//            if (state == State.INTAKE) {
+//                telemetry.addLine("state: intake");
+//            } else {
+//                telemetry.addLine("state: outtake");
+//            }
 
             telemetry.update();
 

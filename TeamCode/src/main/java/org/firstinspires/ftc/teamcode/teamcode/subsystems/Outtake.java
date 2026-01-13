@@ -19,6 +19,10 @@ public class Outtake {
     private double lastTargetTicksPerSecond;
     public double targetTicksPerSecond;
 
+    private ElapsedTime sustainTimer; //keep the outtake running for a little while longer even after it's set to 0
+    private final double sustainTime = 0.3;
+    private double sustainTicksPerSecond;
+
     // the outtake must be going at +- this t/s for atTargetSpeed() to return true
     public double tolerance = 40;
 
@@ -50,6 +54,8 @@ public class Outtake {
 
     public void init() {
         veloTimer.reset();
+
+        sustainTimer = new ElapsedTime(100);
     }
 
     public void setOuttakePower(double power) {
@@ -81,6 +87,24 @@ public class Outtake {
     }
 
     public void update() {
+        // new code:
+//        if (lastTargetTicksPerSecond > 0 && targetTicksPerSecond == 0) {
+//            sustainTimer.reset();
+//            sustainTicksPerSecond = lastTargetTicksPerSecond;
+//        }
+//        if (sustainTimer.seconds() < sustainTime) {
+//            setOuttakeTicksPerSecond(sustainTicksPerSecond, sustainTicksPerSecond);
+//        } else {
+//            // ok so technically there's an issue here because when we switch from sustain back to real tps
+//            // last target tps will be zero when it shouldn't be
+//            // but i think that this might actually be fine
+//            // bc the only thing last target tps is used for is kA
+//            // which is zero
+//            setOuttakeTicksPerSecond(targetTicksPerSecond, lastTargetTicksPerSecond);
+//        }
+//        lastTargetTicksPerSecond = targetTicksPerSecond;
+
+        // old code:
         double targetAcceleration = (targetTicksPerSecond - lastTargetTicksPerSecond) / veloTimer.seconds();
 
         veloTimer.reset();
@@ -92,6 +116,18 @@ public class Outtake {
         double power = veloController.update(motorPos, motorVelo, targetTicksPerSecond, targetAcceleration);
         setOuttakePower(power);
     }
+
+//    private void setOuttakeTicksPerSecond(double targetTicksPerSecond, double lastTargetTicksPerSecond) {
+//        double targetAcceleration = (targetTicksPerSecond - lastTargetTicksPerSecond) / veloTimer.seconds();
+//
+//        veloTimer.reset();
+//
+//        double motorPos = outtake1.getCurrentPosition();
+//        double motorVelo = outtake1.getVelocity();
+//
+//        double power = veloController.update(motorPos, motorVelo, targetTicksPerSecond, targetAcceleration);
+//        setOuttakePower(power);
+//    }
 
     private void setLUTValues() {
         outtakeVelocityLUT.add(0.5, 1000);

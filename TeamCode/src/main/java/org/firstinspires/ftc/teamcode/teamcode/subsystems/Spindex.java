@@ -101,6 +101,15 @@ public class Spindex {
         updateDrumPosition();
     }
 
+    public void init(String drumMode, int drumPosition) {
+        switchCooldownTimer = new ElapsedTime();
+        flickTimer = new ElapsedTime(676767);
+        setFlickPosition("down");
+
+        setDrumState(drumMode, drumPosition);
+        updateDrumPosition();
+    }
+
     /**
      * updates drum position based on drumMode and drumPosition
      * <p>

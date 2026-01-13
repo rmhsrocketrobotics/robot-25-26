@@ -11,6 +11,7 @@ import com.acmerobotics.roadrunner.Pose2dDual;
 import com.acmerobotics.roadrunner.PosePath;
 import com.acmerobotics.roadrunner.RaceAction;
 import com.acmerobotics.roadrunner.SequentialAction;
+import com.acmerobotics.roadrunner.SleepAction;
 import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.VelConstraint;
@@ -71,24 +72,33 @@ public class MainAuto extends LinearOpMode {
         }
 
         public void init() {
-            spindex.init();
-            spindex.setDrumState("outtake", 2);
+            spindex.init("outtake", 2);
 
             outtake.init();
         }
 
         public class TrackObelisk implements Action {
+            final boolean trackObelisk;
+            public TrackObelisk(boolean trackObelisk) {
+                this.trackObelisk = trackObelisk;
+            }
+
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
-                vision.faceCameraToObelisk(drive.localizer.getPose());
+                if (trackObelisk) {
+                    vision.faceCameraToObelisk(drive.localizer.getPose());
+                } else {
+                    vision.cameraServo.setPosition(0.5);
+                }
+
                 vision.detectObelisk();
                 telemetry.addData("obelisk id", vision.obeliskId);
                 return true;
             }
         }
 
-        public Action trackObelisk() {
-            return new TrackObelisk();
+        public Action trackObelisk(boolean trackObelisk) {
+            return new TrackObelisk(trackObelisk);
         }
 
         public class LaunchAllBalls implements Action {
@@ -126,8 +136,8 @@ public class MainAuto extends LinearOpMode {
                 spindex.update(outtake, State.OUTTAKE);
                 outtake.update();
 
-                outtake.printTelemetry(telemetry);
-                spindex.printTelemetry(telemetry);
+//                outtake.printTelemetry(telemetry);
+//                spindex.printTelemetry(telemetry);
 
                 telemetry.update();
 
@@ -256,16 +266,16 @@ public class MainAuto extends LinearOpMode {
         double launchDistance;
         double finalLaunchDistance;
         if (useFarAuto()) {
-            launchDistance = 2.7;
+            launchDistance = 2.75;
             finalLaunchDistance = launchDistance;
         } else {
             launchDistance = 0.9;
             finalLaunchDistance = 0.6;
         }
-
+        Action firstBalls = new SequentialAction(new SleepAction(.3), ballHandler.launchAllBalls(launchDistance));
 
         // path actions combined with other actions
-        Action launchFirstBalls = new ParallelAction(startToLaunchZone.build(), ballHandler.launchAllBalls(launchDistance));
+        Action launchFirstBalls = new ParallelAction(startToLaunchZone.build(), firstBalls);
 
         Action getSecondBalls = new RaceAction(launchZoneToSecondBalls.build(), ballHandler.runActiveIntake(true));
         Action returnToLaunchZoneWithSecondBalls = new RaceAction(secondBallsToLaunchZone.build(), ballHandler.readyOuttake(launchDistance));
@@ -293,15 +303,19 @@ public class MainAuto extends LinearOpMode {
         runAutonomous = new RaceAction(runAutonomous, recordPose());
 
         // add auto camera tracking to the auto action
-        runAutonomous = new RaceAction(runAutonomous, ballHandler.trackObelisk());
+        if (useFarAuto()) {
+            runAutonomous = new RaceAction(runAutonomous, ballHandler.trackObelisk(false));
+        } else {
+            runAutonomous = new RaceAction(runAutonomous, ballHandler.trackObelisk(true));
+        }
 
         // this is in place of a waitForStart() call
-        waitForStart();
-//        while (opModeInInit() && !isStopRequested()) {
-//            vision.detectObelisk();
-//            telemetry.addData("obelisk", vision.obeliskId);
-//            telemetry.addLine("21 is gpp; 22 is pgp; 23 is ppg");
-//        }
+//        waitForStart();
+        while (opModeInInit() && !isStopRequested()) {
+            ballHandler.vision.detectObelisk();
+            telemetry.addData("obelisk", ballHandler.vision.obeliskId);
+            telemetry.addLine("21 is gpp; 22 is pgp; 23 is ppg");
+        }
 
 //        ballHandler.obeliskId = 22;//vision.obeliskId;
         ballHandler.init();
@@ -414,7 +428,7 @@ class AutoVision {
     private AprilTagProcessor aprilTag;
     private VisionPortal visionPortal;
     public int obeliskId = 21;
-    private Servo cameraServo;
+    public Servo cameraServo;
     private final Vector2d obeliskPosition = new Vector2d(-72, 0);
 
     public AutoVision(HardwareMap hardwareMap) {
