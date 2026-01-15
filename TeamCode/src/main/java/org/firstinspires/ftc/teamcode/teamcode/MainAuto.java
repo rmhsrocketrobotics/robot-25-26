@@ -11,18 +11,28 @@ import com.acmerobotics.roadrunner.Pose2dDual;
 import com.acmerobotics.roadrunner.PosePath;
 import com.acmerobotics.roadrunner.RaceAction;
 import com.acmerobotics.roadrunner.SequentialAction;
+import com.acmerobotics.roadrunner.SleepAction;
 import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.VelConstraint;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.MecanumDrive;
+import org.firstinspires.ftc.teamcode.teamcode.subsystems.CustomMath;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Outtake;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Spindex;
+import org.firstinspires.ftc.teamcode.teamcode.subsystems.State;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Velocity;
-import org.firstinspires.ftc.teamcode.teamcode.subsystems.Vision;
+import org.firstinspires.ftc.vision.VisionPortal;
+import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
+import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
+
+import java.util.List;
 
 public class MainAuto extends LinearOpMode {
 
@@ -49,26 +59,54 @@ public class MainAuto extends LinearOpMode {
     public class BallHandler { // combination of spindex and outtake
         Spindex spindex;
         Outtake outtake;
-        public int obeliskId;
+        AutoVision vision;
 
         public BallHandler(HardwareMap hardwareMap) {
             spindex = new Spindex(hardwareMap);
             spindex.ballStates = new Spindex.BallState[]{Spindex.BallState.GREEN, Spindex.BallState.PURPLE, Spindex.BallState.PURPLE};
 
             outtake = new Outtake(hardwareMap);
-            outtake.tolerance = 100;
+            //outtake.tolerance = 100;
+
+            vision = new AutoVision(hardwareMap);
         }
 
         public void init() {
-            spindex.init();
+            spindex.init("outtake", 2);
+
+            outtake.init();
+        }
+
+        public class TrackObelisk implements Action {
+            final boolean trackObelisk;
+            public TrackObelisk(boolean trackObelisk) {
+                this.trackObelisk = trackObelisk;
+            }
+
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                if (trackObelisk) {
+                    vision.faceCameraToObelisk(drive.localizer.getPose());
+                } else {
+                    vision.cameraServo.setPosition(0.5);
+                }
+
+                vision.detectObelisk();
+                telemetry.addData("obelisk id", vision.obeliskId);
+                return true;
+            }
+        }
+
+        public Action trackObelisk(boolean trackObelisk) {
+            return new TrackObelisk(trackObelisk);
         }
 
         public class LaunchAllBalls implements Action {
             private boolean initialized = false;
-            Velocity launchVelocity;
+            private double launchDistance;
 
-            public LaunchAllBalls(Velocity launchVelocity) {
-                this.launchVelocity = launchVelocity;
+            public LaunchAllBalls(double launchDistance) {
+                this.launchDistance = launchDistance;
             }
 
             @Override
@@ -76,40 +114,40 @@ public class MainAuto extends LinearOpMode {
                 if (!initialized) {
                     initialized = true;
 
-                    spindex.setDrumState("outtake", 0);
-
-                    if (obeliskId == 21) {
+                    if (vision.obeliskId == 21) {
                         spindex.queueBall("green");
                         spindex.queueBall("purple");
                         spindex.queueBall("purple");
 
-                    } else if (obeliskId == 22) {
+                    } else if (vision.obeliskId == 22) {
                         spindex.queueBall("purple");
                         spindex.queueBall("green");
                         spindex.queueBall("purple");
 
-                    } else if (obeliskId == 23) {
+                    } else if (vision.obeliskId == 23) {
                         spindex.queueBall("purple");
                         spindex.queueBall("purple");
                         spindex.queueBall("green");
                     }
-                    outtake.setOuttakeToSpeed(launchVelocity.speed, 3.5);
-                    outtake.setHoodServoToAngle(launchVelocity.direction);
+
+                    outtake.setOuttakeVelocityAndHoodAngle(launchDistance);
                 }
 
-                spindex.update(outtake);
-                outtake.update(spindex);
+                spindex.update(outtake, State.OUTTAKE);
+                outtake.update();
 
-                outtake.printTelemetry(telemetry);
-                spindex.printTelemetry(telemetry);
+//                outtake.printTelemetry(telemetry);
+//                spindex.printTelemetry(telemetry);
 
                 telemetry.update();
+
+                PoseStorage.ballStates = spindex.ballStates;
 
                 return !spindex.shouldSwitchToIntake;
             }
         }
-        public Action launchAllBalls(Velocity launchVelocity) {
-            return new LaunchAllBalls(launchVelocity);
+        public Action launchAllBalls(double launchDistance) {
+            return new LaunchAllBalls(launchDistance);
         }
 
         public class RunActiveIntake implements Action {
@@ -126,14 +164,16 @@ public class MainAuto extends LinearOpMode {
 
                     outtake.targetTicksPerSecond = 0;
 
-                    //spindex.ballStates = new String[] {"empty", "empty", "empty"};
                     if (this.resetDrum) {
-                        spindex.setDrumState("intake", 0);
+                        spindex.recheckDrum();
                     }
-                    spindex.intake.setPower(1);
+
+                    spindex.intakeMotor.setPower(1);
                 }
-                spindex.update(outtake);
-                outtake.update(spindex);
+                spindex.update(outtake, State.INTAKE);
+                outtake.update();
+
+                PoseStorage.ballStates = spindex.ballStates;
 
                 return true;
             }
@@ -144,10 +184,11 @@ public class MainAuto extends LinearOpMode {
 
         public class ReadyOuttake implements Action {
             private boolean initialized = false;
-            public Velocity launchVelocity;
+            private double launchDistance;
+            private State currentState = State.INTAKE;
 
-            public ReadyOuttake(Velocity launchVelocity) {
-                this.launchVelocity = launchVelocity;
+            public ReadyOuttake(double launchDistance) {
+                this.launchDistance = launchDistance;
             }
 
             @Override
@@ -155,22 +196,32 @@ public class MainAuto extends LinearOpMode {
                 if (!initialized) {
                     initialized = true;
 
-                    spindex.intake.setPower(0);
-                    spindex.setDrumState("outtake", 0);
+                    spindex.update(outtake, currentState);
 
-                    outtake.setOuttakeToSpeed(launchVelocity.speed, 3.5);
-                    outtake.setHoodServoToAngle(launchVelocity.direction);
-
+                    outtake.setOuttakeVelocityAndHoodAngle(launchDistance);
                 }
 
-                spindex.update(outtake);
-                outtake.update(spindex);
+                if (spindex.shouldSwitchToOuttake && currentState == State.INTAKE) {
+                    currentState = State.OUTTAKE;
+                }
+
+                if (currentState == State.INTAKE) {
+                    spindex.intakeMotor.setPower(1);
+
+                } else if (currentState == State.OUTTAKE) {
+                    spindex.intakeMotor.setPower(0);
+                }
+
+                spindex.update(outtake, currentState);
+                outtake.update();
+
+                PoseStorage.ballStates = spindex.ballStates;
 
                 return true;
             }
         }
-        public Action readyOuttake(Velocity launchVelocity) {
-            return new ReadyOuttake(launchVelocity);
+        public Action readyOuttake(double launchDistance) {
+            return new ReadyOuttake(launchDistance);
         }
     }
 
@@ -185,6 +236,7 @@ public class MainAuto extends LinearOpMode {
     TrajectoryActionBuilder secondBallsToLaunchZone;
     TrajectoryActionBuilder launchZoneToThirdBalls;
     TrajectoryActionBuilder thirdBallsToLaunchZone;
+    TrajectoryActionBuilder launchZoneToEndPosition;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -211,26 +263,29 @@ public class MainAuto extends LinearOpMode {
             closePath();
         }
 
-        Velocity launchVelocity;
+        double launchDistance;
+        double finalLaunchDistance;
         if (useFarAuto()) {
-            launchVelocity = new Velocity(6.3, 45);
+            launchDistance = 2.75;
+            finalLaunchDistance = launchDistance;
         } else {
-            launchVelocity = new Velocity(4.3, 55);
+            launchDistance = 0.9;
+            finalLaunchDistance = 0.6;
         }
-
+        Action firstBalls = new SequentialAction(new SleepAction(.3), ballHandler.launchAllBalls(launchDistance));
 
         // path actions combined with other actions
-        Action launchFirstBalls = new ParallelAction(startToLaunchZone.build(), ballHandler.launchAllBalls(launchVelocity));
+        Action launchFirstBalls = new ParallelAction(startToLaunchZone.build(), firstBalls);
 
         Action getSecondBalls = new RaceAction(launchZoneToSecondBalls.build(), ballHandler.runActiveIntake(true));
-//        Action returnToLaunchZoneWithSecondBalls = new RaceAction(secondBallsToLaunchZone.build(), ballHandler.readyOuttake(launchVelocity));
-        Action returnToLaunchZoneWithSecondBalls = new RaceAction(secondBallsToLaunchZone.build(), ballHandler.runActiveIntake(false));
-        Action launchSecondBalls = ballHandler.launchAllBalls(launchVelocity);
+        Action returnToLaunchZoneWithSecondBalls = new RaceAction(secondBallsToLaunchZone.build(), ballHandler.readyOuttake(launchDistance));
+//        Action returnToLaunchZoneWithSecondBalls = new RaceAction(secondBallsToLaunchZone.build(), ballHandler.runActiveIntake(false));
+        Action launchSecondBalls = ballHandler.launchAllBalls(launchDistance);
 
         Action getThirdBalls = new RaceAction(launchZoneToThirdBalls.build(), ballHandler.runActiveIntake(true));
-//        Action returnToLaunchZoneWithThirdBalls = new RaceAction(thirdBallsToLaunchZone.build(), ballHandler.readyOuttake(launchVelocity));
-        Action returnToLaunchZoneWithThirdBalls = new RaceAction(thirdBallsToLaunchZone.build(), ballHandler.runActiveIntake(false));
-        Action launchThirdBalls = ballHandler.launchAllBalls(launchVelocity);
+        Action returnToLaunchZoneWithThirdBalls = new RaceAction(thirdBallsToLaunchZone.build(), ballHandler.readyOuttake(finalLaunchDistance));
+//        Action returnToLaunchZoneWithThirdBalls = new RaceAction(thirdBallsToLaunchZone.build(), ballHandler.runActiveIntake(false));
+        Action launchThirdBalls = ballHandler.launchAllBalls(finalLaunchDistance);
 
         // combine all of the above actions into one big long sequential action
         Action runAutonomous = new SequentialAction(
@@ -239,18 +294,33 @@ public class MainAuto extends LinearOpMode {
                 getThirdBalls, returnToLaunchZoneWithThirdBalls, launchThirdBalls
         );
 
-        // this is in place of a waitForStart() call
-        waitForStart();
-//        while (opModeInInit() && !isStopRequested()) {
-//            vision.detectObelisk();
-//            telemetry.addData("obelisk", vision.obeliskId);
-//            telemetry.addLine("21 is gpp; 22 is pgp; 23 is ppg");
-//        }
+        // if this is a far auto, add the park pathing
+        if (useFarAuto()) {
+            runAutonomous = new SequentialAction(runAutonomous, launchZoneToEndPosition.build());
+        }
 
-        ballHandler.obeliskId = 22;//vision.obeliskId;
+        // add pose recording to the auto action
+        runAutonomous = new RaceAction(runAutonomous, recordPose());
+
+        // add auto camera tracking to the auto action
+        if (useFarAuto()) {
+            runAutonomous = new RaceAction(runAutonomous, ballHandler.trackObelisk(false));
+        } else {
+            runAutonomous = new RaceAction(runAutonomous, ballHandler.trackObelisk(true));
+        }
+
+        // this is in place of a waitForStart() call
+//        waitForStart();
+        while (opModeInInit() && !isStopRequested()) {
+            ballHandler.vision.detectObelisk();
+            telemetry.addData("obelisk", ballHandler.vision.obeliskId);
+            telemetry.addLine("21 is gpp; 22 is pgp; 23 is ppg");
+        }
+
+//        ballHandler.obeliskId = 22;//vision.obeliskId;
         ballHandler.init();
 
-        Actions.runBlocking(new RaceAction(runAutonomous, recordPose()));
+        Actions.runBlocking(runAutonomous);
     }
 
     public double angleBetweenPoints(Vector2d point1, Vector2d point2) {
@@ -261,26 +331,26 @@ public class MainAuto extends LinearOpMode {
     }
 
     public void farPath() {
-        beginPose = new Pose2d(61, 13.5, Math.toRadians(180));
+        // flip if on blue
+        int flipConstant = 1;
+        if (!allianceIsRed()) {
+            flipConstant = -1;
+        }
+
+        beginPose = new Pose2d(61, 13.5 * flipConstant, Math.toRadians(180) * flipConstant);
         drive = new MecanumDrive(hardwareMap, beginPose);
 
-        Vector2d launchPosition = new Vector2d(56, 14.5);
-        double launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-66, 58));
+        Vector2d launchPosition = new Vector2d(50.5, 14.5 * flipConstant);
+        double launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-66, 60 * flipConstant));
 
-        TrajectoryActionBuilder actionBuilder;
-        if (allianceIsRed()) {
-            actionBuilder = drive.actionBuilder(beginPose);
-        } else {
-            actionBuilder = drive.actionBuilder(beginPose, pose2dDual -> new Pose2dDual<>(
-                    pose2dDual.position.x, pose2dDual.position.y.unaryMinus(), pose2dDual.heading.plus(Math.PI)));
-        }
+        TrajectoryActionBuilder actionBuilder = drive.actionBuilder(beginPose);
 
         startToLaunchZone = actionBuilder
                 .splineTo(launchPosition, launchToGoalAngle);
 
         launchZoneToSecondBalls = startToLaunchZone.endTrajectory().fresh()
-                .splineTo(new Vector2d(36, 28), pi/2)
-                .splineTo(new Vector2d(36, 45), pi/2, lowVelocity); // slow mode
+                .splineTo(new Vector2d(36, 28 * flipConstant), (pi/2) * flipConstant)
+                .splineTo(new Vector2d(36, 61 * flipConstant), (pi/2) * flipConstant, lowVelocity); // slow mode
 
         secondBallsToLaunchZone = launchZoneToSecondBalls.endTrajectory().fresh()
                 .setReversed(true)
@@ -288,39 +358,43 @@ public class MainAuto extends LinearOpMode {
 
         launchZoneToThirdBalls = secondBallsToLaunchZone.endTrajectory().fresh()
                 .setReversed(false)
-                .splineTo(new Vector2d(13, 28), pi/2)
-                .splineTo(new Vector2d(13, 45), pi/2, lowVelocity); // slow mode
+                .splineTo(new Vector2d(13, 28 * flipConstant), (pi/2) * flipConstant)
+                .splineTo(new Vector2d(13, 61 * flipConstant), (pi/2) * flipConstant, lowVelocity); // slow mode
 
         thirdBallsToLaunchZone = launchZoneToThirdBalls.endTrajectory().fresh()
                 .setReversed(true)
                 .splineTo(launchPosition, launchToGoalAngle - pi);
+
+        launchZoneToEndPosition = thirdBallsToLaunchZone.endTrajectory().fresh() // only for far auto
+                .setReversed(false)
+                .splineTo(new Vector2d(20, 40 * flipConstant), pi);
     }
 
     public void closePath() {
+        // flip if on blue
+        int flipConstant = 1;
+        if (!allianceIsRed()) {
+            flipConstant = -1;
+        }
+
         int ballPickupYPos = 27;
 
-        beginPose = new Pose2d(-61, 36, Math.toRadians(180));
+        beginPose = new Pose2d(-61, 36 * flipConstant, Math.toRadians(180) * flipConstant);
         drive = new MecanumDrive(hardwareMap, beginPose);
 
-        Vector2d launchPosition = new Vector2d(-25, ballPickupYPos);
-        double launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-58, 58));
+        Vector2d launchPosition = new Vector2d(-25, ballPickupYPos * flipConstant);
+        double launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-58, 58 * flipConstant));
 
-        Vector2d launchPositionFinal = new Vector2d(-50, ballPickupYPos);
-        double launchToGoalAngleFinal = angleBetweenPoints(launchPositionFinal, new Vector2d(-58, 58));
+        Vector2d launchPositionFinal = new Vector2d(-50, ballPickupYPos * flipConstant);
+        double launchToGoalAngleFinal = angleBetweenPoints(launchPositionFinal, new Vector2d(-65, 65 * flipConstant));
 
-        Vector2d ball1PickupPosition = new Vector2d(-11, 55);
+        Vector2d ball1PickupPosition = new Vector2d(-11, 55 * flipConstant);
         double ball1ToLaunchAngle = angleBetweenPoints(ball1PickupPosition, launchPosition);
 
-        Vector2d ball2PickupPosition = new Vector2d(13, 61);
+        Vector2d ball2PickupPosition = new Vector2d(13, 61 * flipConstant);
         double ball2ToLaunchAngle = angleBetweenPoints(ball2PickupPosition, launchPosition);
 
-        TrajectoryActionBuilder actionBuilder;
-        if (allianceIsRed()) {
-            actionBuilder = drive.actionBuilder(beginPose);
-        } else {
-            actionBuilder = drive.actionBuilder(beginPose, pose2dDual -> new Pose2dDual<>(
-                    pose2dDual.position.x, pose2dDual.position.y.unaryMinus(), pose2dDual.heading.plus(Math.PI)));
-        }
+        TrajectoryActionBuilder actionBuilder = drive.actionBuilder(beginPose);
 
         startToLaunchZone = actionBuilder
                 .setReversed(true)
@@ -329,9 +403,9 @@ public class MainAuto extends LinearOpMode {
         launchZoneToSecondBalls = startToLaunchZone.endTrajectory().fresh()
                 .setReversed(false)
                 .setTangent(0)
-                .splineToSplineHeading(new Pose2d(-11, ballPickupYPos, pi/2), 0)
-                .setTangent(pi/2)
-                .splineTo(ball1PickupPosition, pi/2, lowVelocity); // slow mode
+                .splineToSplineHeading(new Pose2d(-11, (ballPickupYPos - 2.5) * flipConstant, (pi/2) * flipConstant), 0)
+                .setTangent((pi/2) * flipConstant)
+                .splineTo(ball1PickupPosition, (pi/2) * flipConstant, lowVelocity); // slow mode
 
         secondBallsToLaunchZone = launchZoneToSecondBalls.endTrajectory().fresh()
                 .setTangent(ball1ToLaunchAngle)
@@ -340,13 +414,78 @@ public class MainAuto extends LinearOpMode {
         launchZoneToThirdBalls = secondBallsToLaunchZone.endTrajectory().fresh()
                 .setReversed(false)
                 .setTangent(0)
-                .splineToSplineHeading(new Pose2d(13, ballPickupYPos, pi/2), 0)
-                .setTangent(pi/2)
-                .splineTo(ball2PickupPosition, pi/2, lowVelocity); // slow mode
+                .splineToSplineHeading(new Pose2d(13, ballPickupYPos * flipConstant, (pi/2) * flipConstant), 0)
+                .setTangent((pi/2) * flipConstant)
+                .splineTo(ball2PickupPosition, (pi/2) * flipConstant, lowVelocity); // slow mode
 
         thirdBallsToLaunchZone = launchZoneToThirdBalls.endTrajectory().fresh()
-                .setTangent(3*pi/2)
-                .splineToSplineHeading(new Pose2d(launchPositionFinal, launchToGoalAngleFinal), pi);
+                .setTangent((3*pi/2) * flipConstant)
+                .splineToSplineHeading(new Pose2d(launchPositionFinal, launchToGoalAngleFinal), pi * flipConstant);
+    }
+}
 
+class AutoVision {
+    private AprilTagProcessor aprilTag;
+    private VisionPortal visionPortal;
+    public int obeliskId = 21;
+    public Servo cameraServo;
+    private final Vector2d obeliskPosition = new Vector2d(-72, 0);
+
+    public AutoVision(HardwareMap hardwareMap) {
+        // pretty sure that orientation doesn't matter for this
+        aprilTag = new AprilTagProcessor.Builder()
+                .build();
+
+        visionPortal = new VisionPortal.Builder()
+                .setCamera(hardwareMap.get(WebcamName.class, "camera"))
+                .addProcessor(aprilTag)
+                .build();
+        visionPortal.setProcessorEnabled(aprilTag, true);
+
+        cameraServo = hardwareMap.get(Servo.class, "cameraServo");
+    }
+
+    /**
+     * returns true if the obelisk has successfully been detected
+     * */
+    public boolean detectObelisk() {
+        List<AprilTagDetection> detections = aprilTag.getDetections();
+        for (AprilTagDetection detection : detections) {
+            if (detection.id == 21 || detection.id == 22 || detection.id == 23) {
+                obeliskId = detection.id;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void faceCameraToObelisk(Pose2d cameraPose) {
+        // uhhh this code probably isn't right TODO fix
+        double angleToObelisk = CustomMath.angleBetweenPoints(cameraPose.position, obeliskPosition);
+        double cameraAngle = angleToObelisk - cameraPose.heading.toDouble();
+
+        cameraAngle = AngleUnit.normalizeRadians(cameraAngle);
+
+        setCameraToAngle(cameraAngle);
+    }
+
+    /**
+     * zero is looking straight ahead,
+     * a positive angle is looking left,
+     * and a negative angle is looking right
+     * **/
+    private void setCameraToAngle(double cameraAngle) {
+        cameraAngle = -cameraAngle;
+
+        double cameraMinAngle = -Math.PI / 2;
+        double cameraMaxAngle = Math.PI / 2;
+        double servoMinPosition = 0.18;
+        double servoMaxPosition = 0.82;
+
+        cameraAngle = CustomMath.clamp(cameraAngle, cameraMinAngle, cameraMaxAngle);
+        double normalizedValue = (cameraAngle - cameraMinAngle) / (cameraMaxAngle - cameraMinAngle);
+        double servoPosition = (normalizedValue * (servoMaxPosition - servoMinPosition)) + servoMinPosition;
+
+        cameraServo.setPosition(servoPosition);
     }
 }

@@ -2,21 +2,23 @@ package org.firstinspires.ftc.teamcode.teamcode;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
+import org.firstinspires.ftc.teamcode.Drawing;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Drivetrain;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Outtake;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Spindex;
-import org.firstinspires.ftc.teamcode.teamcode.subsystems.Velocity;
+import org.firstinspires.ftc.teamcode.teamcode.subsystems.State;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Vision;
 
 // this class is literally just a copy of mainteleop, but it has been changed to test the shooter
 // i deleted like most of the normal teleop code from here dw its fine probably
 @TeleOp
 public class LaunchTesting extends LinearOpMode{
-    String state;
+    State state;
     Drivetrain drivetrain;
     Spindex spindex;
     Outtake outtake;
@@ -26,10 +28,10 @@ public class LaunchTesting extends LinearOpMode{
 
     boolean pauseIntake = false;
     double hoodServoPosition = 0;
-    double outtakeSpeed = 1000;
+    double outtakeSpeed = 1400;
 
     public boolean allianceIsRed() {
-        return true;
+        return false;
     }
 
     @Override
@@ -38,7 +40,7 @@ public class LaunchTesting extends LinearOpMode{
         FtcDashboard dashboard = FtcDashboard.getInstance();
         telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
 
-        state = "intake"; // states are: "intake" and "outtake"
+        state = State.INTAKE;
 
         drivetrain = new Drivetrain(hardwareMap); // wheels
         spindex = new Spindex(hardwareMap); // drumServo, intake, flick
@@ -49,11 +51,12 @@ public class LaunchTesting extends LinearOpMode{
         gamepad1Last = new Gamepad();
         gamepad2Last = new Gamepad();
 
-        telemetry.setMsTransmissionInterval(100); //default 250
+        telemetry.setMsTransmissionInterval(250); //default 250
 
         waitForStart();
 
         spindex.init();
+        outtake.init();
 
         while (opModeIsActive()) {
 
@@ -70,9 +73,9 @@ public class LaunchTesting extends LinearOpMode{
             outtake.hoodServo.setPosition(hoodServoPosition);
 
             if (gamepad1.x && !gamepad1Last.x) {
-                outtakeSpeed += 100;
+                outtakeSpeed += 50;
             } else if (gamepad1.y && !gamepad1Last.y) {
-                outtakeSpeed -= 100;
+                outtakeSpeed -= 50;
             }
 
             if (gamepad1.dpad_right && !gamepad1Last.dpad_right) {
@@ -92,9 +95,9 @@ public class LaunchTesting extends LinearOpMode{
             }
 
             if (gamepad2.x && !gamepad2Last.x) {
-                spindex.outtakeTime += 0.05;
+                spindex.flickTime += 0.05;
             } else if (gamepad2.y && !gamepad2Last.y) {
-                spindex.outtakeTime -= 0.05;
+                spindex.flickTime -= 0.05;
             }
 //
 //            if (gamepad2.dpad_right && !gamepad2Last.dpad_right) {
@@ -116,21 +119,27 @@ public class LaunchTesting extends LinearOpMode{
             telemetry.addLine();
 
             telemetry.addData("the switch cooldown constant (gp2 bumpers) is", spindex.switchCooldownConstant);
-            telemetry.addData("the outtake time (gp2 x & y) is", spindex.outtakeTime);
+            telemetry.addData("the flick time (gp2 x & y) is", spindex.flickTime);
 //            telemetry.addData("the post flick time is", spindex.postFlickTime);
 
             telemetry.addLine("\n---------------------------\n");
 
             // state specific code goes in these methods
-            if (state.equals("intake")) {
-                intakeMode();
-            } else if (state.equals("outtake")) {
-                outtakeMode();
+            switch (state) {
+                case INTAKE:
+                    intakeMode();
+                    break;
+
+                case OUTTAKE:
+                    outtakeMode();
+                    break;
             }
 
-            spindex.update(outtake);
-            outtake.update(spindex);
+            spindex.update(outtake, state);
+            outtake.update();
             vision.update();
+
+            telemetry.addData("can see goal april tag", vision.canSeeGoalAprilTag);
 
             spindex.printTelemetry(telemetry);
             outtake.printTelemetry(telemetry);
@@ -138,35 +147,36 @@ public class LaunchTesting extends LinearOpMode{
             telemetry.addData("state", state);
             telemetry.update();
 
-            sleep(10);
+            TelemetryPacket packet = new TelemetryPacket();
+            packet.fieldOverlay().setStroke("#3F51B5");
+            Drawing.drawRobot(packet.fieldOverlay(), vision.localizer.getPose());
+            FtcDashboard.getInstance().sendTelemetryPacket(packet);
         }
     }
 
     public void intakeMode() {
         if (spindex.shouldSwitchToOuttake) {
-            state = "outtake";
+            state = State.OUTTAKE;
             //spindex.setDrumState("outtake", 0);
             //vision.seenGoalAprilTag = false;
             //spindex.ballQueue.clear();
 
-            spindex.queueBall("green");
-            spindex.queueBall("green");
-            spindex.queueBall("green");
+            spindex.shootAllBalls();
 
-            spindex.intake.setPower(0);
+            spindex.intakeMotor.setPower(0);
 
             return;
         }
         if (pauseIntake) {
-            spindex.intake.setPower(1);
+            spindex.intakeMotor.setPower(1);
         } else {
-            spindex.intake.setPower(0);
+            spindex.intakeMotor.setPower(0);
         }
     }
 
     public void outtakeMode() {
         if (spindex.shouldSwitchToIntake) {
-            state = "intake";
+            state = State.INTAKE;
             //spindex.setDrumState("intake", 0);
 
             outtake.targetTicksPerSecond = 0;

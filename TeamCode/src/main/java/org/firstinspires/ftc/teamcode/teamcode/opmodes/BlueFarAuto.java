@@ -4,7 +4,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
 import org.firstinspires.ftc.teamcode.teamcode.MainAuto;
 
-@Autonomous(preselectTeleOp = "MainTeleopBlue", group = "!", name = "BLUE FAR Auto")
+@Autonomous(preselectTeleOp = "BLUE TeleOp", group = "!", name = "BLUE FAR Auto")
 public class BlueFarAuto extends MainAuto {
     @Override
     public boolean allianceIsRed() {

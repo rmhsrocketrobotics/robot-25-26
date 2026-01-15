@@ -1,16 +1,21 @@
 package org.firstinspires.ftc.teamcode.teamcode;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
+import org.firstinspires.ftc.teamcode.Drawing;
+import org.firstinspires.ftc.teamcode.teamcode.subsystems.State;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Velocity;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Vision;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Spindex;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Outtake;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Drivetrain;
 
-public class MainTeleop extends LinearOpMode{
-    String state;
+public class MainTeleop extends LinearOpMode {
+    State state;
     Drivetrain drivetrain;
     Spindex spindex;
     Outtake outtake;
@@ -24,7 +29,7 @@ public class MainTeleop extends LinearOpMode{
 
     @Override
     public void runOpMode() {
-        state = "intake"; // states are: "intake" and "outtake"
+        state = State.INTAKE;
 
         drivetrain = new Drivetrain(hardwareMap); // wheels
         spindex = new Spindex(hardwareMap); // drumServo, intake, flick
@@ -43,7 +48,7 @@ public class MainTeleop extends LinearOpMode{
 //        imu.initialize(parameters);
 //        imu.resetYaw();
 
-        telemetry.setMsTransmissionInterval(200); //default 250
+//        telemetry.setMsTransmissionInterval(200); //default 250
         //telemetry.setNumDecimalPlaces(0, 5);
 
 //        //this is in place of a waitForStart() call
@@ -54,11 +59,13 @@ public class MainTeleop extends LinearOpMode{
         waitForStart();
 
         spindex.init();
+        outtake.init();
+        vision.init();
 
         while (opModeIsActive()) {
             // GAMEPAD 1 CODE:
             if (gamepad1.y && vision.seenGoalAprilTag) {
-                vision.faceGoal(drivetrain);
+                vision.faceGoal(drivetrain, telemetry);
             } else {
                 if (gamepad1.left_bumper) {
                     // speed mode
@@ -91,26 +98,24 @@ public class MainTeleop extends LinearOpMode{
 //            }
 
             if (gamepad2.left_trigger > 0.1) { // backspin intake
-                spindex.intake.setPower(-gamepad2.left_trigger);
+                spindex.intakeMotor.setPower(-gamepad2.left_trigger);
 
             } else if ((gamepad2.right_trigger > 0.1)) { // spin intake
-                spindex.intake.setPower(gamepad2.right_trigger);
+                spindex.intakeMotor.setPower(gamepad2.right_trigger);
 
             } else {
-                spindex.intake.setPower(0);
+                spindex.intakeMotor.setPower(0);
             }
 
-            Velocity requiredVelocity = vision.getRequiredVelocity();
-            telemetry.addData("target speed m/s", requiredVelocity.speed);
-            telemetry.addData("target angle degrees", requiredVelocity.direction);
-
-            outtake.setHoodServoToAngle(50);//outtake.setHoodServoToAngle(requiredVelocity.direction);
-
             // state specific code goes in these methods
-            if (state.equals("intake")) {
-                intakeMode();
-            } else if (state.equals("outtake")) {
-                outtakeMode(requiredVelocity);
+            switch (state) {
+                case INTAKE:
+                    intakeMode();
+                    break;
+
+                case OUTTAKE:
+                    outtakeMode();
+                    break;
             }
 
 //            if (gamepad2.y) {
@@ -123,47 +128,57 @@ public class MainTeleop extends LinearOpMode{
 
             gamepad2Last.copy(gamepad2);
 
-            spindex.update(outtake);
-            outtake.update(spindex);
+            drivetrain.update();
+            spindex.update(outtake, state);
+            outtake.update();
             vision.update();
 
             //drivetrain.printTelemetry(telemetry);
-            outtake.printTelemetry(telemetry);
-            vision.printTelemetry(telemetry);
-            telemetry.addData("state", state);
+//            spindex.printTelemetry(telemetry);
+//            outtake.printTelemetry(telemetry);
+//            vision.printTelemetry(telemetry);
+//            if (state == State.INTAKE) {
+//                telemetry.addLine("state: intake");
+//            } else {
+//                telemetry.addLine("state: outtake");
+//            }
+
             telemetry.update();
+
+//            TelemetryPacket packet = new TelemetryPacket();
+//            packet.fieldOverlay().setStroke("#3F51B5");
+//            Drawing.drawRobot(packet.fieldOverlay(), vision.localizer.getPose());
+//            FtcDashboard.getInstance().sendTelemetryPacket(packet);
         }
     }
 
     public void intakeMode() {
         if ((gamepad2.dpad_up && !gamepad2Last.dpad_up) || spindex.shouldSwitchToOuttake) {
-            state = "outtake";
-            spindex.forceSwitchToStateOuttake();
-            return;
+            state = State.OUTTAKE;
+
         } else if (gamepad2.dpad_down && !gamepad2Last.dpad_down) {
-            spindex.forceSwitchToStateIntake();
-            return;
+            spindex.recheckDrum();
         }
     }
 
-    public void outtakeMode(Velocity requiredVelocity) {
+    public void outtakeMode() {
         if ((gamepad2.dpad_down && !gamepad2Last.dpad_down) || spindex.shouldSwitchToIntake) {
-            state = "intake";
-            spindex.forceSwitchToStateIntake();
+            state = State.INTAKE;
+
             outtake.targetTicksPerSecond = 0;
             return;
         }
 
-        //vision.detectGoalAprilTag();
-
-        outtake.targetTicksPerSecond = 1400;//outtake.setOuttakeToSpeed(requiredVelocity.speed, 3.5);
-        //outtake.setOuttakeToSpeed(6.5, 3.5);
+        outtake.setOuttakeVelocityAndHoodAngle(vision.goalDistance);
 
         if (gamepad2.left_bumper && !gamepad2Last.left_bumper) {
             spindex.queueBall("purple");
         }
         if (gamepad2.right_bumper && !gamepad2Last.right_bumper) {
             spindex.queueBall("green");
+        }
+        if (gamepad2.y) {
+            spindex.shootAllBalls();
         }
     }
 }

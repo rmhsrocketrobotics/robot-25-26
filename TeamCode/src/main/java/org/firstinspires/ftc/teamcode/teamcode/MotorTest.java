@@ -1,16 +1,12 @@
 package org.firstinspires.ftc.teamcode.teamcode;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.PIDFCoefficients;
-import com.qualcomm.robotcore.hardware.VoltageSensor;
-import com.qualcomm.robotcore.hardware.configuration.typecontainers.MotorConfigurationType;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
-@Disabled//@TeleOp
+@TeleOp
 
 public class MotorTest extends LinearOpMode{
 
@@ -55,24 +51,32 @@ public class MotorTest extends LinearOpMode{
 //                positionLastLoop = gecko.getCurrentPosition();
 //            }
 
+//            outtake1.setPower(gamepad1.left_stick_y * 0.5);
+//            outtake2.setPower(gamepad1.right_stick_y * 0.5);
 
             //gecko.setPower(-gamepad1.left_stick_y);
             if (gamepad1.b) {
-                outtake1.setPower(-1);
-                outtake2.setPower(-1);
+                outtake1.setPower(1);
+                outtake2.setPower(1);
             } else if (gamepad1.a) {
-                outtake1.setPower(-0.75);
-                outtake2.setPower(-0.75);
+                outtake1.setPower(0.75);
+                outtake2.setPower(0.75);
             } else if (gamepad1.x) {
-                outtake1.setPower(-0.5);
-                outtake2.setPower(-0.5);
+                outtake1.setPower(0.5);
+                outtake2.setPower(0.5);
             } else if (gamepad1.y) {
-                outtake1.setPower(-0.25);
-                outtake2.setPower(-0.25);
+                outtake1.setPower(0.25);
+                outtake2.setPower(0.25);
             } else {
                 outtake1.setPower(0);
                 outtake2.setPower(0);
             }
+
+            telemetry.addData("outtake1 speed rpm", (outtake1.getVelocity() * 60) / 28);
+            telemetry.addData("outtake2 speed rpm", (outtake2.getVelocity() * 60) / 28);
+            telemetry.addData("outtake1 speed tps", outtake1.getVelocity());
+            telemetry.addData("outtake2 speed tps", outtake2.getVelocity());
+            telemetry.update();
         }
     }
 
