@@ -65,36 +65,33 @@ public class MeepMeepTesting {
                         .setReversed(true)
                         .splineTo(launchPosition, launchToGoalAngle - pi)
 //                        //launchZoneToMiddleBalls
-//                        .setReversed(false)
-//                        .setTangent(0)
-//                        .splineToSplineHeading(new Pose2d(13, ballPickupYPos, pi/2), 0)
-//                        .setTangent(pi/2)
-//                        .splineTo(ball2PickupPosition, pi/2) // slow mode
-//                        //middleBallsToLaunchZone
-//                        .setTangent(3*pi/2)
-//                        .splineToSplineHeading(new Pose2d(launchPosition, launchToGoalAngleFinal), pi)
+                        .setReversed(false)
+                        .setTangent(0)
+                        .splineToSplineHeading(new Pose2d(13, ballPickupYPos, pi/2), 0)
+                        .setTangent(pi/2)
+                        .splineTo(ball2PickupPosition, pi/2) // slow mode
+                        //middleBallsToLaunchZone
+                        .setTangent(3*pi/2)
+                        .splineToSplineHeading(new Pose2d(launchPosition, launchToGoalAngle), pi)
                         //launchZoneToClassifier (boxy)
                         .setReversed(true)
                         .setTangent(0)
-                        .splineToSplineHeading(new Pose2d(-4,30, pi/8), pi/8)
-                        .splineToSplineHeading(new Pose2d(14,59, 3 * pi / 4), 3*pi/4)
-                        .setTangent(-pi/4)
-//                        .splineToSplineHeading(new Pose2d(5.6, ballPickupYPos, pi/2), 0)
-//                        .setTangent(pi/2)
-//                        .splineTo( new Vector2d(-0.5, 52), 2*pi/3)
-//                        .splineTo(ball2PickupPosition, pi/2) // slow mode
-
+                        .splineToSplineHeading(new Pose2d(-4,30, 5*pi/8), pi/8)
+                        .splineToSplineHeading(new Pose2d(12,58, 5*pi/8), 5*pi/8)
+                        .setTangent(-pi/8)
+                        //ClassifierToLaunchZone
+                        .setTangent(3*pi/2)
+                        .splineToSplineHeading(new Pose2d(launchPosition, launchToGoalAngle), pi)
 //                        //launchZoneToFrontBalls
-//                        .setReversed(false)
-//                        .setTangent(0)
-//                        .splineToSplineHeading(new Pose2d(-11, ballPickupYPos, pi/2), 0)
-//                        .setTangent(pi/2)
-//                        .splineTo(ball1PickupPosition, pi/2) // slow mode
+                        .setReversed(false)
+                        .setTangent(0)
+                        .splineToSplineHeading(new Pose2d(-11, ballPickupYPos, pi/2), 0)
+                        .setTangent(pi/2)
+                        .splineTo(ball1PickupPosition, pi/2) // slow mode
 //                        //frontBallsToLaunchZone
-//                        .setTangent(ball1ToLaunchAngle)
-//                        .splineToSplineHeading(new Pose2d(launchPosition, launchToGoalAngle), ball1ToLaunchAngle)
+                        .setTangent(ball1ToLaunchAngle)
+                        .splineToSplineHeading(new Pose2d(launchPosition, launchToGoalAngle), ball1ToLaunchAngle)
 
-//
                         .build());
     }
 
