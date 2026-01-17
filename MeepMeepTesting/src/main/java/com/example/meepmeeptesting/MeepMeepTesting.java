@@ -45,52 +45,59 @@ public class MeepMeepTesting {
 
     //transfered competition near code
     public static RoadRunnerBotEntity testPathClose(MeepMeep meepMeepClose) {
-        int ballPickupYPos = 27;
-        Vector2d launchPosition = new Vector2d(-25, ballPickupYPos);
+        int ballPickupYPos = 30;
+
+        Vector2d startLaunchPosition = new Vector2d(-23, 24);
+
+        Vector2d launchPosition = new Vector2d(-11, 20);
         double launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-58, 58));
-        Vector2d launchPositionFinal = new Vector2d(-50, ballPickupYPos);
-        double launchToGoalAngleFinal = angleBetweenPoints(launchPositionFinal, new Vector2d(-58, 58));
         Vector2d ball1PickupPosition = new Vector2d(-11, 55);
-        double ball1ToLaunchAngle = angleBetweenPoints(ball1PickupPosition, launchPosition);
+//        double ball1ToLaunchAngle = angleBetweenPoints(ball1PickupPosition, launchPosition);
         Vector2d ball2PickupPosition = new Vector2d(13, 61);
-        double ball2ToLaunchAngle = angleBetweenPoints(ball2PickupPosition, launchPosition);
-        //Vector2d classifierClearPosition = new Vector2d(, );
+
+        Vector2d endLaunchPosition = new Vector2d(-46, 25);
+        double endLaunchToGoalAngle = angleBetweenPoints(endLaunchPosition, new Vector2d(-58, 58));
+        double ball1ToEndLaunchAngle = angleBetweenPoints(ball1PickupPosition, endLaunchPosition);
 
 
         return new DefaultBotBuilder(meepMeepClose)
                 // Set bot constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
                 .setConstraints(40, 50, Math.toRadians(180), Math.toRadians(180), 14.5)
-                .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(-61, 36, Math.toRadians(180)))
+                .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(-48, 52, Math.toRadians(130)))
                         //startToLaunchZone
                         .setReversed(true)
-                        .splineTo(launchPosition, launchToGoalAngle - pi)
+                        .splineTo(startLaunchPosition, launchToGoalAngle - pi)
+//                        .waitSeconds(1)
 //                        //launchZoneToMiddleBalls
-                        .setReversed(false)
-                        .setTangent(0)
-                        .splineToSplineHeading(new Pose2d(13, ballPickupYPos, pi/2), 0)
-                        .setTangent(pi/2)
+//                        .setReversed(false)
+//                        .setTangent(0)
+                        .splineToSplineHeading(new Pose2d(13, ballPickupYPos, pi/2), pi/2)
+//                        .waitSeconds(1)
+//                        .setTangent(pi/2)
                         .splineTo(ball2PickupPosition, pi/2) // slow mode
                         //middleBallsToLaunchZone
                         .setTangent(3*pi/2)
                         .splineToSplineHeading(new Pose2d(launchPosition, launchToGoalAngle), pi)
                         //launchZoneToClassifier (boxy)
-                        .setReversed(true)
-                        .setTangent(0)
-                        .splineToSplineHeading(new Pose2d(-4,30, 5*pi/8), pi/8)
+                        .waitSeconds(0.5)
+                        .setTangent(pi/4)
+//                        .splineToSplineHeading(new Pose2d(-4,30, 5*pi/8), pi/8)
                         .splineToSplineHeading(new Pose2d(12,58, 5*pi/8), 5*pi/8)
+                        .waitSeconds(0.5)
                         .setTangent(-pi/8)
                         //ClassifierToLaunchZone
                         .setTangent(3*pi/2)
                         .splineToSplineHeading(new Pose2d(launchPosition, launchToGoalAngle), pi)
+                        .waitSeconds(0.5)
 //                        //launchZoneToFrontBalls
-                        .setReversed(false)
-                        .setTangent(0)
-                        .splineToSplineHeading(new Pose2d(-11, ballPickupYPos, pi/2), 0)
+//                        .setReversed(false)
                         .setTangent(pi/2)
+                        .splineToSplineHeading(new Pose2d(-11, ballPickupYPos, pi/2), pi/2)
+//                        .setTangent(pi/2)
                         .splineTo(ball1PickupPosition, pi/2) // slow mode
 //                        //frontBallsToLaunchZone
-                        .setTangent(ball1ToLaunchAngle)
-                        .splineToSplineHeading(new Pose2d(launchPosition, launchToGoalAngle), ball1ToLaunchAngle)
+                        .setTangent(ball1ToEndLaunchAngle)
+                        .splineToSplineHeading(new Pose2d(endLaunchPosition, endLaunchToGoalAngle), ball1ToEndLaunchAngle)
 
                         .build());
     }
