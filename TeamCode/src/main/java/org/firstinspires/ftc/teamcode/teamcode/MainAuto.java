@@ -418,6 +418,7 @@ public class MainAuto extends LinearOpMode {
                 .setTangent((pi/2) * flipConstant)
                 .splineTo(ball2PickupPosition, (pi/2) * flipConstant, lowVelocity); // slow mode
 
+
         thirdBallsToLaunchZone = launchZoneToThirdBalls.endTrajectory().fresh()
                 .setTangent((3*pi/2) * flipConstant)
                 .splineToSplineHeading(new Pose2d(launchPositionFinal, launchToGoalAngleFinal), pi * flipConstant);

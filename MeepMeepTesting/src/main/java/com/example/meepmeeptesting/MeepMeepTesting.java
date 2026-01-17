@@ -30,7 +30,7 @@ public class MeepMeepTesting {
     public static void main(String[] args) {
         MeepMeep meepMeep = new MeepMeep(700);
 
-        RoadRunnerBotEntity myBot = testPathRightBlue(meepMeep);
+        RoadRunnerBotEntity myBot = testPathClose(meepMeep);
 
         Image img = null;
         try { img = ImageIO.read(new File("MeepMeepTesting/src/main/java/com/example/meepmeeptesting/decode webfield.png")); }
@@ -43,15 +43,87 @@ public class MeepMeepTesting {
                 .start();
     }
 
-    public static RoadRunnerBotEntity testPath(MeepMeep meepMeep) {
-        return new DefaultBotBuilder(meepMeep)
+    //transfered competition near code
+    public static RoadRunnerBotEntity testPathClose(MeepMeep meepMeepClose) {
+        int ballPickupYPos = 27;
+        Vector2d launchPosition = new Vector2d(-25, ballPickupYPos);
+        double launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-58, 58));
+        Vector2d launchPositionFinal = new Vector2d(-50, ballPickupYPos);
+        double launchToGoalAngleFinal = angleBetweenPoints(launchPositionFinal, new Vector2d(-58, 58));
+        Vector2d ball1PickupPosition = new Vector2d(-11, 55);
+        double ball1ToLaunchAngle = angleBetweenPoints(ball1PickupPosition, launchPosition);
+        Vector2d ball2PickupPosition = new Vector2d(13, 61);
+        double ball2ToLaunchAngle = angleBetweenPoints(ball2PickupPosition, launchPosition);
+        //Vector2d classifierClearPosition = new Vector2d(, );
+
+
+        return new DefaultBotBuilder(meepMeepClose)
                 // Set bot constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
-                .setConstraints(50, 50, Math.toRadians(180), Math.toRadians(180), 14.5)
-                .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(0, 0, 0))
-                        .splineTo(new Vector2d(40, 40), pi/2)
+                .setConstraints(40, 50, Math.toRadians(180), Math.toRadians(180), 14.5)
+                .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(-61, 36, Math.toRadians(180)))
+                        //startToLaunchZone
+                        .setReversed(true)
+                        .splineTo(launchPosition, launchToGoalAngle - pi)
+//                        //launchZoneToMiddleBalls
+                        .setReversed(false)
+                        .setTangent(0)
+                        .splineToSplineHeading(new Pose2d(13, ballPickupYPos, pi/2), 0)
+                        .setTangent(pi/2)
+                        .splineTo(ball2PickupPosition, pi/2) // slow mode
+                        //middleBallsToLaunchZone
+                        .setTangent(3*pi/2)
+                        .splineToSplineHeading(new Pose2d(launchPosition, launchToGoalAngle), pi)
+                        //launchZoneToClassifier (boxy)
+                        .setReversed(true)
+                        .setTangent(0)
+                        .splineToSplineHeading(new Pose2d(-4,30, 5*pi/8), pi/8)
+                        .splineToSplineHeading(new Pose2d(12,58, 5*pi/8), 5*pi/8)
+                        .setTangent(-pi/8)
+                        //ClassifierToLaunchZone
+                        .setTangent(3*pi/2)
+                        .splineToSplineHeading(new Pose2d(launchPosition, launchToGoalAngle), pi)
+//                        //launchZoneToFrontBalls
+                        .setReversed(false)
+                        .setTangent(0)
+                        .splineToSplineHeading(new Pose2d(-11, ballPickupYPos, pi/2), 0)
+                        .setTangent(pi/2)
+                        .splineTo(ball1PickupPosition, pi/2) // slow mode
+//                        //frontBallsToLaunchZone
+                        .setTangent(ball1ToLaunchAngle)
+                        .splineToSplineHeading(new Pose2d(launchPosition, launchToGoalAngle), ball1ToLaunchAngle)
+
                         .build());
     }
 
+    //transfered competition far code
+    public static RoadRunnerBotEntity testPathFar(MeepMeep meepMeepFar) {
+        Vector2d launchPosition = new Vector2d(56, 14.5);
+        double launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-66, 58));
+
+
+        return new DefaultBotBuilder(meepMeepFar)
+                // Set bot constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
+                .setConstraints(40, 50, Math.toRadians(180), Math.toRadians(180), 14.5)
+                .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(61, 13.5, Math.toRadians(180)))
+                        //startToLaunchZone
+                        .splineTo(launchPosition, launchToGoalAngle)
+                        //launchZoneToSecondBalls
+                        .splineTo(new Vector2d(36, 28), pi/2)
+                        .splineTo(new Vector2d(36, 45), pi/2) // slow mode
+                        //secondBallsToLaunchZone
+                        .setReversed(true)
+                        .splineTo(launchPosition, launchToGoalAngle - pi)
+                        //launchZoneToThirdBalls
+                        .setReversed(false)
+                        .splineTo(new Vector2d(13, 28), pi/2)
+                        .splineTo(new Vector2d(13, 45), pi/2) // slow mode
+                        //thirdBallsToLaunchZone
+                        .setReversed(true)
+                        .splineTo(launchPosition, launchToGoalAngle - pi)
+
+
+                        .build());
+    }
 
     //starts on the right side, towards red goal
     public static RoadRunnerBotEntity testPathRightRed(MeepMeep meepMeepRightRed) {
