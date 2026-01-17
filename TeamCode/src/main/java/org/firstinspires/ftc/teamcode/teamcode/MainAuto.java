@@ -175,7 +175,7 @@ public class MainAuto extends LinearOpMode {
 
                 PoseStorage.ballStates = spindex.ballStates;
 
-                return true;
+                return !spindex.shouldSwitchToOuttake;
             }
         }
         public Action runActiveIntake(boolean resetDrum) {

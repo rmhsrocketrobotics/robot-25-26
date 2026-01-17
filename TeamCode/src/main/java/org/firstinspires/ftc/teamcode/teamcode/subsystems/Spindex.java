@@ -50,13 +50,13 @@ public class Spindex {
 
     // time it takes to go from position 0.0 to position 1.0 on the drum servo
     // (setting too low will mean the sensor sees the same ball multiple times)
-    public double switchCooldownConstant = 1;//1.75;
+    public double switchCooldownConstant = 0.6;//1.75;
 
     double switchCooldown = switchCooldownConstant;
 
     public ElapsedTime flickTimer;
     // time that the flick has to go up and down
-    public double flickTime = 0.55;
+    public double flickTime = 0.3;
 
     public boolean shouldSwitchToIntake = false;
     public boolean shouldSwitchToOuttake = false;
@@ -184,7 +184,7 @@ public class Spindex {
     public void setDrumState(String newDrumMode) {
         if (!this.drumMode.equals(newDrumMode)) {
             switchCooldown = switchCooldownConstant * (Math.abs(getDrumPositions(newDrumMode, this.drumPosition) - getDrumPositions(this.drumMode, this.drumPosition)));
-            switchCooldown += 0.1;
+            switchCooldown += 0.05;
             switchCooldownTimer.reset();
 
             this.drumMode = newDrumMode;
@@ -195,7 +195,7 @@ public class Spindex {
     public void setDrumState(int newDrumPosition) {
         if (this.drumPosition != newDrumPosition) {
             switchCooldown = switchCooldownConstant * (Math.abs(getDrumPositions(this.drumMode, newDrumPosition) - getDrumPositions(this.drumMode, this.drumPosition)));
-            switchCooldown += 0.1;
+            switchCooldown += 0.05;
             switchCooldownTimer.reset();
 
             this.drumPosition = newDrumPosition;
@@ -215,7 +215,7 @@ public class Spindex {
 //            }
 
             switchCooldown = switchCooldownConstant * (Math.abs(getDrumPositions(newDrumMode, newDrumPosition) - getDrumPositions(this.drumMode, this.drumPosition)));
-            switchCooldown += 0.1;
+            switchCooldown += 0.05;
             switchCooldownTimer.reset();
 
             this.drumMode = newDrumMode;
