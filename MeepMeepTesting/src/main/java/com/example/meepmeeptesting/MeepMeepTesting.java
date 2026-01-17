@@ -80,7 +80,7 @@ public class MeepMeepTesting {
                         .splineToSplineHeading(new Pose2d(launchPosition, launchToGoalAngle), pi)
                         //launchZoneToClassifier (boxy)
                         .waitSeconds(0.5)
-                        .setTangent(pi/4)
+                        .setTangent(0)
 //                        .splineToSplineHeading(new Pose2d(-4,30, 5*pi/8), pi/8)
                         .splineToSplineHeading(new Pose2d(12,58, 5*pi/8), 5*pi/8)
                         .waitSeconds(0.5)

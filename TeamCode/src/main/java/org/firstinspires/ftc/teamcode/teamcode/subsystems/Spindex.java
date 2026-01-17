@@ -234,7 +234,7 @@ public class Spindex {
     /**
      * shoot a ball
      * */
-    private void setDrumStateToNextOuttake() {
+    public void setDrumStateToNextOuttake() { // this method and its overloads should really be private but i need to use them in auto sooo
         int[] drumPositionOrder = {2, 0, 1};
 
         for (int i : drumPositionOrder) {
@@ -250,7 +250,7 @@ public class Spindex {
      * shoot a ball of a specific color
      * if there are no balls of the specified color and shootAny is true, then the robot will attempt to shoot a ball of the opposite color
      * */
-    private void setDrumStateToNextOuttake(BallState color, boolean shootAny) {
+    public void setDrumStateToNextOuttake(BallState color, boolean shootAny) {
         for (int i = 0; i < ballStates.length; i++) {
             BallState ballState = ballStates[i];
             if (ballState == color) {
