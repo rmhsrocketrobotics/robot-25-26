@@ -27,6 +27,7 @@ public class LaunchTesting extends LinearOpMode{
     Gamepad gamepad2Last;
 
     boolean pauseIntake = false;
+    boolean sortBalls = false;
     double hoodServoPosition = 0;
     double outtakeSpeed = 1400;
 
@@ -88,10 +89,14 @@ public class LaunchTesting extends LinearOpMode{
 
 
             /// GAMEPAD 2 CODE
+            if (gamepad2.dpad_up && !gamepad2Last.dpad_up) {
+                sortBalls = !sortBalls;
+            }
+
             if (gamepad2.right_bumper && !gamepad2Last.right_bumper) {
-                spindex.switchCooldownConstant += 0.1;
+                spindex.switchCooldownMultiplier += 0.05;
             } else if (gamepad2.left_bumper && !gamepad2Last.left_bumper) {
-                spindex.switchCooldownConstant -= 0.1;
+                spindex.switchCooldownMultiplier -= 0.05;
             }
 
             if (gamepad2.x && !gamepad2Last.x) {
@@ -99,12 +104,12 @@ public class LaunchTesting extends LinearOpMode{
             } else if (gamepad2.y && !gamepad2Last.y) {
                 spindex.flickTime -= 0.05;
             }
-//
-//            if (gamepad2.dpad_right && !gamepad2Last.dpad_right) {
-//                spindex.postFlickTime += 0.1;
-//            } else if (gamepad2.dpad_left && !gamepad2Last.dpad_left) {
-//                spindex.postFlickTime -= 0.1;
-//            }
+
+            if (gamepad2.dpad_right && !gamepad2Last.dpad_right) {
+                spindex.switchCooldownConstant += 0.01;
+            } else if (gamepad2.dpad_left && !gamepad2Last.dpad_left) {
+                spindex.switchCooldownConstant -= 0.01;
+            }
 
             gamepad2Last.copy(gamepad2);
 
@@ -118,9 +123,14 @@ public class LaunchTesting extends LinearOpMode{
 
             telemetry.addLine();
 
-            telemetry.addData("the switch cooldown constant (gp2 bumpers) is", spindex.switchCooldownConstant);
+            telemetry.addData("the switch cooldown multiplier (gp2 bumpers) is", spindex.switchCooldownMultiplier);
             telemetry.addData("the flick time (gp2 x & y) is", spindex.flickTime);
-//            telemetry.addData("the post flick time is", spindex.postFlickTime);
+            telemetry.addData("the switch cooldown constant (gp2 dpad left & right) is", spindex.switchCooldownConstant);
+
+            telemetry.addLine();
+
+            telemetry.addData("intake paused (gp1 dpad up)", pauseIntake);
+            telemetry.addData("sorting balls (gp2 dpad up)", sortBalls);
 
             telemetry.addLine("\n---------------------------\n");
 
@@ -141,8 +151,8 @@ public class LaunchTesting extends LinearOpMode{
 
             telemetry.addData("can see goal april tag", vision.canSeeGoalAprilTag);
 
-            spindex.printTelemetry(telemetry);
-            outtake.printTelemetry(telemetry);
+//            spindex.printTelemetry(telemetry);
+//            outtake.printTelemetry(telemetry);
 //            vision.printTelemetry(telemetry);
             telemetry.addData("state", state);
             telemetry.update();
@@ -161,7 +171,13 @@ public class LaunchTesting extends LinearOpMode{
             //vision.seenGoalAprilTag = false;
             //spindex.ballQueue.clear();
 
-            spindex.shootAllBalls();
+            if (sortBalls) {
+                spindex.queueBall("green");
+                spindex.queueBall("purple");
+                spindex.queueBall("purple");
+            } else {
+                spindex.shootAllBalls();
+            }
 
             spindex.intakeMotor.setPower(0);
 
