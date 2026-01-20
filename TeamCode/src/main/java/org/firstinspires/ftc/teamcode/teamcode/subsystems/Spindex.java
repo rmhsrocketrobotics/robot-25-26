@@ -227,7 +227,7 @@ public class Spindex {
         if (position.equals("up")) {
             flickServo.setPosition(0.15);
         } else if (position.equals("down")) {
-            flickServo.setPosition(0.5);
+            flickServo.setPosition(0.52);
         }
     }
 

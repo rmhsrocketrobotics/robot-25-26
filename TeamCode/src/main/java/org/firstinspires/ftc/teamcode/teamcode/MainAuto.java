@@ -78,14 +78,14 @@ public class MainAuto extends LinearOpMode {
             launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-58, 58 * flipConstant));
             launchPose = new Pose2d(launchPosition, launchToGoalAngle);
 
-            classifierPose = new Pose2d(12,58 * flipConstant, 5*pi/8 * flipConstant);
+            classifierPose = new Pose2d(13,58 * flipConstant, 3*pi/4 * flipConstant);
         }
 
         public Action startToMiddleBalls() {
             return drive.actionBuilder(beginPose)
                     // back up while facing the goal
                     .setReversed(true)
-                    .splineTo(new Vector2d(-23, 24 * flipConstant), launchToGoalAngle - pi)
+                    .splineTo(new Vector2d(-23, 24 * flipConstant), launchToGoalAngle - pi, mediumVelocity) // slowed
 
                     // go to middle row of balls
                     .splineToSplineHeading(new Pose2d(13, 30 * flipConstant, (pi/2) * flipConstant), (pi/2) * flipConstant)
@@ -103,7 +103,7 @@ public class MainAuto extends LinearOpMode {
         }
 
         public Action toFinalLaunchZone(Pose2d startPose) {
-            Vector2d endLaunchPosition = new Vector2d(-46, 25);
+            Vector2d endLaunchPosition = new Vector2d(-46, 25 * flipConstant);
             double endLaunchToGoalAngle = angleBetweenPoints(endLaunchPosition, new Vector2d(-58, 58 * flipConstant));
             double startToFinalLaunchAngle = angleBetweenPoints(startPose.component1(), endLaunchPosition);
 
@@ -125,7 +125,7 @@ public class MainAuto extends LinearOpMode {
         public Action launchZoneToClassifier() {
             return drive.actionBuilder(launchPose)
                     .setTangent((pi/4) * flipConstant)
-                    .splineToSplineHeading(classifierPose, (5*pi/8) * flipConstant)
+                    .splineToSplineHeading(classifierPose, (pi/2) * flipConstant)
 
                     .build();
         }
@@ -256,7 +256,7 @@ public class MainAuto extends LinearOpMode {
                     this.launchDistance = CustomMath.distanceBetweenPoints(drive.localizer.getPose().component1(), goalPosition) / 39.37;
                     // alr bro listen ik this is a stupid way to try to do moving while shooting but i can't be bothered and it might work
                     // todo fix if it doesn't work tho
-                    outtake.setOuttakeVelocityAndHoodAngle(launchDistance + 0.3);
+                    outtake.setOuttakeVelocityAndHoodAngle(launchDistance + 0.2);
                 }
 
                 spindex.update(outtake, State.OUTTAKE);
@@ -368,6 +368,7 @@ public class MainAuto extends LinearOpMode {
     MecanumDrive drive;
 
     VelConstraint lowVelocity;
+    VelConstraint mediumVelocity;
     TrajectoryActionBuilder startToLaunchZone;
     TrajectoryActionBuilder launchZoneToSecondBalls;
     TrajectoryActionBuilder secondBallsToLaunchZone;
@@ -385,6 +386,13 @@ public class MainAuto extends LinearOpMode {
             @Override
             public double maxRobotVel(@NonNull Pose2dDual<Arclength> pose2dDual, @NonNull PosePath posePath, double v) {
                 return 10;
+            }
+        };
+
+        mediumVelocity = new VelConstraint() {
+            @Override
+            public double maxRobotVel(@NonNull Pose2dDual<Arclength> pose2dDual, @NonNull PosePath posePath, double v) {
+                return 15;
             }
         };
 
@@ -457,6 +465,8 @@ public class MainAuto extends LinearOpMode {
         // add auto camera tracking to the auto action
         shootAndIntakeMiddleBalls = new RaceAction(shootAndIntakeMiddleBalls, ballHandler.trackObelisk(true));
 
+        ballHandler.init();
+
         waitForStart();
 
         /// BLOCKING
@@ -466,7 +476,7 @@ public class MainAuto extends LinearOpMode {
         Action shootMiddleBalls = new RaceAction(ballHandler.readyOuttake(1.5, false), path.toLaunchZone(drive.localizer.getPose()));
         shootMiddleBalls = new SequentialAction(
                 shootMiddleBalls,
-                new ParallelAction(ballHandler.launchAllBalls(1.5, false), path.updateLocalizer())
+                new RaceAction(ballHandler.launchAllBalls(1.5, false), path.updateLocalizer())
         );
 
         // go clear classifier
@@ -490,8 +500,8 @@ public class MainAuto extends LinearOpMode {
         Actions.runBlocking(new SequentialAction(shootMiddleBalls, clearClassifier, shootClassifierBalls, intakeCloseBalls));
 
         // shoot close balls
-        Action shootCloseBalls = new RaceAction(ballHandler.readyOuttake(1.5), path.toFinalLaunchZone(drive.localizer.getPose()));
-        shootCloseBalls = new SequentialAction(shootCloseBalls, ballHandler.launchAllBalls(1.5));
+        Action shootCloseBalls = new RaceAction(ballHandler.readyOuttake(0.7), path.toFinalLaunchZone(drive.localizer.getPose()));
+        shootCloseBalls = new SequentialAction(shootCloseBalls, ballHandler.launchAllBalls(0.7));
 
         // add pose recording
         shootCloseBalls = new RaceAction(shootCloseBalls, recordPose());
