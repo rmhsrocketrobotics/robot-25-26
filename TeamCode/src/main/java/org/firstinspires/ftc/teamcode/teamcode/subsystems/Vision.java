@@ -8,6 +8,8 @@ import static java.lang.Math.tan;
 import static java.lang.Math.toDegrees;
 import static java.lang.Math.toRadians;
 
+import android.util.Size;
+
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Pose2d;
@@ -76,10 +78,12 @@ public class Vision {
         /// see ConceptAprilTagLocalization.java
         aprilTag = new AprilTagProcessor.Builder()
                 .setCameraPose(cameraPosition, cameraOrientation)
+                .setLensIntrinsics(1782.29, 1782.29, 433.599, 833.017)
                 .build();
 
         visionPortal = new VisionPortal.Builder()
                 .setCamera(hardwareMap.get(WebcamName.class, "camera"))
+                .setCameraResolution(new Size(1280, 720))
                 .addProcessor(aprilTag)
                 .build();
         visionPortal.setProcessorEnabled(aprilTag, true);

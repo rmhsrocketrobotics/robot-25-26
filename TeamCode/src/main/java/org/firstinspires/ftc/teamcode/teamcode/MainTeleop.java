@@ -145,10 +145,10 @@ public class MainTeleop extends LinearOpMode {
 
             telemetry.update();
 
-//            TelemetryPacket packet = new TelemetryPacket();
-//            packet.fieldOverlay().setStroke("#3F51B5");
-//            Drawing.drawRobot(packet.fieldOverlay(), vision.localizer.getPose());
-//            FtcDashboard.getInstance().sendTelemetryPacket(packet);
+            TelemetryPacket packet = new TelemetryPacket();
+            packet.fieldOverlay().setStroke("#3F51B5");
+            Drawing.drawRobot(packet.fieldOverlay(), vision.localizer.getPose());
+            FtcDashboard.getInstance().sendTelemetryPacket(packet);
         }
     }
 
