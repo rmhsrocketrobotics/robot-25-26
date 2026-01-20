@@ -30,7 +30,7 @@ public class MeepMeepTesting {
     public static void main(String[] args) {
         MeepMeep meepMeep = new MeepMeep(700);
 
-        RoadRunnerBotEntity myBot = testPathClose(meepMeep);
+        RoadRunnerBotEntity myBot = testPathFar(meepMeep);
 
         Image img = null;
         try { img = ImageIO.read(new File("MeepMeepTesting/src/main/java/com/example/meepmeeptesting/decode webfield.png")); }
@@ -128,6 +128,8 @@ public class MeepMeepTesting {
                         .setReversed(true)
                         .splineTo(launchPosition, launchToGoalAngle - pi)
 
+                        .setTangent(pi/2)
+                        .splineToSplineHeading(new Pose2d(56, 35, pi), pi/2)
 
                         .build());
     }

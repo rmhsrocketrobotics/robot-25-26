@@ -152,6 +152,83 @@ public class MainAuto extends LinearOpMode {
         }
     }
 
+    public class FarPathGenerator {
+        int flipConstant;
+
+        Vector2d launchPosition;
+        double launchToGoalAngle;
+        Pose2d launchPose;
+
+        FarPathGenerator() {
+            if (allianceIsRed()) {
+                flipConstant = 1;
+            } else {
+                flipConstant = -1;
+            }
+
+            beginPose = new Pose2d(61, 13.5 * flipConstant, Math.toRadians(180) * flipConstant);
+            drive = new MecanumDrive(hardwareMap, beginPose);
+
+            launchPosition = new Vector2d(50.5, 14.5 * flipConstant);
+            launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-66, 60 * flipConstant));
+            launchPose = new Pose2d(launchPosition, launchToGoalAngle);
+        }
+
+        public Action startToLaunchZone() {
+            return drive.actionBuilder(beginPose)
+                    .splineTo(launchPosition, launchToGoalAngle)
+
+                    .build();
+        }
+
+        public Action toLaunchZone(Pose2d startPose) {
+            return drive.actionBuilder(startPose)
+                    .setReversed(true)
+                    .splineTo(launchPosition, launchToGoalAngle - pi)
+
+                    .build();
+        }
+
+        public Action launchZoneToFarBalls() {
+            return drive.actionBuilder(launchPose)
+                    .setReversed(false)
+                    .splineTo(new Vector2d(36, 28 * flipConstant), (pi/2) * flipConstant)
+                    .splineTo(new Vector2d(36, 61 * flipConstant), (pi/2) * flipConstant, lowVelocity) // slowed
+
+                    .build();
+        }
+
+        public Action launchZoneToMiddleBalls() {
+            return drive.actionBuilder(launchPose)
+                    .setReversed(false)
+                    .splineTo(new Vector2d(13, 28 * flipConstant), (pi/2) * flipConstant)
+                    .splineTo(new Vector2d(13, 61 * flipConstant), (pi/2) * flipConstant, lowVelocity) // slowed
+
+                    .build();
+        }
+
+        public Action launchZoneToPark() {
+            return drive.actionBuilder(launchPose)
+                    .setReversed(false)
+                    .setTangent(pi/2 * flipConstant)
+                    .splineToSplineHeading(new Pose2d(50.5, 35 * flipConstant, pi), pi/2 * flipConstant)
+
+                    .build();
+        }
+
+        public class UpdateLocalizer implements Action {
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                drive.localizer.update();
+                return true;
+            }
+        }
+
+        public Action updateLocalizer() {
+            return new UpdateLocalizer();
+        }
+    }
+
     public class BallHandler { // combination of spindex and outtake
         Spindex spindex;
         Outtake outtake;
