@@ -7,6 +7,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
 import org.firstinspires.ftc.teamcode.Drawing;
+import org.firstinspires.ftc.teamcode.teamcode.subsystems.LoopTimer;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.State;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Velocity;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Vision;
@@ -22,6 +23,7 @@ public class MainTeleop extends LinearOpMode {
     Vision vision;
     Gamepad gamepad1Last;
     Gamepad gamepad2Last;
+    LoopTimer loopTimer = new LoopTimer();
 
     public boolean allianceIsRed() {
         return true;
@@ -136,12 +138,14 @@ public class MainTeleop extends LinearOpMode {
             //drivetrain.printTelemetry(telemetry);
 //            spindex.printTelemetry(telemetry);
 //            outtake.printTelemetry(telemetry);
-//            vision.printTelemetry(telemetry);
+            vision.printTelemetry(telemetry);
 //            if (state == State.INTAKE) {
 //                telemetry.addLine("state: intake");
 //            } else {
 //                telemetry.addLine("state: outtake");
 //            }
+
+            telemetry.addData("loops per second", Math.round(1 / loopTimer.getLoopTimeSeconds()));
 
             telemetry.update();
 
