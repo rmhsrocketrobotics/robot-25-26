@@ -1,29 +1,24 @@
 package org.firstinspires.ftc.teamcode.teamcode;
 
-import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
-import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
-import org.firstinspires.ftc.teamcode.Drawing;
-import org.firstinspires.ftc.teamcode.teamcode.subsystems.LoopTimer;
-import org.firstinspires.ftc.teamcode.teamcode.subsystems.State;
+import org.firstinspires.ftc.teamcode.teamcode.subsystems.Odometry;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Velocity;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Vision;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Spindex;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Outtake;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Drivetrain;
 
-public class MainTeleop extends LinearOpMode {
-    State state;
+public class MainTeleop extends LinearOpMode{
+    String state;
     Drivetrain drivetrain;
     Spindex spindex;
     Outtake outtake;
     Vision vision;
+    Odometry odometry;
     Gamepad gamepad1Last;
     Gamepad gamepad2Last;
-    LoopTimer loopTimer = new LoopTimer();
 
     public boolean allianceIsRed() {
         return true;
@@ -31,13 +26,16 @@ public class MainTeleop extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-        state = State.INTAKE;
+        state = "intake"; // states are: "intake", "transition", and "outtake"
 
         drivetrain = new Drivetrain(hardwareMap); // wheels
-        spindex = new Spindex(hardwareMap); // drumServo, intake, flick
+        spindex = new Spindex(hardwareMap, false); // drumServo, intake, flick
+        spindex.flickTime = 1;
+        spindex.postFlickTime = 0.4;
 
         outtake = new Outtake(hardwareMap); // outtake, hoodServo
         vision = new Vision(hardwareMap, allianceIsRed()); // camera
+        odometry = new Odometry(hardwareMap); // pinpoint
 
         gamepad1Last = new Gamepad();
         gamepad2Last = new Gamepad();
@@ -50,7 +48,7 @@ public class MainTeleop extends LinearOpMode {
 //        imu.initialize(parameters);
 //        imu.resetYaw();
 
-//        telemetry.setMsTransmissionInterval(200); //default 250
+        telemetry.setMsTransmissionInterval(200); //default 250
         //telemetry.setNumDecimalPlaces(0, 5);
 
 //        //this is in place of a waitForStart() call
@@ -61,13 +59,11 @@ public class MainTeleop extends LinearOpMode {
         waitForStart();
 
         spindex.init();
-        outtake.init();
-        vision.init();
 
         while (opModeIsActive()) {
             // GAMEPAD 1 CODE:
             if (gamepad1.y && vision.seenGoalAprilTag) {
-                vision.faceGoal(drivetrain, telemetry);
+                vision.faceGoal(drivetrain, odometry.currentBearing);
             } else {
                 if (gamepad1.left_bumper) {
                     // speed mode
@@ -92,32 +88,29 @@ public class MainTeleop extends LinearOpMode {
 //            if (gamepad2.y && !gamepad2Last.y) {
 //                spindex.incrementDrumPosition();
 //            }
-//            if (gamepad2.x) {
-//                spindex.flick.setPower(1);
-//            }
 //            if (gamepad2.x && !gamepad2Last.x) {
 //                spindex.setDrumState("intake", 0);
 //            }
 
-            if (gamepad2.left_trigger > 0.1) { // backspin intake
-                spindex.intakeMotor.setPower(-gamepad2.left_trigger);
-
-            } else if ((gamepad2.right_trigger > 0.1)) { // spin intake
-                spindex.intakeMotor.setPower(gamepad2.right_trigger);
-
+            if (gamepad2.left_trigger > 0.1) {
+                spindex.intake.setPower(-gamepad2.left_trigger);
             } else {
-                spindex.intakeMotor.setPower(0);
+                spindex.intake.setPower(gamepad2.right_trigger);
             }
 
-            // state specific code goes in these methods
-            switch (state) {
-                case INTAKE:
-                    intakeMode();
-                    break;
+            //spindex.flick.setPower(gamepad2.left_trigger);
 
-                case OUTTAKE:
-                    outtakeMode();
-                    break;
+            Velocity requiredVelocity = vision.getRequiredVelocity();
+            telemetry.addData("target speed m/s", requiredVelocity.speed);
+            telemetry.addData("target angle degrees", requiredVelocity.direction);
+
+            outtake.setHoodServoToAngle(requiredVelocity.direction);
+
+            // state specific code goes in these methods
+            if (state.equals("intake")) {
+                intakeMode();
+            } else if (state.equals("outtake")) {
+                outtakeMode(requiredVelocity);
             }
 
 //            if (gamepad2.y) {
@@ -130,59 +123,49 @@ public class MainTeleop extends LinearOpMode {
 
             gamepad2Last.copy(gamepad2);
 
-            drivetrain.update();
-            spindex.update(outtake, state);
-            outtake.update();
-            vision.update();
+            spindex.update(outtake);
+            outtake.update(spindex);
+            vision.update(odometry.currentBearing);
+            odometry.update();
 
             //drivetrain.printTelemetry(telemetry);
-//            spindex.printTelemetry(telemetry);
-//            outtake.printTelemetry(telemetry);
+            outtake.printTelemetry(telemetry);
             vision.printTelemetry(telemetry);
-//            if (state == State.INTAKE) {
-//                telemetry.addLine("state: intake");
-//            } else {
-//                telemetry.addLine("state: outtake");
-//            }
-
-            telemetry.addData("loops per second", Math.round(1 / loopTimer.getLoopTimeSeconds()));
-
+            telemetry.addData("state", state);
             telemetry.update();
-
-            TelemetryPacket packet = new TelemetryPacket();
-            packet.fieldOverlay().setStroke("#3F51B5");
-            Drawing.drawRobot(packet.fieldOverlay(), vision.localizer.getPose());
-            FtcDashboard.getInstance().sendTelemetryPacket(packet);
         }
     }
 
     public void intakeMode() {
         if ((gamepad2.dpad_up && !gamepad2Last.dpad_up) || spindex.shouldSwitchToOuttake) {
-            state = State.OUTTAKE;
-
+            state = "outtake";
+            spindex.setDrumState("outtake", 0);
+            //vision.seenGoalAprilTag = false;
+            spindex.ballQueue.clear();
+            return;
         } else if (gamepad2.dpad_down && !gamepad2Last.dpad_down) {
-            spindex.recheckDrum();
+            spindex.setDrumState("intake", 0);
+            return;
         }
     }
 
-    public void outtakeMode() {
+    public void outtakeMode(Velocity requiredVelocity) {
         if ((gamepad2.dpad_down && !gamepad2Last.dpad_down) || spindex.shouldSwitchToIntake) {
-            state = State.INTAKE;
-
+            state = "intake";
+            spindex.setDrumState("intake", 0);
             outtake.targetTicksPerSecond = 0;
             return;
         }
 
-        outtake.setOuttakeVelocityAndHoodAngle(vision.goalDistance);
+        //vision.detectGoalAprilTag();
+
+        outtake.setOuttakeToSpeed(requiredVelocity.speed, 3.5);
 
         if (gamepad2.left_bumper && !gamepad2Last.left_bumper) {
             spindex.queueBall("purple");
         }
         if (gamepad2.right_bumper && !gamepad2Last.right_bumper) {
             spindex.queueBall("green");
-        }
-        if (gamepad2.y) {
-            spindex.shootAllBalls();
         }
     }
 }

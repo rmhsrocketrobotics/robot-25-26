@@ -8,80 +8,66 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.PwmControl;
-import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.teamcode.teamcode.PoseStorage;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
 
 public class Spindex {
-
-    public enum BallState {
-        GREEN,
-        PURPLE,
-        EMPTY
-    }
-
     private ServoImplEx drumServo;
 
     final double[] intakePositions = {0, 0.3826, 0.7831};
-    // final double[] outtakePositions = {0.5745, 0.975, 0.1823}; old values
-    final double[] outtakePositions = {0.5845, 0.98, 0.18};
+    final double[] outtakePositions = {0.5745, 0.975, 0.1823};
 
-    public DcMotor intakeMotor;
+    public DcMotor intake;
 
-    public Servo flickServo;
+    DcMotor flick;
 
     NormalizedColorSensor intakeColorSensor;
+
+    NormalizedColorSensor outtakeColorSensor;
 
     private String drumMode;
 
     private int drumPosition;
 
-    public BallState[] ballStates = PoseStorage.ballStates.clone();
-    public Deque<BallState> ballQueue = new ArrayDeque<>();
+    public String[] ballStates = {"empty", "empty", "empty"};
+    public Deque<String> ballQueue = new ArrayDeque<>();
 
     private ElapsedTime switchCooldownTimer;
 
-    // time it takes to go from position 0.0 to position 1.0 on the drum servo
+    // time it takes to go from position 0 to position 1 on the drum servo
     // (setting too low will mean the sensor sees the same ball multiple times)
-    public double switchCooldownMultiplier = 0.6;//1.75;
+    public double switchCooldownConstant = 1.3;//1.75;
 
-    // added constant onto the switch timer
-    public double switchCooldownConstant = 0.05;
+    double switchCooldown = switchCooldownConstant;
 
-    double switchCooldown = switchCooldownMultiplier;
+    private ElapsedTime flickTimer;
 
-    public ElapsedTime flickTimer;
-    // time that the flick has to go up and down
-    public double flickTime = 0.3;
+    public double flickTime = 1.2; // time that the robot will try to flick the ball up for
+    public double postFlickTime = 0.5; // og: 0.25; // time that the robot will wait after flicking before doing anything else
 
     public boolean shouldSwitchToIntake = false;
     public boolean shouldSwitchToOuttake = false;
 
-    private State lastState = State.INTAKE;
-
-    private boolean shootAll;
-    public boolean waitingToFlick = false;
+    public boolean usingAutoFlickMode; // TODO: implement this?? maybe not necessary
 
     /**
      * should run BEFORE waitForStart()
      * */
-    public Spindex(HardwareMap hardwareMap) {
-        PoseStorage.ballStates = new BallState[]{BallState.EMPTY, BallState.EMPTY, BallState.EMPTY};
-
+    public Spindex(HardwareMap hardwareMap, boolean usingAutoFlickMode) {
         drumServo = hardwareMap.get(ServoImplEx.class, "drumServo");
         drumServo.setPwmRange(new PwmControl.PwmRange(500, 2500));
 
-        intakeMotor = hardwareMap.get(DcMotor.class, "intake");
+        intake = hardwareMap.get(DcMotor.class, "intake");
         //intake.setDirection(DcMotor.Direction.REVERSE);
 
-        flickServo = hardwareMap.get(Servo.class, "flick");
+        flick = hardwareMap.get(DcMotor.class, "flick");
+        flick.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         intakeColorSensor = hardwareMap.get(NormalizedColorSensor.class, "intakeColorSensor");
         intakeColorSensor.setGain(15);
@@ -89,9 +75,9 @@ public class Spindex {
         //outtakeColorSensor = hardwareMap.get(NormalizedColorSensor.class, "idk lmao");
 
         drumMode = "intake";
-        drumPosition = 2;
+        drumPosition = 0;
 
-        shootAll = false;
+        this.usingAutoFlickMode = usingAutoFlickMode;
     }
 
     /**
@@ -100,16 +86,6 @@ public class Spindex {
     public void init() {
         switchCooldownTimer = new ElapsedTime();
         flickTimer = new ElapsedTime(676767);
-        setFlickPosition("down");
-        updateDrumPosition();
-    }
-
-    public void init(String drumMode, int drumPosition) {
-        switchCooldownTimer = new ElapsedTime();
-        flickTimer = new ElapsedTime(676767);
-        setFlickPosition("down");
-
-        setDrumState(drumMode, drumPosition);
         updateDrumPosition();
     }
 
@@ -139,25 +115,20 @@ public class Spindex {
         return 676767;
     }
 
-    public void nextDrumPosition() {
-        if (drumInIntakeMode()) {
-            int newDrumPosition = drumPosition - 1;
-            if (newDrumPosition < 0) {
-                newDrumPosition = 0;
-            }
-            setDrumState(newDrumPosition);
+    public void incrementDrumPosition() {
+        int newDrumPosition = drumPosition + 1;
+        String newDrumState = drumMode;
+        if (newDrumPosition >= 3) {
+            newDrumPosition = 0;
 
-        } else if (drumInOuttakeMode()) {
-            // this corresponds to the way that the drum looks irl; the drum outtakes the ball in slot 2, then in slot 0, then in slot 1
-            if (drumPosition == 2) {
-                setDrumState(0);
-            } else if (drumPosition == 0) {
-                setDrumState(1);
-            } else if (drumPosition == 1) {
-                //setDrumState(1);
+            if (drumInIntakeMode()) {
+                newDrumState = "outtake";
+            } else if (drumInOuttakeMode()) {
+                newDrumState = "intake";
             }
         }
 
+        setDrumState(newDrumState, newDrumPosition);
     }
 
     public boolean drumInOuttakeMode() {
@@ -169,25 +140,12 @@ public class Spindex {
     }
 
     public boolean drumIsEmpty() {
-        return ballStates[0] == BallState.EMPTY && ballStates[1] == BallState.EMPTY && ballStates[2] == BallState.EMPTY;
-    }
-
-    public boolean drumIsFull() {
-        return ballStates[0] != BallState.EMPTY && ballStates[1] != BallState.EMPTY && ballStates[2] != BallState.EMPTY;
-    }
-
-    public boolean drumIsSwitching() {
-        return switchCooldownTimer.seconds() < switchCooldown;
-    }
-
-    public boolean drumIsFlicking() {
-        return flickTimer.seconds() < flickTime;
+        return ballStates[0].equals("empty") && ballStates[1].equals("empty") && ballStates[2].equals("empty");
     }
 
     public void setDrumState(String newDrumMode) {
         if (!this.drumMode.equals(newDrumMode)) {
-            switchCooldown = switchCooldownMultiplier * (Math.abs(getDrumPositions(newDrumMode, this.drumPosition) - getDrumPositions(this.drumMode, this.drumPosition)));
-            switchCooldown += switchCooldownConstant;
+            switchCooldown = switchCooldownConstant * (Math.abs(getDrumPositions(newDrumMode, this.drumPosition) - getDrumPositions(this.drumMode, this.drumPosition)));
             switchCooldownTimer.reset();
 
             this.drumMode = newDrumMode;
@@ -197,8 +155,7 @@ public class Spindex {
 
     public void setDrumState(int newDrumPosition) {
         if (this.drumPosition != newDrumPosition) {
-            switchCooldown = switchCooldownMultiplier * (Math.abs(getDrumPositions(this.drumMode, newDrumPosition) - getDrumPositions(this.drumMode, this.drumPosition)));
-            switchCooldown += switchCooldownConstant;
+            switchCooldown = switchCooldownConstant * (Math.abs(getDrumPositions(this.drumMode, newDrumPosition) - getDrumPositions(this.drumMode, this.drumPosition)));
             switchCooldownTimer.reset();
 
             this.drumPosition = newDrumPosition;
@@ -208,17 +165,7 @@ public class Spindex {
 
     public void setDrumState(String newDrumMode, int newDrumPosition) {
         if ((!this.drumMode.equals(newDrumMode)) || (this.drumPosition != newDrumPosition)) {
-//            if (
-//                    this.drumMode.equals("intake")
-//                    && this.drumPosition == 0
-//                    && newDrumMode.equals("outtake")
-//                    && newDrumPosition == 2
-//            ) {
-//
-//            }
-
-            switchCooldown = switchCooldownMultiplier * (Math.abs(getDrumPositions(newDrumMode, newDrumPosition) - getDrumPositions(this.drumMode, this.drumPosition)));
-            switchCooldown += switchCooldownConstant;
+            switchCooldown = switchCooldownConstant * (Math.abs(getDrumPositions(newDrumMode, newDrumPosition) - getDrumPositions(this.drumMode, this.drumPosition)));
             switchCooldownTimer.reset();
 
             this.drumMode = newDrumMode;
@@ -226,23 +173,13 @@ public class Spindex {
         }
     }
 
-    private void setFlickPosition(String position) {
-        if (position.equals("up")) {
-            flickServo.setPosition(0.15);
-        } else if (position.equals("down")) {
-            flickServo.setPosition(0.52);
-        }
-    }
-
     /**
      * shoot a ball
      * */
-    public void setDrumStateToNextOuttake() { // this method and its overloads should really be private but i need to use them in auto sooo
-        int[] drumPositionOrder = {2, 0, 1};
-
-        for (int i : drumPositionOrder) {
-            BallState ballState = ballStates[i];
-            if (ballState != BallState.EMPTY) {
+    private void setDrumStateToNextOuttake() {
+        for (int i = 0; i < ballStates.length; i++) {
+            String ballState = ballStates[i];
+            if (!ballState.equals("empty")) {
                 setDrumState("outtake", i);
                 return;
             }
@@ -253,10 +190,10 @@ public class Spindex {
      * shoot a ball of a specific color
      * if there are no balls of the specified color and shootAny is true, then the robot will attempt to shoot a ball of the opposite color
      * */
-    public void setDrumStateToNextOuttake(BallState color, boolean shootAny) {
+    private void setDrumStateToNextOuttake(String color, boolean shootAny) {
         for (int i = 0; i < ballStates.length; i++) {
-            BallState ballState = ballStates[i];
-            if (ballState == color) {
+            String ballState = ballStates[i];
+            if (ballState.equals(color)) {
                 setDrumState("outtake", i);
                 return;
             }
@@ -265,6 +202,18 @@ public class Spindex {
         if (shootAny) {
             setDrumStateToNextOuttake();
         }
+    }
+
+    public boolean drumIsSwitching() {
+        return switchCooldownTimer.seconds() < switchCooldown;
+    }
+
+    public boolean drumIsFlicking() {
+        return flickTimer.seconds() < flickTime;
+    }
+
+    public boolean drumIsInFlickCooldown() {
+        return flickTimer.seconds() < flickTime + postFlickTime;
     }
 
     /**
@@ -277,7 +226,7 @@ public class Spindex {
         }
 
         // get distance from sensor
-        boolean ballDetected = ((DistanceSensor) intakeColorSensor).getDistance(DistanceUnit.CM) < 4; // og value: 3 cm
+        boolean ballDetected = ((DistanceSensor) intakeColorSensor).getDistance(DistanceUnit.CM) < 3;
 
         if (!ballDetected) { // could add && Objects.equals(ballStates[drumPosition], "empty") to this statement
             return false;
@@ -289,9 +238,9 @@ public class Spindex {
         Color.colorToHSV(colors.toColor(), hsvValues);
 
         // assume a ball is purple unless proven green (most balls on the field are purple)
-        BallState color = BallState.PURPLE;
+        String color = "purple";
         if (hsvValues[0] < 180) {
-            color = BallState.GREEN;
+            color = "green";
         }
 
         ballStates[drumPosition] = color;
@@ -299,136 +248,81 @@ public class Spindex {
         return true;
     }
 
-    public void queueBall(BallState color) {
-        if (color == BallState.GREEN) {
-            ballQueue.addLast(BallState.GREEN);
-        } else if (color == BallState.PURPLE) {
-            ballQueue.addLast(BallState.PURPLE);
+//    /**
+//     * move the drum to the next outtake slot with a ball in it and flick it
+//     * */
+//    public void flickNextBall() {
+//        setDrumStateToNextOuttake();
+//        flickTimer.reset();
+//    }
+
+    /**
+     * move the drum to the next outtake slot with a ball of a certain color in it and flick it
+     * if there are no balls of the specified color and shootAny is true, then the robot will attempt to shoot a ball of the opposite color
+     */
+    public void flickNextBall(String color, boolean shootAny) {
+        if (!drumIsEmpty()) {
+        setDrumStateToNextOuttake(color, shootAny);
+        flickTimer.reset();
         }
     }
 
     public void queueBall(String color) {
         if (color.equals("green")) {
-            ballQueue.addLast(BallState.GREEN);
+            ballQueue.addLast("green");
         } else if (color.equals("purple")) {
-            ballQueue.addLast(BallState.PURPLE);
+            ballQueue.addLast("purple");
         }
-    }
-
-    public void shootAllBalls() {
-        shootAll = true;
-    }
-
-    public void recheckDrum() {
-        setDrumState("intake", 2);
-
-        ballStates[0] = BallState.EMPTY;
-        ballStates[1] = BallState.EMPTY;
-        ballStates[2] = BallState.EMPTY;
     }
 
     /**
      * should be called in the event loop
      * */
-    public void update(Outtake outtake, State state) {
+    public void update(Outtake outtake) {
         shouldSwitchToIntake = false;
         shouldSwitchToOuttake = false;
 
-        switch (state) {
-            case INTAKE:
-                // when switching to INTAKE mode, reset the drum's position and reset the recorded ball states
-                if (lastState == State.OUTTAKE) {
-                    setDrumState("intake", 2);
-
-                    ballStates[0] = BallState.EMPTY;
-                    ballStates[1] = BallState.EMPTY;
-                    ballStates[2] = BallState.EMPTY;
-                }
-
-                // auto move drum when ball detected
-                if (!drumIsSwitching()) {
-                    boolean ballDetected = detectBallIntake();
-                    if (ballDetected) {
-                        nextDrumPosition();
-                    }
-                }
-
-                // suggest to switch to OUTTAKE mode when the drum is full
-                if (!drumIsSwitching() && drumIsFull()) {
+        // detect if we have intaked (intook?) a ball, if so, switch to a new slot
+        if (drumInIntakeMode()) {
+            if (detectBallIntake()) {
+                incrementDrumPosition();
+                if (drumInOuttakeMode()) {
                     shouldSwitchToOuttake = true;
                 }
+            }
+        }
 
-                // ensure the queue stays clear when in INTAKE mode
-                ballQueue.clear();
+        // if we aren't doing anything, get the next ball from the queue
+        // holy if statement
+        if (drumInOuttakeMode() && !drumIsSwitching() && !drumIsInFlickCooldown() && !ballQueue.isEmpty() && outtake.atTargetSpeed()) {
+            flickNextBall(ballQueue.removeFirst(), true);
+        }
 
-                // ensure the flick servo is down when in INTAKE mode
-                setFlickPosition("down");
+        // if we should be flicking, then turn the flick on
+        if (drumInOuttakeMode() && drumIsFlicking()) {
+            if (!drumIsSwitching()) {
+                flick.setPower(1);
+                ballStates[drumPosition] = "empty";
+            } else {
+                flickTimer.reset();
+                flick.setPower(0);
+            }
+        } else {
+            flick.setPower(0);
+        }
 
-                // ensure shootAll is false when in INTAKE mode
-                shootAll = false;
-
-                break;
-
-            case OUTTAKE:
-                // when switching to OUTTAKE mode, reset the drum's position
-                if (lastState == State.INTAKE) {
-                    setDrumState("outtake", 2);
-                    waitingToFlick = false;
-                }
-
-                // flick ball when there is a ball in the queue and the outtake is at the target speed
-                if (!drumIsSwitching() && !waitingToFlick && !drumIsFlicking() && !drumIsEmpty()) {
-                    if (shootAll) {
-                        setDrumStateToNextOuttake();
-
-                        ballStates[drumPosition] = BallState.EMPTY;
-                        waitingToFlick = true;
-
-                    } else if (!ballQueue.isEmpty()) {
-                        setDrumStateToNextOuttake(ballQueue.removeFirst(), true);
-
-                        ballStates[drumPosition] = BallState.EMPTY;
-                        waitingToFlick = true;
-                    }
-                }
-
-                // if we should be flicking, but the outtake isn't at the right speed, or the drum is still switching,
-                // then we wait and keep the flick down
-                if (waitingToFlick && !drumIsSwitching() && outtake.atTargetSpeed()) {
-                    flickTimer.reset();
-                    waitingToFlick = false;
-                }
-
-                // set the flick's position based on the flick timer
-                if (flickTimer.seconds() < (flickTime / 2)) {
-                    setFlickPosition("up");
-                } else {
-                    setFlickPosition("down");
-                }
-
-                // suggest to swtich back to INTAKE when the drum is empty
-                if (!drumIsSwitching() && !waitingToFlick && !drumIsFlicking() && drumIsEmpty()) {
-                    shouldSwitchToIntake = true;
-                }
-
-                break;
+        // switch back to intake if we're not doing anything
+        if (drumIsEmpty() && drumInOuttakeMode() && !drumIsSwitching() && !drumIsInFlickCooldown()) {
+            shouldSwitchToIntake = true;
         }
 
         updateDrumPosition();
-
-        lastState = state;
     }
 
     public void printTelemetry(Telemetry telemetry) {
-        for (BallState ballState : ballStates) {
-            if (ballState == BallState.GREEN) {
-                telemetry.addData("ball", "green");
-            } else if (ballState == BallState.PURPLE) {
-                telemetry.addData("ball", "purple");
-            } else {
-                telemetry.addData("ball", "empty");
-            }
-        }
+        telemetry.addData("ballStates[0]", ballStates[0]);
+        telemetry.addData("ballStates[1]", ballStates[1]);
+        telemetry.addData("ballStates[2]", ballStates[2]);
         telemetry.addData("drumMode", drumMode);
         telemetry.addData("drumPosition", drumPosition);
         telemetry.addData("switchCooldown", switchCooldown);
