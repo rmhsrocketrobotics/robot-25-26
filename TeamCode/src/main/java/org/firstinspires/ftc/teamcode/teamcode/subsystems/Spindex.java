@@ -59,7 +59,7 @@ public class Spindex {
 
     public ElapsedTime flickTimer;
     // time that the flick has to go up and down
-    public double flickTime = 0.3;
+    public double flickTime = 0.4;
 
     public boolean shouldSwitchToIntake = false;
     public boolean shouldSwitchToOuttake = false;

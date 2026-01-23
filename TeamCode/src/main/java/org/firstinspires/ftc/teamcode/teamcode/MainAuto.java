@@ -284,6 +284,8 @@ public class MainAuto extends LinearOpMode {
             public LaunchAllBalls(double launchDistance, boolean sortBalls) {
                 this.sortBalls = sortBalls;
 
+                spindex.intakeMotor.setPower(0);
+
                 if (launchDistance == 0) {
                     this.autoFindLaunchDistance = true;
                     if (allianceIsRed()) {
@@ -403,7 +405,7 @@ public class MainAuto extends LinearOpMode {
                 if (!initialized) {
                     initialized = true;
 
-                    spindex.intakeMotor.setPower(0);
+                    spindex.intakeMotor.setPower(1);
 
                     if (!sortBalls) {
                         spindex.setDrumStateToNextOuttake();

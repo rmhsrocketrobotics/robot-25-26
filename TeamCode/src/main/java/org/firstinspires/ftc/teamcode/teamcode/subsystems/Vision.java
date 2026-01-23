@@ -64,7 +64,7 @@ public class Vision {
 
     public Servo cameraServo;
 
-    private double cameraPitch = 14;
+    private double cameraPitch = 10;
     private Position cameraPosition = new Position(DistanceUnit.INCH,
             0, 7, 12, 0);
     private YawPitchRollAngles cameraOrientation = new YawPitchRollAngles(AngleUnit.DEGREES,
@@ -78,12 +78,12 @@ public class Vision {
         /// see ConceptAprilTagLocalization.java
         aprilTag = new AprilTagProcessor.Builder()
                 .setCameraPose(cameraPosition, cameraOrientation)
-                .setLensIntrinsics(1782.29, 1782.29, 433.599, 833.017)
+//                .setLensIntrinsics(1393.09, 1393.09, 974.952, 551.167)
                 .build();
 
         visionPortal = new VisionPortal.Builder()
                 .setCamera(hardwareMap.get(WebcamName.class, "camera"))
-                .setCameraResolution(new Size(1280, 720))
+//                .setCameraResolution(new Size(1920, 1080))
                 .addProcessor(aprilTag)
                 .build();
         visionPortal.setProcessorEnabled(aprilTag, true);
@@ -219,8 +219,8 @@ public class Vision {
         drivetrain.setDrivetrainPower(xyPower.x, -xyPower.y, -rotationPower);
 
         // brake if facing about the correct angle
-        if (Math.abs(bearingError) < Math.toRadians(15)) {
-            drivetrain.isBraking = true;
+        if (Math.abs(xyPower.x) < 0.1 && Math.abs(xyPower.y) < 0.1 && Math.abs(rotationPower) < 0.1) {
+            //drivetrain.isBraking = true;
         }
     }
 

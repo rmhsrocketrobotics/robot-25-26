@@ -12,10 +12,10 @@ public class FixHoodServo extends LinearOpMode{
 
     @Override
     public void runOpMode() {
-        ServoImplEx servo = hardwareMap.get(ServoImplEx.class, "drumServo");
-        servo.setPwmRange(new PwmControl.PwmRange(500, 2500));
+//        ServoImplEx servo = hardwareMap.get(ServoImplEx.class, "drumServo");
+//        servo.setPwmRange(new PwmControl.PwmRange(500, 2500));
 
-//        Servo servo = hardwareMap.get(Servo.class, "rBrake");
+        Servo servo = hardwareMap.get(Servo.class, "cameraServo");
 
         double[] presetPositions = {0.25, 0.5, 0.75};
         double servoPosition = 0;

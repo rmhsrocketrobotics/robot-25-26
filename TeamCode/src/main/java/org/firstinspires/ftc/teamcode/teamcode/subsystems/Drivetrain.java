@@ -87,11 +87,11 @@ public class Drivetrain {
 
     public void update() {
         if (isBraking) {
-            lBrake.setPosition(0.4);
+            lBrake.setPosition(0.55);
             rBrake.setPosition(0.5);
             isBraking = false;
         } else {
-            lBrake.setPosition(0.6);
+            lBrake.setPosition(0.7);
             rBrake.setPosition(0.3);
         }
     }
