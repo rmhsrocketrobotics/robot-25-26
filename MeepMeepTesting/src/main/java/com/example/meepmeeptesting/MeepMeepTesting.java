@@ -128,16 +128,9 @@ public class MeepMeepTesting {
                         .setReversed(true)
                         .splineTo(launchPosition, launchToGoalAngle - pi)
 
-                        //sweep secret tunnel and human player area
                         .setTangent(pi/2)
-                        .lineToSplineHeading(new Pose2d(58, 37, pi/2))
-                        .splineToSplineHeading(new Pose2d(54, 52, 3*pi/4), 5*pi/6)
-                        .splineToSplineHeading(new Pose2d(15, 60, pi), pi)
-                        //sweepToLaunchZone
-                        .setReversed(true)
-                        .splineTo(launchPosition, launchToGoalAngle - pi)
+                        .splineToSplineHeading(new Pose2d(56, 35, pi), pi/2)
 
-                        .lineTo(new Vector2d(56, 30))
                         .build());
     }
 
