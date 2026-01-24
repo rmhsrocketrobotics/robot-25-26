@@ -217,7 +217,7 @@ public class MainAuto extends LinearOpMode {
 
         public Action launchZoneToHumanBalls() {
             return drive.actionBuilder(launchPose)
-                    .setTangent(pi/2)
+                    .setTangent(pi/2 * flipConstant)
                     .splineToSplineHeading(new Pose2d(56, 30 * flipConstant, pi/2 * flipConstant), pi/2 * flipConstant)
                     .splineToConstantHeading(new Vector2d(61, 55 * flipConstant), pi/2 * flipConstant)
                     .splineToConstantHeading(new Vector2d(61, 60 * flipConstant), pi/2 * flipConstant, lowVelocity) // slowed
@@ -227,7 +227,7 @@ public class MainAuto extends LinearOpMode {
 
         public Action humanBallsToLaunchZone() {
             return drive.actionBuilder(new Pose2d(61, 60 * flipConstant, pi/2 * flipConstant)) /// this should be the human ball pose
-                    .setTangent(3*pi/2)
+                    .setTangent(3*pi/2 * flipConstant)
                     .splineToConstantHeading(new Vector2d(56, 30 * flipConstant), 3*pi/2 * flipConstant)
                     .splineToSplineHeading(new Pose2d(launchPosition, launchToGoalAngle), 3*pi/2 * flipConstant)
                     .setTangent(launchToGoalAngle)
