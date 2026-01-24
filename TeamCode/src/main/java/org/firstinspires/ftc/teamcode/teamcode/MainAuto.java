@@ -134,7 +134,7 @@ public class MainAuto extends LinearOpMode {
             return drive.actionBuilder(launchPose)
                     .setTangent((pi/2) * flipConstant)
                     .splineToSplineHeading(new Pose2d(-11, 30 * flipConstant, (pi/2) * flipConstant), (pi/2) * flipConstant)
-                    .splineTo(new Vector2d(-11, 55), (pi/2) * flipConstant, lowVelocity) // slowed
+                    .splineTo(new Vector2d(-11, 55 * flipConstant), (pi/2) * flipConstant, lowVelocity) // slowed
 
                     .build();
         }
@@ -212,6 +212,49 @@ public class MainAuto extends LinearOpMode {
                     .setReversed(false)
                     .setTangent(pi/2 * flipConstant)
                     .splineToSplineHeading(new Pose2d(50.5, 35 * flipConstant, pi), pi/2 * flipConstant)
+
+                    .build();
+        }
+
+        public Action launchZoneToHumanBalls() {
+            return drive.actionBuilder(launchPose)
+                    .setTangent(pi/2)
+                    .splineToSplineHeading(new Pose2d(56, 30 * flipConstant, pi/2 * flipConstant), pi/2 * flipConstant)
+                    .splineToConstantHeading(new Vector2d(61, 55 * flipConstant), pi/2 * flipConstant)
+                    .splineToConstantHeading(new Vector2d(61, 60 * flipConstant), pi/2 * flipConstant, lowVelocity) // slowed
+
+                    .build();
+        }
+
+        public Action humanBallsToLaunchZone() {
+            return drive.actionBuilder(new Pose2d(61, 60 * flipConstant, pi/2 * flipConstant)) /// this should be the human ball pose
+                    .setTangent(3*pi/2)
+                    .splineToConstantHeading(new Vector2d(56, 30 * flipConstant), 3*pi/2 * flipConstant)
+                    .splineToSplineHeading(new Pose2d(launchPosition, launchToGoalAngle), 3*pi/2 * flipConstant)
+                    .setTangent(launchToGoalAngle)
+
+                    .build();
+        }
+
+        public Action launchZoneToSweepDrew() {
+            return drive.actionBuilder(launchPose)
+                    .setTangent(pi/2 * flipConstant)
+                    .splineToSplineHeading(new Pose2d(59, 35 * flipConstant, pi/2 * flipConstant), pi/2 * flipConstant)
+                    .splineToSplineHeading(new Pose2d(40, 60 * flipConstant, pi), pi)
+                    .splineToSplineHeading(new Pose2d(20, 60 * flipConstant, pi), pi)
+
+                    .build();
+        }
+
+        public Action launchZoneToSweepJonah() {
+            Vector2d sweepPosition = new Vector2d(58, 37 * flipConstant);
+            double launchToSweepAngle = angleBetweenPoints(launchPosition, sweepPosition);
+
+            return drive.actionBuilder(launchPose)
+                    .setTangent(pi/2 * flipConstant)
+                    .splineToSplineHeading(new Pose2d(sweepPosition, pi/2 * flipConstant), launchToSweepAngle)
+                    .splineToSplineHeading(new Pose2d(54, 52 * flipConstant, 3*pi/4 * flipConstant), 5*pi/6 * flipConstant)
+                    .splineToSplineHeading(new Pose2d(20, 60 * flipConstant, pi), pi)
 
                     .build();
         }

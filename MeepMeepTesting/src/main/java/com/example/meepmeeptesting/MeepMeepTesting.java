@@ -107,6 +107,7 @@ public class MeepMeepTesting {
         Vector2d launchPosition = new Vector2d(56, 14.5);
         double launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-66, 58));
 
+        double launchToSweepAngle = angleBetweenPoints(launchPosition, new Vector2d(58, 37));
 
         return new DefaultBotBuilder(meepMeepFar)
                 // Set bot constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
@@ -114,6 +115,19 @@ public class MeepMeepTesting {
                 .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(61, 13.5, Math.toRadians(180)))
                         //startToLaunchZone
                         .splineTo(launchPosition, launchToGoalAngle)
+
+                        // get human player balls
+                        .setTangent(pi/2)
+                        .splineToSplineHeading(new Pose2d(56, 30, pi/2), pi/2)
+                        .splineToConstantHeading(new Vector2d(61, 55), pi/2)
+                        .splineToConstantHeading(new Vector2d(61, 60), pi/2)
+
+                        .setTangent(3*pi/2)
+                        .splineToConstantHeading(new Vector2d(56, 30), 3*pi/2)
+                        .splineToSplineHeading(new Pose2d(launchPosition, launchToGoalAngle), 3*pi/2)
+                        .setTangent(launchToGoalAngle)
+                        .waitSeconds(1)
+
                         //launchZoneToSecondBalls
                         .splineTo(new Vector2d(36, 28), pi/2)
                         .splineTo(new Vector2d(36, 45), pi/2) // slow mode
@@ -128,11 +142,18 @@ public class MeepMeepTesting {
                         .setReversed(true)
                         .splineTo(launchPosition, launchToGoalAngle - pi)
 
-                        //sweep secret tunnel and human player area
+                        //sweep secret tunnel and human player area OPTION 1
+//                        .setTangent(pi/2)
+//                        .splineToSplineHeading(new Pose2d(58, 37, pi/2), launchToSweepAngle)
+//                        .splineToSplineHeading(new Pose2d(54, 52, 3*pi/4), 5*pi/6)
+//                        .splineToSplineHeading(new Pose2d(20, 60, pi), pi)
+
+                        //sweep secret tunnel and human player area OPTION 2
                         .setTangent(pi/2)
-                        .lineToSplineHeading(new Pose2d(58, 37, pi/2))
-                        .splineToSplineHeading(new Pose2d(54, 52, 3*pi/4), 5*pi/6)
-                        .splineToSplineHeading(new Pose2d(15, 60, pi), pi)
+                        .splineToSplineHeading(new Pose2d(59, 35, pi/2), pi/2)
+                        .splineToSplineHeading(new Pose2d(40, 60, pi), pi)
+                        .splineToSplineHeading(new Pose2d(20, 60, pi), pi)
+
                         //sweepToLaunchZone
                         .setReversed(true)
                         .splineTo(launchPosition, launchToGoalAngle - pi)
