@@ -526,53 +526,59 @@ public class MainAuto extends LinearOpMode {
     }
 
     public void runFarAutoBlocking() {
-        farPath();
-        double launchDistance = 2.75;
-        double finalLaunchDistance = launchDistance;
+        // TODO add pose recording to this
+        FarPathGenerator path = new FarPathGenerator();
 
-        Action firstBalls = new SequentialAction(new SleepAction(.3), ballHandler.launchAllBalls(launchDistance));
+        Action autonomous1 = new SequentialAction(
+                // launch preload
+                new ParallelAction(path.startToLaunchZone(), ballHandler.launchAllBalls(3, true)),
 
-        // path actions combined with other actions
-        Action launchFirstBalls = new ParallelAction(startToLaunchZone.build(), firstBalls);
+                // get human balls
+                new RaceAction(
+                        new SequentialAction(path.launchZoneToHumanBalls(), new SleepAction(0.5)),
+                        ballHandler.runActiveIntake(true)
+                ),
 
-        Action getSecondBalls = new RaceAction(launchZoneToSecondBalls.build(), ballHandler.runActiveIntake(true));
-        Action returnToLaunchZoneWithSecondBalls = new RaceAction(secondBallsToLaunchZone.build(), ballHandler.readyOuttake(launchDistance));
-//        Action returnToLaunchZoneWithSecondBalls = new RaceAction(secondBallsToLaunchZone.build(), ballHandler.runActiveIntake(false));
-        Action launchSecondBalls = ballHandler.launchAllBalls(launchDistance);
+                // go back to launch zone
+                new RaceAction(path.humanBallsToLaunchZone(), ballHandler.readyOuttake(3, true)),
 
-        Action getThirdBalls = new RaceAction(launchZoneToThirdBalls.build(), ballHandler.runActiveIntake(true));
-        Action returnToLaunchZoneWithThirdBalls = new RaceAction(thirdBallsToLaunchZone.build(), ballHandler.readyOuttake(finalLaunchDistance));
-//        Action returnToLaunchZoneWithThirdBalls = new RaceAction(thirdBallsToLaunchZone.build(), ballHandler.runActiveIntake(false));
-        Action launchThirdBalls = ballHandler.launchAllBalls(finalLaunchDistance);
+                // fire human balls
+                ballHandler.launchAllBalls(3, true),
 
-        // combine all of the above actions into one big long sequential action
-        Action runAutonomous = new SequentialAction(
-                launchFirstBalls,
-                getSecondBalls, returnToLaunchZoneWithSecondBalls, launchSecondBalls,
-                getThirdBalls, returnToLaunchZoneWithThirdBalls, launchThirdBalls
+                // get far balls
+                new RaceAction(path.launchZoneToFarBalls(), ballHandler.runActiveIntake(true))
         );
 
-        // if this is a far auto, add the park pathing
-        runAutonomous = new SequentialAction(runAutonomous, launchZoneToEndPosition.build());
+        ballHandler.init();
 
-        // add pose recording to the auto action
-        runAutonomous = new RaceAction(runAutonomous, recordPose());
-
-        // add auto camera tracking to the auto action
-        runAutonomous = new RaceAction(runAutonomous, ballHandler.trackObelisk(false));
-
-        // this is in place of a waitForStart() call
-//        waitForStart();
         while (opModeInInit() && !isStopRequested()) {
             ballHandler.vision.detectObelisk();
             telemetry.addData("obelisk", ballHandler.vision.obeliskId);
             telemetry.addLine("21 is gpp; 22 is pgp; 23 is ppg");
+            telemetry.update();
         }
 
-//        ballHandler.obeliskId = 22;//vision.obeliskId;
-        ballHandler.init();
+        Actions.runBlocking(autonomous1);
 
-        Actions.runBlocking(runAutonomous);
+        Action autonomous2 = new SequentialAction(
+                // fire far balls
+                new RaceAction(path.toLaunchZone(drive.localizer.getPose()), ballHandler.readyOuttake(3, true)),
+
+                // get middle balls
+                new RaceAction(path.launchZoneToMiddleBalls(), ballHandler.runActiveIntake(true))
+        );
+
+        Actions.runBlocking(autonomous2);
+
+        Action autonomous3 = new SequentialAction(
+                // fire middle balls
+                new RaceAction(path.toLaunchZone(drive.localizer.getPose()), ballHandler.readyOuttake(3, true)),
+
+                // park
+                new RaceAction(path.launchZoneToPark(), ballHandler.runActiveIntake(true))
+        );
+
+        Actions.runBlocking(autonomous3);
     }
 
     public void runCloseAutoBlocking() {
@@ -638,46 +644,6 @@ public class MainAuto extends LinearOpMode {
 
         return Math.atan2(y, x);
     }
-
-    public void farPath() {
-        // flip if on blue
-        int flipConstant = 1;
-        if (!allianceIsRed()) {
-            flipConstant = -1;
-        }
-
-        beginPose = new Pose2d(61, 13.5 * flipConstant, Math.toRadians(180) * flipConstant);
-        drive = new MecanumDrive(hardwareMap, beginPose);
-
-        Vector2d launchPosition = new Vector2d(50.5, 14.5 * flipConstant);
-        double launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-66, 60 * flipConstant));
-
-        TrajectoryActionBuilder actionBuilder = drive.actionBuilder(beginPose);
-
-        startToLaunchZone = actionBuilder
-                .splineTo(launchPosition, launchToGoalAngle);
-
-        launchZoneToSecondBalls = startToLaunchZone.endTrajectory().fresh()
-                .splineTo(new Vector2d(36, 28 * flipConstant), (pi/2) * flipConstant)
-                .splineTo(new Vector2d(36, 61 * flipConstant), (pi/2) * flipConstant, lowVelocity); // slow mode
-
-        secondBallsToLaunchZone = launchZoneToSecondBalls.endTrajectory().fresh()
-                .setReversed(true)
-                .splineTo(launchPosition, launchToGoalAngle - pi);
-
-        launchZoneToThirdBalls = secondBallsToLaunchZone.endTrajectory().fresh()
-                .setReversed(false)
-                .splineTo(new Vector2d(13, 28 * flipConstant), (pi/2) * flipConstant)
-                .splineTo(new Vector2d(13, 61 * flipConstant), (pi/2) * flipConstant, lowVelocity); // slow mode
-
-        thirdBallsToLaunchZone = launchZoneToThirdBalls.endTrajectory().fresh()
-                .setReversed(true)
-                .splineTo(launchPosition, launchToGoalAngle - pi);
-
-        launchZoneToEndPosition = thirdBallsToLaunchZone.endTrajectory().fresh() // only for far auto
-                .setReversed(false)
-                .splineTo(new Vector2d(20, 40 * flipConstant), pi);
-    }
 }
 
 class AutoVision {
@@ -699,6 +665,8 @@ class AutoVision {
         visionPortal.setProcessorEnabled(aprilTag, true);
 
         cameraServo = hardwareMap.get(Servo.class, "cameraServo");
+
+        cameraServo.setPosition(0.5);
     }
 
     /**
