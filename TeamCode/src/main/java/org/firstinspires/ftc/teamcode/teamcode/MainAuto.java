@@ -12,7 +12,6 @@ import com.acmerobotics.roadrunner.PosePath;
 import com.acmerobotics.roadrunner.RaceAction;
 import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.SleepAction;
-import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.VelConstraint;
 import com.acmerobotics.roadrunner.ftc.Actions;
@@ -491,12 +490,6 @@ public class MainAuto extends LinearOpMode {
 
     VelConstraint lowVelocity;
     VelConstraint mediumVelocity;
-    TrajectoryActionBuilder startToLaunchZone;
-    TrajectoryActionBuilder launchZoneToSecondBalls;
-    TrajectoryActionBuilder secondBallsToLaunchZone;
-    TrajectoryActionBuilder launchZoneToThirdBalls;
-    TrajectoryActionBuilder thirdBallsToLaunchZone;
-    TrajectoryActionBuilder launchZoneToEndPosition;
     BallHandler ballHandler;
 
     @Override
