@@ -30,7 +30,7 @@ public class MeepMeepTesting {
     public static void main(String[] args) {
         MeepMeep meepMeep = new MeepMeep(700);
 
-        RoadRunnerBotEntity myBot = testPathFar(meepMeep);
+        RoadRunnerBotEntity myBot = testPathClose(meepMeep);
 
         Image img = null;
         try { img = ImageIO.read(new File("MeepMeepTesting/src/main/java/com/example/meepmeeptesting/decode webfield.png")); }
@@ -78,11 +78,22 @@ public class MeepMeepTesting {
                         //middleBallsToLaunchZone
                         .setTangent(3*pi/2)
                         .splineToSplineHeading(new Pose2d(launchPosition, launchToGoalAngle), pi)
-                        //launchZoneToClassifier (boxy)
+                        //launchZoneToClassifier
                         .waitSeconds(0.5)
                         .setTangent(0)
 //                        .splineToSplineHeading(new Pose2d(-4,30, 5*pi/8), pi/8)
-                        .splineToSplineHeading(new Pose2d(12,58, 3*pi/4), pi/2)
+                        .splineToSplineHeading(new Pose2d(12,58, 5*pi/8), pi/2)
+                        .waitSeconds(0.5)
+                        .setTangent(-pi/8)
+                        //ClassifierToLaunchZone
+                        .setTangent(3*pi/2)
+                        .splineToSplineHeading(new Pose2d(launchPosition, launchToGoalAngle), pi)
+                        .waitSeconds(0.5)
+                        //launchZoneToClassifier
+                        .waitSeconds(0.5)
+                        .setTangent(0)
+//                        .splineToSplineHeading(new Pose2d(-4,30, 5*pi/8), pi/8)
+                        .splineToSplineHeading(new Pose2d(12,58, 5*pi/8), pi/2)
                         .waitSeconds(0.5)
                         .setTangent(-pi/8)
                         //ClassifierToLaunchZone
@@ -97,7 +108,10 @@ public class MeepMeepTesting {
                         .splineTo(ball1PickupPosition, pi/2) // slow mode
 //                        //frontBallsToLaunchZone
                         .setTangent(ball1ToEndLaunchAngle)
-                        .splineToSplineHeading(new Pose2d(endLaunchPosition, endLaunchToGoalAngle), ball1ToEndLaunchAngle)
+                        .splineToSplineHeading(new Pose2d(-34,35.8, 3*pi/4), ball1ToEndLaunchAngle)
+                        .waitSeconds(0.5)
+                        //autoEnd
+                        .splineToSplineHeading(new Pose2d(endLaunchPosition, launchToGoalAngle), ball1ToEndLaunchAngle)
 
                         .build());
     }
