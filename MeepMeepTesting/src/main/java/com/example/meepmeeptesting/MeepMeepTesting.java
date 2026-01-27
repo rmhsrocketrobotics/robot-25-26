@@ -129,49 +129,54 @@ public class MeepMeepTesting {
                 .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(61, 13.5, Math.toRadians(180)))
                         //startToLaunchZone
                         .splineTo(launchPosition, launchToGoalAngle)
+                        .waitSeconds(0.5)
                         //startToHumanPlayer
-//                        .setTangent(pi/2)
-                        .splineToSplineHeading(new Pose2d(52, 25, pi/2), pi/2)
-                        .splineToSplineHeading(new Pose2d(52, 60, pi/4), pi/2)
-                        .splineToSplineHeading(new Pose2d(52, 68, 0), pi/2)
-                        //humanPlayerToLaunch
-                        .setTangent(3*pi/2)
-                        .splineToConstantHeading(new Vector2d(56, 30), 3*pi/2)
-                        .splineToSplineHeading(new Pose2d(launchPosition, launchToGoalAngle), 3*pi/2)
-                        .setTangent(launchToGoalAngle)
-                        .waitSeconds(1)
+                        //vertical*
+//                        .splineToSplineHeading(new Pose2d(52, 25, pi/2), pi/2)
+//                        .splineToSplineHeading(new Pose2d(52, 50, 3*pi/8), pi/2)
+//                        .splineToSplineHeading(new Pose2d(52, 68, 0), pi/2)
+                        //horizantal*
+                        .setTangent(pi/2)
+                        .splineToSplineHeading(new Pose2d(62,70, pi/2), pi/2)
+//                        //humanPlayerToLaunch
+                        .setReversed(true)
+//                        .splineToConstantHeading(new Vector2d(56, 30), 3*pi/2)
+                        .splineToSplineHeading(new Pose2d(launchPosition, launchToGoalAngle), -pi/2)
+//                        .setTangent(launchToGoalAngle)
+//                        .waitSeconds(1)
+                        .setReversed(false)
                         //launchZoneToSecondBalls
                         .splineTo(new Vector2d(36, 28), pi/2)
                         .splineTo(new Vector2d(36, 45), pi/2) // slow mode
                         //secondBallsToLaunchZone
                         .setReversed(true)
                         .splineTo(launchPosition, launchToGoalAngle - pi)
-                        //launchZoneToThirdBalls
+                        .waitSeconds(0.5)
+//                        launchZoneToThirdBalls
                         .setReversed(false)
                         .splineTo(new Vector2d(13, 28), pi/2)
                         .splineTo(new Vector2d(13, 45), pi/2) // slow mode
                         //thirdBallsToLaunchZone
                         .setReversed(true)
                         .splineTo(launchPosition, launchToGoalAngle - pi)
-
-                        //sweep secret tunnel and human player area OPTION 1
+                        .setReversed(false)
+//                        sweep secret tunnel and human player area OPTION 1
 //                        .setTangent(pi/2)
 //                        .splineToSplineHeading(new Pose2d(58, 37, pi/2), launchToSweepAngle)
 //                        .splineToSplineHeading(new Pose2d(54, 52, 3*pi/4), 5*pi/6)
 //                        .splineToSplineHeading(new Pose2d(20, 60, pi), pi)
 
-                        //sweep secret tunnel and human player area OPTION 2
-                        .setTangent(pi/2)
-                        .splineToSplineHeading(new Pose2d(59, 35, pi/2), pi/2)
-                        .splineToSplineHeading(new Pose2d(40, 60, pi), pi)
-                        .splineToSplineHeading(new Pose2d(20, 60, pi), pi)
+                        //launchToSweep
+                        .splineToSplineHeading(new Pose2d(12,58, 5*pi/8), 3*pi/4)
 
                         //sweepToLaunchZone
                         .setReversed(true)
                         .splineTo(launchPosition, launchToGoalAngle - pi)
+                        .waitSeconds(0.5)
 
                         //endAuto
                         .lineTo(new Vector2d(56, 30))
+
                         .build());
     }
 
