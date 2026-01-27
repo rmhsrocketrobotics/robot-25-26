@@ -30,7 +30,7 @@ public class MeepMeepTesting {
     public static void main(String[] args) {
         MeepMeep meepMeep = new MeepMeep(700);
 
-        RoadRunnerBotEntity myBot = testPathClose(meepMeep);
+        RoadRunnerBotEntity myBot = testPathFar(meepMeep);
 
         Image img = null;
         try { img = ImageIO.read(new File("MeepMeepTesting/src/main/java/com/example/meepmeeptesting/decode webfield.png")); }
@@ -129,19 +129,17 @@ public class MeepMeepTesting {
                 .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(61, 13.5, Math.toRadians(180)))
                         //startToLaunchZone
                         .splineTo(launchPosition, launchToGoalAngle)
-
-                        // get human player balls
-                        .setTangent(pi/2)
-                        .splineToSplineHeading(new Pose2d(56, 30, pi/2), pi/2)
-                        .splineToConstantHeading(new Vector2d(61, 55), pi/2)
-                        .splineToConstantHeading(new Vector2d(61, 60), pi/2)
-
+                        //startToHumanPlayer
+//                        .setTangent(pi/2)
+                        .splineToSplineHeading(new Pose2d(52, 25, pi/2), pi/2)
+                        .splineToSplineHeading(new Pose2d(52, 60, pi/4), pi/2)
+                        .splineToSplineHeading(new Pose2d(52, 68, 0), pi/2)
+                        //humanPlayerToLaunch
                         .setTangent(3*pi/2)
                         .splineToConstantHeading(new Vector2d(56, 30), 3*pi/2)
                         .splineToSplineHeading(new Pose2d(launchPosition, launchToGoalAngle), 3*pi/2)
                         .setTangent(launchToGoalAngle)
                         .waitSeconds(1)
-
                         //launchZoneToSecondBalls
                         .splineTo(new Vector2d(36, 28), pi/2)
                         .splineTo(new Vector2d(36, 45), pi/2) // slow mode
@@ -172,6 +170,7 @@ public class MeepMeepTesting {
                         .setReversed(true)
                         .splineTo(launchPosition, launchToGoalAngle - pi)
 
+                        //endAuto
                         .lineTo(new Vector2d(56, 30))
                         .build());
     }
