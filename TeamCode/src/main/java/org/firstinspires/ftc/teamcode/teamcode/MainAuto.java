@@ -34,6 +34,23 @@ import java.util.List;
 
 public class MainAuto extends LinearOpMode {
 
+    public abstract class DynamicTrajectoryAction implements Action {
+        private boolean initialized = false;
+        private Action trajectoryAction;
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket packet) {
+            if (!initialized) {
+                trajectoryAction = createPath();
+                initialized = true;
+            }
+
+            return trajectoryAction.run(packet);
+        }
+
+        public abstract Action createPath();
+    }
+
     public boolean allianceIsRed() {
         return true;
     }
@@ -93,12 +110,48 @@ public class MainAuto extends LinearOpMode {
                     .build();
         }
 
+        public class ToLaunchZone extends DynamicTrajectoryAction {
+            @Override
+            public Action createPath() {
+                return drive.actionBuilder(drive.localizer.getPose())
+                        .setTangent((3*pi/2) * flipConstant)
+                        .splineToSplineHeading(launchPose, pi)
+
+                        .build();
+            }
+        }
+
+        public Action toLaunchZone() {
+            return new ToLaunchZone();
+        }
+
         public Action toLaunchZone(Pose2d startPose) {
             return drive.actionBuilder(startPose)
                     .setTangent((3*pi/2) * flipConstant)
                     .splineToSplineHeading(launchPose, pi)
 
                     .build();
+        }
+
+        public class ToFinalLaunchZone extends DynamicTrajectoryAction {
+            @Override
+            public Action createPath() {
+                Pose2d startPose = drive.localizer.getPose();
+
+                Vector2d endLaunchPosition = new Vector2d(-46, 25 * flipConstant);
+                double endLaunchToGoalAngle = angleBetweenPoints(endLaunchPosition, new Vector2d(-58, 58 * flipConstant));
+                double startToFinalLaunchAngle = angleBetweenPoints(startPose.component1(), endLaunchPosition);
+
+                return drive.actionBuilder(startPose)
+                        .setTangent(startToFinalLaunchAngle)
+                        .splineToSplineHeading(new Pose2d(endLaunchPosition, endLaunchToGoalAngle), startToFinalLaunchAngle)
+
+                        .build();
+            }
+        }
+
+        public Action toFinalLaunchZone() {
+            return new ToFinalLaunchZone();
         }
 
         public Action toFinalLaunchZone(Pose2d startPose) {
@@ -180,6 +233,21 @@ public class MainAuto extends LinearOpMode {
                     .build();
         }
 
+        public class ToLaunchZone extends DynamicTrajectoryAction {
+            @Override
+            public Action createPath() {
+                return drive.actionBuilder(drive.localizer.getPose())
+                        .setReversed(true)
+                        .splineTo(launchPosition, launchToGoalAngle - pi)
+
+                        .build();
+            }
+        }
+
+        public Action toLaunchZone() {
+            return new ToLaunchZone();
+        }
+
         public Action toLaunchZone(Pose2d startPose) {
             return drive.actionBuilder(startPose)
                     .setReversed(true)
@@ -231,6 +299,13 @@ public class MainAuto extends LinearOpMode {
                     .splineToConstantHeading(new Vector2d(56, 30 * flipConstant), 3*pi/2 * flipConstant)
                     .splineToSplineHeading(new Pose2d(launchPosition, launchToGoalAngle), 3*pi/2 * flipConstant)
                     .setTangent(launchToGoalAngle)
+
+                    .build();
+        }
+
+        public Action launchZoneToClassifier() {
+            return drive.actionBuilder(launchPose)
+                    .splineToSplineHeading(new Pose2d(12,58, 5*pi/8), 3*pi/4)
 
                     .build();
         }
@@ -483,6 +558,13 @@ public class MainAuto extends LinearOpMode {
         }
     }
 
+    public double angleBetweenPoints(Vector2d point1, Vector2d point2) {
+        double x = point2.x - point1.x;
+        double y = point2.y - point1.y;
+
+        return Math.atan2(y, x);
+    }
+
     public final double pi = Math.PI;
 
     Pose2d beginPose;
@@ -522,9 +604,14 @@ public class MainAuto extends LinearOpMode {
         // TODO add pose recording to this
         FarPathGenerator path = new FarPathGenerator();
 
-        Action autonomous1 = new SequentialAction(
+        Action autonomous = new SequentialAction(
+
+                /// -------------------------------- PRELOAD --------------------------------
+
                 // launch preload
                 new ParallelAction(path.startToLaunchZone(), ballHandler.launchAllBalls(3, true)),
+
+                /// -------------------------------- HUMAN BALLS --------------------------------
 
                 // get human balls
                 new RaceAction(
@@ -536,10 +623,33 @@ public class MainAuto extends LinearOpMode {
                 new RaceAction(path.humanBallsToLaunchZone(), ballHandler.readyOuttake(3, true)),
 
                 // fire human balls
-                ballHandler.launchAllBalls(3, true),
+                new RaceAction(ballHandler.launchAllBalls(3, true), path.updateLocalizer()),
+
+                /// -------------------------------- FAR BALLS --------------------------------
 
                 // get far balls
-                new RaceAction(path.launchZoneToFarBalls(), ballHandler.runActiveIntake(true))
+                new RaceAction(path.launchZoneToFarBalls(), ballHandler.runActiveIntake(true)),
+
+                // go back to launch zone
+                new RaceAction(path.toLaunchZone(), ballHandler.readyOuttake(3, true)),
+
+                // fire far balls
+                new RaceAction(ballHandler.launchAllBalls(3, true), path.updateLocalizer()),
+
+                /// -------------------------------- MIDDLE BALLS --------------------------------
+
+                // get middle balls
+                new RaceAction(path.launchZoneToMiddleBalls(), ballHandler.runActiveIntake(true)),
+                
+                // go back to launch zone
+                new RaceAction(path.toLaunchZone(), ballHandler.readyOuttake(3, true)),
+
+                // fire middle balls
+                new RaceAction(ballHandler.launchAllBalls(3, true), path.updateLocalizer()),
+
+                /// -------------------------------- PARK --------------------------------
+
+                new RaceAction(path.launchZoneToPark(), ballHandler.runActiveIntake(true))
         );
 
         ballHandler.init();
@@ -551,31 +661,60 @@ public class MainAuto extends LinearOpMode {
             telemetry.update();
         }
 
-        Actions.runBlocking(autonomous1);
-
-        Action autonomous2 = new SequentialAction(
-                // fire far balls
-                new RaceAction(path.toLaunchZone(drive.localizer.getPose()), ballHandler.readyOuttake(3, true)),
-
-                // get middle balls
-                new RaceAction(path.launchZoneToMiddleBalls(), ballHandler.runActiveIntake(true))
-        );
-
-        Actions.runBlocking(autonomous2);
-
-        Action autonomous3 = new SequentialAction(
-                // fire middle balls
-                new RaceAction(path.toLaunchZone(drive.localizer.getPose()), ballHandler.readyOuttake(3, true)),
-
-                // park
-                new RaceAction(path.launchZoneToPark(), ballHandler.runActiveIntake(true))
-        );
-
-        Actions.runBlocking(autonomous3);
+        Actions.runBlocking(autonomous);
     }
 
     public void runCloseAutoBlocking() {
         ClosePathGenerator path = new ClosePathGenerator();
+
+        Action autonomous = new SequentialAction(
+
+                /// -------------------------------- SHOOT PRELOAD + MIDDLE BALLS --------------------------------
+
+                // shoot preload while moving, then intake middle balls
+                new RaceAction(
+                        new SequentialAction(ballHandler.launchAllBalls(0, false), ballHandler.runActiveIntake(true)),
+                        path.startToMiddleBalls()
+                        ),
+
+                // go to launch zone
+                new RaceAction(ballHandler.readyOuttake(1.5, false), path.toLaunchZone()),
+
+                // shoot middle balls
+                new RaceAction(ballHandler.launchAllBalls(1.5, false), path.updateLocalizer()),
+
+                /// -------------------------------- CLEAR CLASSIFIER --------------------------------
+
+                // go to classifier and intake (max 8 seconds)
+                new RaceAction(
+                        ballHandler.runActiveIntake(true),
+                        new SequentialAction(path.launchZoneToClassifier(), path.updateLocalizer()),
+                        new SleepAction(8)
+                ),
+
+                // go to launch zone
+                new RaceAction(ballHandler.readyOuttake(1.5), path.classifierToLaunchZone()),
+
+                // shoot classifier balls
+                new RaceAction(ballHandler.launchAllBalls(1.5), path.updateLocalizer()),
+
+                /// -------------------------------- CLOSE BALLS --------------------------------
+
+                // intake close balls
+                new RaceAction(ballHandler.runActiveIntake(true), path.launchZoneToCloseBalls()),
+
+                // go to final launch zone
+                new RaceAction(ballHandler.readyOuttake(0.7), path.toFinalLaunchZone()),
+
+                // launch close balls
+                ballHandler.launchAllBalls(0.7)
+        );
+
+        autonomous = new RaceAction(
+                autonomous,
+                ballHandler.trackObelisk(true),
+                recordPose()
+        );
 
         // shoots preload then intakes middle balls
         Action shootAndIntakeMiddleBalls = new SequentialAction(ballHandler.launchAllBalls(0, false), ballHandler.runActiveIntake(true));
@@ -590,52 +729,7 @@ public class MainAuto extends LinearOpMode {
 
         waitForStart();
 
-        /// BLOCKING
-        Actions.runBlocking(shootAndIntakeMiddleBalls);
-
-        // shoot middle balls
-        Action shootMiddleBalls = new RaceAction(ballHandler.readyOuttake(1.5, false), path.toLaunchZone(drive.localizer.getPose()));
-        shootMiddleBalls = new SequentialAction(
-                shootMiddleBalls,
-                new RaceAction(ballHandler.launchAllBalls(1.5, false), path.updateLocalizer())
-        );
-
-        // go clear classifier
-        Action clearClassifier = new RaceAction(
-                ballHandler.runActiveIntake(true),
-                new SequentialAction(path.launchZoneToClassifier(), path.updateLocalizer()),
-                new SleepAction(8)
-        );
-
-        // shoot classifier balls
-        Action shootClassifierBalls = new RaceAction(ballHandler.readyOuttake(1.5), path.classifierToLaunchZone());
-        shootClassifierBalls = new SequentialAction(
-                shootClassifierBalls,
-                new RaceAction(ballHandler.launchAllBalls(1.5), path.updateLocalizer())
-        );
-
-        // intakes close balls
-        Action intakeCloseBalls = new RaceAction(ballHandler.runActiveIntake(true), path.launchZoneToCloseBalls());
-
-        /// BLOCKING
-        Actions.runBlocking(new SequentialAction(shootMiddleBalls, clearClassifier, shootClassifierBalls, intakeCloseBalls));
-
-        // shoot close balls
-        Action shootCloseBalls = new RaceAction(ballHandler.readyOuttake(0.7), path.toFinalLaunchZone(drive.localizer.getPose()));
-        shootCloseBalls = new SequentialAction(shootCloseBalls, ballHandler.launchAllBalls(0.7));
-
-        // add pose recording
-        shootCloseBalls = new RaceAction(shootCloseBalls, recordPose());
-
-        /// BLOCKING (final)
-        Actions.runBlocking(shootCloseBalls);
-    }
-
-    public double angleBetweenPoints(Vector2d point1, Vector2d point2) {
-        double x = point2.x - point1.x;
-        double y = point2.y - point1.y;
-
-        return Math.atan2(y, x);
+        Actions.runBlocking(autonomous);
     }
 }
 
