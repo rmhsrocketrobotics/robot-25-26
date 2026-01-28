@@ -132,18 +132,19 @@ public class MeepMeepTesting {
                         .waitSeconds(0.5)
                         //startToHumanPlayer
                         //vertical*
-//                        .splineToSplineHeading(new Pose2d(52, 25, pi/2), pi/2)
-//                        .splineToSplineHeading(new Pose2d(52, 50, 3*pi/8), pi/2)
-//                        .splineToSplineHeading(new Pose2d(52, 68, 0), pi/2)
+//                        .splineToSplineHeading(new Pose2d(50, 25, pi/2), pi/2)
+//                        .splineToSplineHeading(new Pose2d(50, 50, 3*pi/8), pi/2)
+//                        .splineToSplineHeading(new Pose2d(50, 62, 0), pi/2)
                         //horizantal*
                         .setTangent(pi/2)
-                        .splineToSplineHeading(new Pose2d(62,70, pi/2), pi/2)
-//                        //humanPlayerToLaunch
+                        .splineToSplineHeading(new Pose2d(58,60, 3*pi/8), pi/2)
+                        //humanPlayerToLaunch
                         .setReversed(true)
-//                        .splineToConstantHeading(new Vector2d(56, 30), 3*pi/2)
+                        .setTangent(-pi/2)
+                        .splineToConstantHeading(new Vector2d(56, 30), 3*pi/2)
                         .splineToSplineHeading(new Pose2d(launchPosition, launchToGoalAngle), -pi/2)
-//                        .setTangent(launchToGoalAngle)
-//                        .waitSeconds(1)
+                        .setTangent(launchToGoalAngle)
+                        .waitSeconds(1)
                         .setReversed(false)
                         //launchZoneToSecondBalls
                         .splineTo(new Vector2d(36, 28), pi/2)
