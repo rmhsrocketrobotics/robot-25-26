@@ -137,7 +137,9 @@ public class MeepMeepTesting {
 //                        .splineToSplineHeading(new Pose2d(50, 62, 0), pi/2)
                         //horizantal*
                         .setTangent(pi/2)
-                        .splineToSplineHeading(new Pose2d(58,60, 3*pi/8), pi/2)
+                        .splineToSplineHeading(new Pose2d(53,60, 3*pi/8), pi/2)
+                        .setTangent(0)
+                        .splineToConstantHeading(new Vector2d(59, 60), 0)
                         //humanPlayerToLaunch
                         .setReversed(true)
                         .setTangent(-pi/2)

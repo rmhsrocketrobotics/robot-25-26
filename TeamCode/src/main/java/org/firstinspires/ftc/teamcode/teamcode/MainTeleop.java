@@ -99,14 +99,14 @@ public class MainTeleop extends LinearOpMode {
 //                spindex.setDrumState("intake", 0);
 //            }
 
-            if (gamepad2.left_trigger > 0.1) { // backspin intake
+            if (gamepad2.left_trigger > 0.2) { // backspin intake
                 spindex.intakeMotor.setPower(-gamepad2.left_trigger);
 
-            } else if ((gamepad2.right_trigger > 0.1)) { // spin intake
+            } else if ((gamepad2.right_trigger > 0.5)) { // spin intake
                 spindex.intakeMotor.setPower(gamepad2.right_trigger);
 
             } else {
-                spindex.intakeMotor.setPower(0);
+                spindex.intakeMotor.setPower(0.5);
             }
 
             // state specific code goes in these methods

@@ -29,7 +29,7 @@ public class LaunchTesting extends LinearOpMode{
     boolean pauseIntake = false;
     boolean sortBalls = false;
     double hoodServoPosition = 0;
-    double outtakeSpeed = 1400;
+    double outtakeSpeed = 1100;
 
     public boolean allianceIsRed() {
         return false;
@@ -152,7 +152,7 @@ public class LaunchTesting extends LinearOpMode{
             telemetry.addData("can see goal april tag", vision.canSeeGoalAprilTag);
 
 //            spindex.printTelemetry(telemetry);
-//            outtake.printTelemetry(telemetry);
+            outtake.printTelemetry(telemetry);
 //            vision.printTelemetry(telemetry);
             telemetry.addData("state", state);
             telemetry.update();
@@ -179,7 +179,7 @@ public class LaunchTesting extends LinearOpMode{
                 spindex.shootAllBalls();
             }
 
-            spindex.intakeMotor.setPower(0);
+            spindex.intakeMotor.setPower(0.5);
 
             return;
         }

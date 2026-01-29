@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.teamcode;
 
+import android.util.Size;
+
 import androidx.annotation.NonNull;
 
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
@@ -286,11 +288,20 @@ public class MainAuto extends LinearOpMode {
         public Action launchZoneToHumanBalls() {
             return drive.actionBuilder(launchPose)
                     .setTangent(pi/2 * flipConstant)
-                    .splineToSplineHeading(new Pose2d(56, 30 * flipConstant, pi/2 * flipConstant), pi/2 * flipConstant)
-                    .splineToConstantHeading(new Vector2d(61, 55 * flipConstant), pi/2 * flipConstant)
-                    .splineToConstantHeading(new Vector2d(61, 60 * flipConstant), pi/2 * flipConstant, lowVelocity) // slowed
+                    .splineToSplineHeading(new Pose2d(53,60 * flipConstant, 3*pi/8 * flipConstant), pi/2 * flipConstant, lowVelocity) // slowed
+
+                    .setTangent(0)
+                    .splineToConstantHeading(new Vector2d(59, 60 * flipConstant), 0, lowVelocity)
 
                     .build();
+
+//            return drive.actionBuilder(launchPose)
+//                    .setTangent(pi/2 * flipConstant)
+//                    .splineToSplineHeading(new Pose2d(56, 30 * flipConstant, pi/2 * flipConstant), pi/2 * flipConstant)
+//                    .splineToConstantHeading(new Vector2d(61, 55 * flipConstant), pi/2 * flipConstant)
+//                    .splineToConstantHeading(new Vector2d(61, 60 * flipConstant), pi/2 * flipConstant, lowVelocity) // slowed
+//
+//                    .build();
         }
 
         public Action humanBallsToLaunchZone() {
@@ -298,7 +309,7 @@ public class MainAuto extends LinearOpMode {
                     .setTangent(3*pi/2 * flipConstant)
                     .splineToConstantHeading(new Vector2d(56, 30 * flipConstant), 3*pi/2 * flipConstant)
                     .splineToSplineHeading(new Pose2d(launchPosition, launchToGoalAngle), 3*pi/2 * flipConstant)
-                    .setTangent(launchToGoalAngle)
+//                    .setTangent(launchToGoalAngle)
 
                     .build();
         }
@@ -313,9 +324,9 @@ public class MainAuto extends LinearOpMode {
         public Action launchZoneToSweepDrew() {
             return drive.actionBuilder(launchPose)
                     .setTangent(pi/2 * flipConstant)
-                    .splineToSplineHeading(new Pose2d(59, 35 * flipConstant, pi/2 * flipConstant), pi/2 * flipConstant)
-                    .splineToSplineHeading(new Pose2d(40, 60 * flipConstant, pi), pi)
-                    .splineToSplineHeading(new Pose2d(20, 60 * flipConstant, pi), pi)
+                    .splineToSplineHeading(new Pose2d(59, 35 * flipConstant, pi/2 * flipConstant), pi/2 * flipConstant, mediumVelocity)
+                    .splineToSplineHeading(new Pose2d(40, 60 * flipConstant, pi), pi, mediumVelocity)
+                    .splineToSplineHeading(new Pose2d(20, 60 * flipConstant, pi), pi, mediumVelocity)
 
                     .build();
         }
@@ -358,7 +369,7 @@ public class MainAuto extends LinearOpMode {
             outtake = new Outtake(hardwareMap);
             //outtake.tolerance = 100;
 
-            vision = new AutoVision(hardwareMap);
+            vision = new AutoVision(hardwareMap, useFarAuto());
         }
 
         public void init() {
@@ -383,6 +394,7 @@ public class MainAuto extends LinearOpMode {
 
                 vision.detectObelisk();
                 telemetry.addData("obelisk id", vision.obeliskId);
+                telemetry.update();
                 return true;
             }
         }
@@ -400,8 +412,6 @@ public class MainAuto extends LinearOpMode {
 
             public LaunchAllBalls(double launchDistance, boolean sortBalls) {
                 this.sortBalls = sortBalls;
-
-                spindex.intakeMotor.setPower(0);
 
                 if (launchDistance == 0) {
                     this.autoFindLaunchDistance = true;
@@ -422,6 +432,14 @@ public class MainAuto extends LinearOpMode {
             public boolean run(@NonNull TelemetryPacket packet) {
                 if (!initialized) {
                     initialized = true;
+
+                    for (int i = 0; i < 3; i++) {
+                        if (spindex.ballStates[i] == Spindex.BallState.EMPTY) {
+                            spindex.ballStates[i] = Spindex.BallState.PURPLE;
+                        }
+                    }
+
+                    spindex.intakeMotor.setPower(0.5);
 
                     if (!sortBalls) {
                         spindex.shootAllBalls();
@@ -499,6 +517,10 @@ public class MainAuto extends LinearOpMode {
                 outtake.update();
 
                 PoseStorage.ballStates = spindex.ballStates;
+
+                if (spindex.shouldSwitchToOuttake) {
+                    spindex.intakeMotor.setPower(-1);
+                }
 
                 return !spindex.shouldSwitchToOuttake;
             }
@@ -582,7 +604,7 @@ public class MainAuto extends LinearOpMode {
         lowVelocity = new VelConstraint() {
             @Override
             public double maxRobotVel(@NonNull Pose2dDual<Arclength> pose2dDual, @NonNull PosePath posePath, double v) {
-                return 10;
+                return 15;
             }
         };
 
@@ -640,7 +662,7 @@ public class MainAuto extends LinearOpMode {
 
                 // get middle balls
                 new RaceAction(path.launchZoneToMiddleBalls(), ballHandler.runActiveIntake(true)),
-                
+
                 // go back to launch zone
                 new RaceAction(path.toLaunchZone(), ballHandler.readyOuttake(3, true)),
 
@@ -650,6 +672,14 @@ public class MainAuto extends LinearOpMode {
                 /// -------------------------------- PARK --------------------------------
 
                 new RaceAction(path.launchZoneToPark(), ballHandler.runActiveIntake(true))
+
+//                /// -------------------------------- SWEEP --------------------------------
+//
+//                new RaceAction(path.launchZoneToSweepDrew(), ballHandler.runActiveIntake(true)),
+//
+//                new RaceAction(path.toLaunchZone(), ballHandler.readyOuttake(3, true)),
+//
+//                new RaceAction(ballHandler.launchAllBalls(3, true), path.updateLocalizer())
         );
 
         ballHandler.init();
@@ -716,18 +746,9 @@ public class MainAuto extends LinearOpMode {
                 recordPose()
         );
 
-        // shoots preload then intakes middle balls
-        Action shootAndIntakeMiddleBalls = new SequentialAction(ballHandler.launchAllBalls(0, false), ballHandler.runActiveIntake(true));
-
-        // add path to the action
-        shootAndIntakeMiddleBalls = new RaceAction(shootAndIntakeMiddleBalls, path.startToMiddleBalls());
-
-        // add auto camera tracking to the auto action
-        shootAndIntakeMiddleBalls = new RaceAction(shootAndIntakeMiddleBalls, ballHandler.trackObelisk(true));
+        waitForStart();
 
         ballHandler.init();
-
-        waitForStart();
 
         Actions.runBlocking(autonomous);
     }
@@ -740,15 +761,24 @@ class AutoVision {
     public Servo cameraServo;
     private final Vector2d obeliskPosition = new Vector2d(-72, 0);
 
-    public AutoVision(HardwareMap hardwareMap) {
+    public AutoVision(HardwareMap hardwareMap, boolean useHighQuality) {
         // pretty sure that orientation doesn't matter for this
         aprilTag = new AprilTagProcessor.Builder()
                 .build();
 
-        visionPortal = new VisionPortal.Builder()
-                .setCamera(hardwareMap.get(WebcamName.class, "camera"))
-                .addProcessor(aprilTag)
-                .build();
+        if (useHighQuality) {
+            visionPortal = new VisionPortal.Builder()
+                    .setCamera(hardwareMap.get(WebcamName.class, "camera"))
+                    .setCameraResolution(new Size(1920, 1080))
+                    .addProcessor(aprilTag)
+                    .build();
+        } else {
+            visionPortal = new VisionPortal.Builder()
+                    .setCamera(hardwareMap.get(WebcamName.class, "camera"))
+                    .addProcessor(aprilTag)
+                    .build();
+        }
+
         visionPortal.setProcessorEnabled(aprilTag, true);
 
         cameraServo = hardwareMap.get(Servo.class, "cameraServo");

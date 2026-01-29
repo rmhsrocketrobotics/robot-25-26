@@ -53,7 +53,7 @@ public class Spindex {
     public double switchCooldownMultiplier = 0.6;//1.75;
 
     // added constant onto the switch timer
-    public double switchCooldownConstant = 0.05;
+    public double switchCooldownConstant = 0.1;
 
     double switchCooldown = switchCooldownMultiplier;
 
@@ -277,7 +277,7 @@ public class Spindex {
         }
 
         // get distance from sensor
-        boolean ballDetected = ((DistanceSensor) intakeColorSensor).getDistance(DistanceUnit.CM) < 4; // og value: 3 cm
+        boolean ballDetected = ((DistanceSensor) intakeColorSensor).getDistance(DistanceUnit.CM) < 5; // og value: 3 cm
 
         if (!ballDetected) { // could add && Objects.equals(ballStates[drumPosition], "empty") to this statement
             return false;
