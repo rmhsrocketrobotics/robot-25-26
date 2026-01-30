@@ -258,6 +258,25 @@ public class MainAuto extends LinearOpMode {
                     .build();
         }
 
+        public class ToLaunchZoneStraight extends DynamicTrajectoryAction {
+            @Override
+            public Action createPath() {
+                Pose2d startPose = drive.localizer.getPose();
+
+                double startToLaunchAngle = angleBetweenPoints(startPose.component1(), launchPosition);
+
+                return drive.actionBuilder(startPose)
+                        .setTangent(startToLaunchAngle)
+                        .splineToSplineHeading(new Pose2d(launchPosition, launchToGoalAngle), startToLaunchAngle)
+
+                        .build();
+            }
+        }
+
+        public Action toLaunchZoneStraight() {
+            return new ToLaunchZoneStraight();
+        }
+
         public Action launchZoneToFarBalls() {
             return drive.actionBuilder(launchPose)
                     .setReversed(false)
@@ -340,6 +359,26 @@ public class MainAuto extends LinearOpMode {
                     .splineToSplineHeading(new Pose2d(sweepPosition, pi/2 * flipConstant), launchToSweepAngle)
                     .splineToSplineHeading(new Pose2d(54, 52 * flipConstant, 3*pi/4 * flipConstant), 5*pi/6 * flipConstant)
                     .splineToSplineHeading(new Pose2d(20, 60 * flipConstant, pi), pi)
+
+                    .build();
+        }
+
+        public Action launchZoneToSweepTwoPart() {
+            return drive.actionBuilder(launchPose)
+                    /// first part of sweep
+                    .setTangent(pi/2 * flipConstant)
+                    .splineToSplineHeading(new Pose2d(56, 30 * flipConstant, pi/2 * flipConstant), pi/2 * flipConstant)
+                    .splineToConstantHeading(new Vector2d(61, 45 * flipConstant), pi/2 * flipConstant)
+                    .splineToConstantHeading(new Vector2d(61, 60 * flipConstant), pi/2 * flipConstant)
+
+                    /// going back
+                    .setTangent(3*pi/2 * flipConstant)
+                    .splineToConstantHeading(new Vector2d(60, 40 * flipConstant), 3*pi/2 * flipConstant)
+
+                    /// second part of sweep
+                    .setTangent(pi/2 * flipConstant)
+                    .splineToSplineHeading(new Pose2d(40, 60 * flipConstant, pi), pi)
+                    .splineToSplineHeading(new Pose2d(30, 60 * flipConstant, pi), pi)
 
                     .build();
         }
@@ -626,15 +665,12 @@ public class MainAuto extends LinearOpMode {
         // TODO add pose recording to this
         FarPathGenerator path = new FarPathGenerator();
 
-        Action autonomous = new SequentialAction(
+        /// -------------------------------- PRELOAD --------------------------------
+        Action preload = new ParallelAction(path.startToLaunchZone(), ballHandler.launchAllBalls(3, true));
 
-                /// -------------------------------- PRELOAD --------------------------------
 
-                // launch preload
-                new ParallelAction(path.startToLaunchZone(), ballHandler.launchAllBalls(3, true)),
-
-                /// -------------------------------- HUMAN BALLS --------------------------------
-
+        /// -------------------------------- HUMAN BALLS --------------------------------
+        Action humanBalls = new SequentialAction(
                 // get human balls
                 new RaceAction(
                         new SequentialAction(path.launchZoneToHumanBalls(), new SleepAction(0.5)),
@@ -645,10 +681,12 @@ public class MainAuto extends LinearOpMode {
                 new RaceAction(path.humanBallsToLaunchZone(), ballHandler.readyOuttake(3, true)),
 
                 // fire human balls
-                new RaceAction(ballHandler.launchAllBalls(3, true), path.updateLocalizer()),
+                new RaceAction(ballHandler.launchAllBalls(3, true), path.updateLocalizer())
+        );
 
-                /// -------------------------------- FAR BALLS --------------------------------
 
+        /// -------------------------------- FAR BALLS --------------------------------
+        Action farBalls = new SequentialAction(
                 // get far balls
                 new RaceAction(path.launchZoneToFarBalls(), ballHandler.runActiveIntake(true)),
 
@@ -656,10 +694,12 @@ public class MainAuto extends LinearOpMode {
                 new RaceAction(path.toLaunchZone(), ballHandler.readyOuttake(3, true)),
 
                 // fire far balls
-                new RaceAction(ballHandler.launchAllBalls(3, true), path.updateLocalizer()),
+                new RaceAction(ballHandler.launchAllBalls(3, true), path.updateLocalizer())
+        );
 
-                /// -------------------------------- MIDDLE BALLS --------------------------------
 
+        /// -------------------------------- MIDDLE BALLS --------------------------------
+        Action middleBalls = new SequentialAction(
                 // get middle balls
                 new RaceAction(path.launchZoneToMiddleBalls(), ballHandler.runActiveIntake(true)),
 
@@ -667,19 +707,36 @@ public class MainAuto extends LinearOpMode {
                 new RaceAction(path.toLaunchZone(), ballHandler.readyOuttake(3, true)),
 
                 // fire middle balls
-                new RaceAction(ballHandler.launchAllBalls(3, true), path.updateLocalizer()),
+                new RaceAction(ballHandler.launchAllBalls(3, true), path.updateLocalizer())
+        );
 
-                /// -------------------------------- PARK --------------------------------
 
+        /// -------------------------------- PARK --------------------------------
+        Action park = new SequentialAction(
                 new RaceAction(path.launchZoneToPark(), ballHandler.runActiveIntake(true))
+        );
 
-//                /// -------------------------------- SWEEP --------------------------------
-//
-//                new RaceAction(path.launchZoneToSweepDrew(), ballHandler.runActiveIntake(true)),
-//
-//                new RaceAction(path.toLaunchZone(), ballHandler.readyOuttake(3, true)),
-//
-//                new RaceAction(ballHandler.launchAllBalls(3, true), path.updateLocalizer())
+
+        /// -------------------------------- SWEEP --------------------------------
+        Action sweep = new SequentialAction(
+                new RaceAction(path.launchZoneToSweepTwoPart(), ballHandler.runActiveIntake(true)),
+
+                new RaceAction(path.toLaunchZoneStraight(), ballHandler.readyOuttake(3, true)),
+
+                new RaceAction(ballHandler.launchAllBalls(3, true), path.updateLocalizer())
+        );
+
+        Action autonomous = new SequentialAction(
+                preload,
+                humanBalls,
+                farBalls,
+                sweep,
+                park
+        );
+
+        autonomous = new RaceAction(
+                autonomous,
+                recordPose()
         );
 
         ballHandler.init();
@@ -705,7 +762,7 @@ public class MainAuto extends LinearOpMode {
                 new RaceAction(
                         new SequentialAction(ballHandler.launchAllBalls(0, false), ballHandler.runActiveIntake(true)),
                         path.startToMiddleBalls()
-                        ),
+                ),
 
                 // go to launch zone
                 new RaceAction(ballHandler.readyOuttake(1.5, false), path.toLaunchZone()),
