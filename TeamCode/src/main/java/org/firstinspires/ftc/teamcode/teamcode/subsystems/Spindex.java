@@ -50,7 +50,7 @@ public class Spindex {
 
     // time it takes to go from position 0.0 to position 1.0 on the drum servo
     // (setting too low will mean the sensor sees the same ball multiple times)
-    public double switchCooldownMultiplier = 0.6;//1.75;
+    public double switchCooldownMultiplier = 0.8;//1.75;
 
     // added constant onto the switch timer
     public double switchCooldownConstant = 0.1;
@@ -59,7 +59,7 @@ public class Spindex {
 
     public ElapsedTime flickTimer;
     // time that the flick has to go up and down
-    public double flickTime = 0.4;
+    public double flickTime = 0.5;
 
     public boolean shouldSwitchToIntake = false;
     public boolean shouldSwitchToOuttake = false;
@@ -277,7 +277,7 @@ public class Spindex {
         }
 
         // get distance from sensor
-        boolean ballDetected = ((DistanceSensor) intakeColorSensor).getDistance(DistanceUnit.CM) < 5; // og value: 3 cm
+        boolean ballDetected = ((DistanceSensor) intakeColorSensor).getDistance(DistanceUnit.CM) < 4.8; // og value: 3 cm
 
         if (!ballDetected) { // could add && Objects.equals(ballStates[drumPosition], "empty") to this statement
             return false;

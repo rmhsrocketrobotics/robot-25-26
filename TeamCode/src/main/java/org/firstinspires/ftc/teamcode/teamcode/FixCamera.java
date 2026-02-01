@@ -2,12 +2,16 @@ package org.firstinspires.ftc.teamcode.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
+import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Vision;
 
 @TeleOp
 public class FixCamera extends LinearOpMode {
     Vision vision;
+    NormalizedColorSensor intakeColorSensor;
 
     public boolean allianceIsRed() {
         return true;
@@ -16,6 +20,9 @@ public class FixCamera extends LinearOpMode {
     @Override
     public void runOpMode() {
         vision = new Vision(hardwareMap, allianceIsRed()); // camera
+
+        intakeColorSensor = hardwareMap.get(NormalizedColorSensor.class, "intakeColorSensor");
+        intakeColorSensor.setGain(15);
 
         telemetry.setMsTransmissionInterval(200); //default 250
 
@@ -27,6 +34,7 @@ public class FixCamera extends LinearOpMode {
             vision.update();
 
             telemetry.addData("pitch error", vision.findPitchError());
+            telemetry.addData("color sensor distance", ((DistanceSensor) intakeColorSensor).getDistance(DistanceUnit.CM));
             vision.printTelemetry(telemetry);
 
             telemetry.update();

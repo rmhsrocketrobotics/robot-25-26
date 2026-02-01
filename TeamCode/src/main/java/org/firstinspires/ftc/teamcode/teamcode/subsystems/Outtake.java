@@ -24,7 +24,7 @@ public class Outtake {
     private double sustainTicksPerSecond;
 
     // the outtake must be going at +- this t/s for atTargetSpeed() to return true
-    public double tolerance = 40;
+    public double tolerance = 50;
 
     private final ElapsedTime veloTimer = new ElapsedTime();
 
@@ -44,7 +44,7 @@ public class Outtake {
         outtake1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         outtake2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        veloController = new VelocityPIDFController(0.004, 0, 0.00065, 0, 0);
+        veloController = new VelocityPIDFController(0.006, 0, 0.00065, 0, 0);
 
         setLUTValues();
 
@@ -136,29 +136,32 @@ public class Outtake {
         outtakeVelocityLUT.add(0.75, 1050);
         outtakeAngleLUT.add(0.75, 0);
 
-        outtakeVelocityLUT.add(1, 1150);
+        outtakeVelocityLUT.add(1, 1100);
         outtakeAngleLUT.add(1, 0.25);
 
-        outtakeVelocityLUT.add(1.25, 1200);
+        outtakeVelocityLUT.add(1.25, 1150);
         outtakeAngleLUT.add(1.25, 0.25);
 
-        outtakeVelocityLUT.add(1.5, 1200);
-        outtakeAngleLUT.add(1.5, 0.4);
+        outtakeVelocityLUT.add(1.5, 1150);
+        outtakeAngleLUT.add(1.5, 0.3);
 
-        outtakeVelocityLUT.add(1.75, 1300);
-        outtakeAngleLUT.add(1.75, 0.4);
+        outtakeVelocityLUT.add(1.75, 1250);
+        outtakeAngleLUT.add(1.75, 0.3);
 
-        outtakeVelocityLUT.add(2, 1350);
+        outtakeVelocityLUT.add(2, 1300);
         outtakeAngleLUT.add(2, 0.4);
 
-        outtakeVelocityLUT.add(2.25, 1400);
+        outtakeVelocityLUT.add(2.25, 1350);
         outtakeAngleLUT.add(2.25, 0.4);
 
-        outtakeVelocityLUT.add(2.5, 1400);
+        outtakeVelocityLUT.add(2.5, 1350);
         outtakeAngleLUT.add(2.5, 0.4);
 
         outtakeVelocityLUT.add(2.9, 1450);
         outtakeAngleLUT.add(2.9, 0.4);
+
+        outtakeVelocityLUT.add(3.1, 1500);
+        outtakeAngleLUT.add(3.1, 0.4);
 
         outtakeVelocityLUT.createLUT();
         outtakeAngleLUT.createLUT();
@@ -169,7 +172,7 @@ public class Outtake {
     public void setOuttakeVelocityAndHoodAngle(double metersFromGoal) {
         // clamp this to be a slightly smaller range than the values you entered into the LUT
         // this is bc InterpLUT throws an error if input <= mX.get(0)
-        metersFromGoal = CustomMath.clamp(metersFromGoal, 0.75 + 0.0001, 2.5 - 0.0001);
+        metersFromGoal = CustomMath.clamp(metersFromGoal, 0.5 + 0.0001, 3.1 - 0.0001);
 
         targetTicksPerSecond = outtakeVelocityLUT.get(metersFromGoal);
         hoodServo.setPosition(outtakeAngleLUT.get(metersFromGoal));

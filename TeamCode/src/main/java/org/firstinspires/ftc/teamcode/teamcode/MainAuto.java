@@ -304,6 +304,26 @@ public class MainAuto extends LinearOpMode {
                     .build();
         }
 
+        public class ToPark extends DynamicTrajectoryAction {
+            @Override
+            public Action createPath() {
+                Pose2d startPose = drive.localizer.getPose();
+                Vector2d parkPosition = new Vector2d(56, 35 * flipConstant);
+
+                double startToParkAngle = angleBetweenPoints(startPose.component1(), parkPosition);
+
+                return drive.actionBuilder(startPose)
+                        .setTangent(startToParkAngle)
+                        .splineToConstantHeading(parkPosition, startToParkAngle)
+
+                        .build();
+            }
+        }
+
+        public Action toPark() {
+            return new ToPark();
+        }
+
         public Action launchZoneToHumanBalls() {
             return drive.actionBuilder(launchPose)
                     .setTangent(pi/2 * flipConstant)
@@ -662,11 +682,10 @@ public class MainAuto extends LinearOpMode {
     }
 
     public void runFarAutoBlocking() {
-        // TODO add pose recording to this
         FarPathGenerator path = new FarPathGenerator();
 
         /// -------------------------------- PRELOAD --------------------------------
-        Action preload = new ParallelAction(path.startToLaunchZone(), ballHandler.launchAllBalls(3, true));
+        Action preload = new ParallelAction(path.startToLaunchZone(), ballHandler.launchAllBalls(3.2, true));
 
 
         /// -------------------------------- HUMAN BALLS --------------------------------
@@ -678,10 +697,10 @@ public class MainAuto extends LinearOpMode {
                 ),
 
                 // go back to launch zone
-                new RaceAction(path.humanBallsToLaunchZone(), ballHandler.readyOuttake(3, true)),
+                new RaceAction(path.humanBallsToLaunchZone(), ballHandler.readyOuttake(3.2, true)),
 
                 // fire human balls
-                new RaceAction(ballHandler.launchAllBalls(3, true), path.updateLocalizer())
+                new RaceAction(ballHandler.launchAllBalls(3.2, true), path.updateLocalizer())
         );
 
 
@@ -691,10 +710,10 @@ public class MainAuto extends LinearOpMode {
                 new RaceAction(path.launchZoneToFarBalls(), ballHandler.runActiveIntake(true)),
 
                 // go back to launch zone
-                new RaceAction(path.toLaunchZone(), ballHandler.readyOuttake(3, true)),
+                new RaceAction(path.toLaunchZone(), ballHandler.readyOuttake(3.2, true)),
 
                 // fire far balls
-                new RaceAction(ballHandler.launchAllBalls(3, true), path.updateLocalizer())
+                new RaceAction(ballHandler.launchAllBalls(3.2, true), path.updateLocalizer())
         );
 
 
@@ -704,33 +723,39 @@ public class MainAuto extends LinearOpMode {
                 new RaceAction(path.launchZoneToMiddleBalls(), ballHandler.runActiveIntake(true)),
 
                 // go back to launch zone
-                new RaceAction(path.toLaunchZone(), ballHandler.readyOuttake(3, true)),
+                new RaceAction(path.toLaunchZone(), ballHandler.readyOuttake(3.2, true)),
 
                 // fire middle balls
-                new RaceAction(ballHandler.launchAllBalls(3, true), path.updateLocalizer())
+                new RaceAction(ballHandler.launchAllBalls(3.2, true), path.updateLocalizer())
         );
 
 
         /// -------------------------------- PARK --------------------------------
-        Action park = new SequentialAction(
-                new RaceAction(path.launchZoneToPark(), ballHandler.runActiveIntake(true))
-        );
+        Action park = path.launchZoneToPark();
 
 
         /// -------------------------------- SWEEP --------------------------------
         Action sweep = new SequentialAction(
                 new RaceAction(path.launchZoneToSweepTwoPart(), ballHandler.runActiveIntake(true)),
 
-                new RaceAction(path.toLaunchZoneStraight(), ballHandler.readyOuttake(3, true)),
+                // TODO make the robot wait until it has at least 1 ball
 
-                new RaceAction(ballHandler.launchAllBalls(3, true), path.updateLocalizer())
+                new RaceAction(path.toLaunchZoneStraight(), ballHandler.readyOuttake(3.2, true)),
+
+                new RaceAction(ballHandler.launchAllBalls(3.2, true), path.updateLocalizer())
         );
 
+        /// IMPORTANT!! main auto plan:
         Action autonomous = new SequentialAction(
                 preload,
                 humanBalls,
                 farBalls,
-                sweep,
+                middleBalls
+        );
+
+        /// once 28.5 seconds have passed, stop everything and park
+        autonomous = new SequentialAction(
+                new RaceAction(autonomous, new SleepAction(28.5)),
                 park
         );
 

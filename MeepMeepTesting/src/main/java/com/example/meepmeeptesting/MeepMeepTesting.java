@@ -191,6 +191,8 @@ public class MeepMeepTesting {
 
         double startToEndAngle = angleBetweenPoints(new Vector2d(30, 60 * flipConstant), launchPosition);
 
+        double launchToParkAngle = angleBetweenPoints(new Vector2d(56, 30 * flipConstant), launchPosition);
+
         return new DefaultBotBuilder(meepMeep)
                 // Set bot constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
                 .setConstraints(40, 50, Math.toRadians(180), Math.toRadians(180), 14.5)
@@ -198,23 +200,26 @@ public class MeepMeepTesting {
                         .splineTo(launchPosition, launchToGoalAngle)
                         .waitSeconds(0.5)
 
-                        /// first part of sweep
-                        .setTangent(pi/2 * flipConstant)
-                        .splineToSplineHeading(new Pose2d(56, 30 * flipConstant, pi/2 * flipConstant), pi/2 * flipConstant)
-                        .splineToConstantHeading(new Vector2d(61, 45 * flipConstant), pi/2 * flipConstant)
-                        .splineToConstantHeading(new Vector2d(61, 60 * flipConstant), pi/2 * flipConstant)
+                        .setTangent(launchToParkAngle + pi)
+                        .splineToConstantHeading(new Vector2d(56, 35 * flipConstant), launchToParkAngle + pi)
 
-                        /// going back
-                        .setTangent(3*pi/2 * flipConstant)
-                        .splineToConstantHeading(new Vector2d(60, 40 * flipConstant), 3*pi/2 * flipConstant)
-
-                        /// second part of sweep
-                        .setTangent(pi/2 * flipConstant)
-                        .splineToSplineHeading(new Pose2d(40, 60 * flipConstant, pi), pi)
-                        .splineToSplineHeading(new Pose2d(30, 60 * flipConstant, pi), pi)
-
-                        .setTangent(startToEndAngle)
-                        .splineToSplineHeading(new Pose2d(launchPosition, launchToGoalAngle), startToEndAngle)
+//                        /// first part of sweep
+//                        .setTangent(pi/2 * flipConstant)
+//                        .splineToSplineHeading(new Pose2d(56, 30 * flipConstant, pi/2 * flipConstant), pi/2 * flipConstant)
+//                        .splineToConstantHeading(new Vector2d(61, 45 * flipConstant), pi/2 * flipConstant)
+//                        .splineToConstantHeading(new Vector2d(61, 60 * flipConstant), pi/2 * flipConstant)
+//
+//                        /// going back
+//                        .setTangent(3*pi/2 * flipConstant)
+//                        .splineToConstantHeading(new Vector2d(60, 40 * flipConstant), 3*pi/2 * flipConstant)
+//
+//                        /// second part of sweep
+//                        .setTangent(pi/2 * flipConstant)
+//                        .splineToSplineHeading(new Pose2d(40, 60 * flipConstant, pi), pi)
+//                        .splineToSplineHeading(new Pose2d(30, 60 * flipConstant, pi), pi)
+//
+//                        .setTangent(startToEndAngle)
+//                        .splineToSplineHeading(new Pose2d(launchPosition, launchToGoalAngle), startToEndAngle)
 
                         .build());
     }
