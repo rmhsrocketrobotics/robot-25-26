@@ -93,6 +93,7 @@ public class Vision {
 
         lastPose = localizer.getPose();
 
+        /// DON'T CHANGE THESE IF YOU WANT TO CHANGE THE AUTO TARGETING CHANGE THE NUMBERS IN faceGoal()
         if (isRedAlliance) {
             goalPosition = new Vector2d(-58, 55);
             //goalPosition = new Vector2d(-65, 60); possible new goal position???
@@ -167,13 +168,13 @@ public class Vision {
             targetBearing = CustomMath.angleBetweenPoints(localizer.getPose().component1(), new Vector2d(-67, -62));
         }
 
-        if (goalDistance > 2.5) {
-            if (isRedAlliance) {
-                targetBearing = targetBearing + (Math.PI/12);
-            } else {
-                targetBearing = targetBearing - (Math.PI/12);
-            }
-        }
+//        if (goalDistance > 2.5) {
+//            if (isRedAlliance) {
+//                targetBearing = targetBearing + (Math.PI/12);
+//            } else {
+//                targetBearing = targetBearing - (Math.PI/12);
+//            }
+//        }
 
         double currentBearing = localizer.getPose().component2().toDouble();
 
