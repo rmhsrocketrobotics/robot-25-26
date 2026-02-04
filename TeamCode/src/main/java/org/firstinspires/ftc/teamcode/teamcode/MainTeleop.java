@@ -23,7 +23,7 @@ public class MainTeleop extends LinearOpMode {
     Vision vision;
     Gamepad gamepad1Last;
     Gamepad gamepad2Last;
-    LoopTimer loopTimer = new LoopTimer();
+//    LoopTimer loopTimer = new LoopTimer();
 
     public boolean allianceIsRed() {
         return true;
@@ -136,7 +136,7 @@ public class MainTeleop extends LinearOpMode {
             vision.update();
 
             //drivetrain.printTelemetry(telemetry);
-//            spindex.printTelemetry(telemetry);
+            spindex.printTelemetry(telemetry);
 //            outtake.printTelemetry(telemetry);
             vision.printTelemetry(telemetry);
 //            if (state == State.INTAKE) {
@@ -145,7 +145,7 @@ public class MainTeleop extends LinearOpMode {
 //                telemetry.addLine("state: outtake");
 //            }
 
-            telemetry.addData("loops per second", Math.round(1 / loopTimer.getLoopTimeSeconds()));
+            //telemetry.addData("loops per second", Math.round(1 / loopTimer.getLoopTimeSeconds()));
 
             telemetry.update();
 

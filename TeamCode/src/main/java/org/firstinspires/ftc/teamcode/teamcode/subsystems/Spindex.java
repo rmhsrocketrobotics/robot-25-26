@@ -230,7 +230,7 @@ public class Spindex {
         if (position.equals("up")) {
             flickServo.setPosition(0.15);
         } else if (position.equals("down")) {
-            flickServo.setPosition(0.52);
+            flickServo.setPosition(0.57);
         }
     }
 
@@ -277,7 +277,7 @@ public class Spindex {
         }
 
         // get distance from sensor
-        boolean ballDetected = ((DistanceSensor) intakeColorSensor).getDistance(DistanceUnit.CM) < 4.8; // og value: 3 cm
+        boolean ballDetected = ((DistanceSensor) intakeColorSensor).getDistance(DistanceUnit.CM) < 4.5; // og value: 3 cm
 
         if (!ballDetected) { // could add && Objects.equals(ballStates[drumPosition], "empty") to this statement
             return false;
