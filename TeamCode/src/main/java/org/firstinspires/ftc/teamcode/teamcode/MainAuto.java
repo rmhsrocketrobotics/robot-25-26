@@ -20,6 +20,7 @@ import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -96,7 +97,7 @@ public class MainAuto extends LinearOpMode {
             launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-58, 58 * flipConstant));
             launchPose = new Pose2d(launchPosition, launchToGoalAngle);
 
-            classifierPose = new Pose2d(10,61 * flipConstant, 3*pi/4 * flipConstant);
+            classifierPose = new Pose2d(12,59 * flipConstant, 5*pi/8 * flipConstant);
         }
 
         public Action startToMiddleBalls() {
@@ -348,7 +349,6 @@ public class MainAuto extends LinearOpMode {
                     .setTangent(3*pi/2 * flipConstant)
                     .splineToConstantHeading(new Vector2d(56, 30 * flipConstant), 3*pi/2 * flipConstant)
                     .splineToSplineHeading(new Pose2d(launchPosition, launchToGoalAngle), 3*pi/2 * flipConstant)
-//                    .setTangent(launchToGoalAngle)
 
                     .build();
         }
@@ -385,17 +385,17 @@ public class MainAuto extends LinearOpMode {
 
         public Action launchZoneToSweepTwoPart() {
             return drive.actionBuilder(launchPose)
-                    /// first part of sweep
+                    // first part of sweep
                     .setTangent(pi/2 * flipConstant)
                     .splineToSplineHeading(new Pose2d(56, 30 * flipConstant, pi/2 * flipConstant), pi/2 * flipConstant)
                     .splineToConstantHeading(new Vector2d(61, 45 * flipConstant), pi/2 * flipConstant)
                     .splineToConstantHeading(new Vector2d(61, 60 * flipConstant), pi/2 * flipConstant)
 
-                    /// going back
+                    // going back
                     .setTangent(3*pi/2 * flipConstant)
                     .splineToConstantHeading(new Vector2d(60, 40 * flipConstant), 3*pi/2 * flipConstant)
 
-                    /// second part of sweep
+                    // second part of sweep
                     .setTangent(pi/2 * flipConstant)
                     .splineToSplineHeading(new Pose2d(40, 60 * flipConstant, pi), pi)
                     .splineToSplineHeading(new Pose2d(30, 60 * flipConstant, pi), pi)
@@ -528,7 +528,6 @@ public class MainAuto extends LinearOpMode {
                 if (autoFindLaunchDistance) {
                     this.launchDistance = CustomMath.distanceBetweenPoints(drive.localizer.getPose().component1(), goalPosition) / 39.37;
                     // alr bro listen ik this is a stupid way to try to do moving while shooting but i can't be bothered and it might work
-                    // todo fix if it doesn't work tho
                     outtake.setOuttakeVelocityAndHoodAngle(launchDistance + 0.2);
                 }
 
@@ -577,10 +576,6 @@ public class MainAuto extends LinearOpMode {
 
                 PoseStorage.ballStates = spindex.ballStates;
 
-                if (spindex.shouldSwitchToOuttake) {
-                    spindex.intakeMotor.setPower(-1);
-                }
-
                 return !spindex.shouldSwitchToOuttake;
             }
         }
@@ -592,10 +587,14 @@ public class MainAuto extends LinearOpMode {
             private boolean initialized = false;
             private double launchDistance;
             private boolean sortBalls;
+            private ElapsedTime spitTimer;
+            private double spitTime = 0.5;
+            private boolean hasSpit = false;
 
             public ReadyOuttake(double launchDistance, boolean sortBalls) {
                 this.launchDistance = launchDistance;
                 this.sortBalls = sortBalls;
+                this.spitTimer = new ElapsedTime(ElapsedTime.SECOND_IN_NANO);
             }
 
             @Override
@@ -603,7 +602,7 @@ public class MainAuto extends LinearOpMode {
                 if (!initialized) {
                     initialized = true;
 
-                    spindex.intakeMotor.setPower(1);
+                    // TODO set all empty drum positions to purple IF we're keep that part in the LaunchAllBalls class
 
                     if (!sortBalls) {
                         spindex.setDrumStateToNextOuttake();
@@ -621,6 +620,19 @@ public class MainAuto extends LinearOpMode {
                     outtake.setOuttakeVelocityAndHoodAngle(launchDistance);
                 }
 
+                if (!hasSpit && !spindex.drumIsSwitching()) {
+                    spitTimer.reset();
+                    hasSpit = true;
+                }
+
+                if (spitTimer.seconds() < spitTime) {
+                    spindex.intakeMotor.setPower(-1);
+                } else if (hasSpit) {
+                    spindex.intakeMotor.setPower(0.5);
+                } else {
+                    spindex.intakeMotor.setPower(1);
+                }
+
                 spindex.update(outtake, State.OUTTAKE);
                 outtake.update();
 
@@ -636,6 +648,18 @@ public class MainAuto extends LinearOpMode {
 
         public Action readyOuttake(double launchDistance) {
             return new ReadyOuttake(launchDistance, true);
+        }
+
+        public class DrumIsEmpty implements Action {
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                return spindex.drumIsEmpty();
+            }
+        }
+
+        /// keeps running as long as the drum is empty
+        public Action drumIsEmpty() {
+            return new DrumIsEmpty();
         }
     }
 
@@ -736,12 +760,16 @@ public class MainAuto extends LinearOpMode {
 
         /// -------------------------------- SWEEP --------------------------------
         Action sweep = new SequentialAction(
+                // sweep while running intake
                 new RaceAction(path.launchZoneToSweepTwoPart(), ballHandler.runActiveIntake(true)),
 
-                // TODO make the robot wait until it has at least 1 ball
+                // robot waits until it has at least 1 ball
+                new RaceAction(ballHandler.runActiveIntake(false), ballHandler.drumIsEmpty(), path.updateLocalizer()),
 
+                // go back to launch zone
                 new RaceAction(path.toLaunchZoneStraight(), ballHandler.readyOuttake(3.2, true)),
 
+                // launch swept balls
                 new RaceAction(ballHandler.launchAllBalls(3.2, true), path.updateLocalizer())
         );
 
@@ -883,7 +911,6 @@ class AutoVision {
     }
 
     public void faceCameraToObelisk(Pose2d cameraPose) {
-        // uhhh this code probably isn't right TODO fix
         double angleToObelisk = CustomMath.angleBetweenPoints(cameraPose.position, obeliskPosition);
         double cameraAngle = angleToObelisk - cameraPose.heading.toDouble();
 
