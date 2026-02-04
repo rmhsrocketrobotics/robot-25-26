@@ -50,16 +50,16 @@ public class Spindex {
 
     // time it takes to go from position 0.0 to position 1.0 on the drum servo
     // (setting too low will mean the sensor sees the same ball multiple times)
-    public double switchCooldownMultiplier = 0.8;//1.75;
+    public double switchCooldownMultiplier = 0.5;//1.75;
 
     // added constant onto the switch timer
-    public double switchCooldownConstant = 0.1;
+    public double switchCooldownConstant = 0.03;
 
     double switchCooldown = switchCooldownMultiplier;
 
     public ElapsedTime flickTimer;
     // time that the flick has to go up and down
-    public double flickTime = 0.5;
+    public double flickTime = 0.45;
 
     public boolean shouldSwitchToIntake = false;
     public boolean shouldSwitchToOuttake = false;
@@ -400,7 +400,7 @@ public class Spindex {
                 }
 
                 // set the flick's position based on the flick timer
-                if (flickTimer.seconds() < (flickTime / 2)) {
+                if (flickTimer.seconds() < ((flickTime / 2) + 0.05)) { // TODO ts is experimental; remove?
                     setFlickPosition("up");
                 } else {
                     setFlickPosition("down");

@@ -96,7 +96,7 @@ public class MainAuto extends LinearOpMode {
             launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-58, 58 * flipConstant));
             launchPose = new Pose2d(launchPosition, launchToGoalAngle);
 
-            classifierPose = new Pose2d(13,58 * flipConstant, 3*pi/4 * flipConstant);
+            classifierPose = new Pose2d(10,61 * flipConstant, 3*pi/4 * flipConstant);
         }
 
         public Action startToMiddleBalls() {
