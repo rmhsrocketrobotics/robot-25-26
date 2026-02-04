@@ -163,9 +163,9 @@ public class Vision {
 
         double targetBearing;
         if (isRedAlliance) {
-            targetBearing = CustomMath.angleBetweenPoints(localizer.getPose().component1(), new Vector2d(-67, 62));
+            targetBearing = CustomMath.angleBetweenPoints(localizer.getPose().component1(), new Vector2d(-67, 69));
         } else {
-            targetBearing = CustomMath.angleBetweenPoints(localizer.getPose().component1(), new Vector2d(-67, -62));
+            targetBearing = CustomMath.angleBetweenPoints(localizer.getPose().component1(), new Vector2d(-67, -69));
         }
 
 //        if (goalDistance > 2.5) {
