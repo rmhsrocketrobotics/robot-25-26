@@ -83,6 +83,7 @@ public class MeepMeepTesting {
                         .setTangent(0)
 //                        .splineToSplineHeading(new Pose2d(-4,30, 5*pi/8), pi/8)
                         .splineToSplineHeading(new Pose2d(12,59, 5*pi/8), pi/2)
+                        .setTangent(0).splineToSplineHeading(new Pose2d(17,59, 6*pi/8), 0)
                         .waitSeconds(0.5)
                         .setTangent(-pi/8)
                         //ClassifierToLaunchZone
@@ -90,16 +91,16 @@ public class MeepMeepTesting {
                         .splineToSplineHeading(new Pose2d(launchPosition, launchToGoalAngle), pi)
                         .waitSeconds(0.5)
                         //launchZoneToClassifier
-                        .waitSeconds(0.5)
-                        .setTangent(0)
-//                        .splineToSplineHeading(new Pose2d(-4,30, 5*pi/8), pi/8)
-                        .splineToSplineHeading(new Pose2d(12,59, 5*pi/8), pi/2)
-                        .waitSeconds(0.5)
-                        .setTangent(-pi/8)
-                        //ClassifierToLaunchZone
-                        .setTangent(3*pi/2)
-                        .splineToSplineHeading(new Pose2d(launchPosition, launchToGoalAngle), pi)
-                        .waitSeconds(0.5)
+//                        .waitSeconds(0.5)
+//                        .setTangent(0)
+////                        .splineToSplineHeading(new Pose2d(-4,30, 5*pi/8), pi/8)
+//                        .splineToSplineHeading(new Pose2d(12,59, 5*pi/8), pi/2)
+//                        .waitSeconds(0.5)
+//                        .setTangent(-pi/8)
+//                        //ClassifierToLaunchZone
+//                        .setTangent(3*pi/2)
+//                        .splineToSplineHeading(new Pose2d(launchPosition, launchToGoalAngle), pi)
+//                        .waitSeconds(0.5)
 //                        //launchZoneToFrontBalls
 //                        .setReversed(false)
                         .setTangent(pi/2)

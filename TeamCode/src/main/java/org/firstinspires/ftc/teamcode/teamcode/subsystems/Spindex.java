@@ -46,7 +46,7 @@ public class Spindex {
     public BallState[] ballStates = PoseStorage.ballStates.clone();
     public Deque<BallState> ballQueue = new ArrayDeque<>();
 
-    private ElapsedTime switchCooldownTimer;
+    public ElapsedTime switchCooldownTimer;
 
     // time it takes to go from position 0.0 to position 1.0 on the drum servo
     // (setting too low will mean the sensor sees the same ball multiple times)
@@ -55,7 +55,7 @@ public class Spindex {
     // added constant onto the switch timer
     public double switchCooldownConstant = 0.03;
 
-    double switchCooldown = switchCooldownMultiplier;
+    public double switchCooldown = switchCooldownMultiplier;
 
     public ElapsedTime flickTimer;
     // time that the flick has to go up and down

@@ -5,6 +5,7 @@ import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.Gamepad;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.Drawing;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.LoopTimer;
@@ -23,6 +24,8 @@ public class MainTeleop extends LinearOpMode {
     Vision vision;
     Gamepad gamepad1Last;
     Gamepad gamepad2Last;
+
+    boolean hasSpit;
 //    LoopTimer loopTimer = new LoopTimer();
 
     public boolean allianceIsRed() {
@@ -31,6 +34,9 @@ public class MainTeleop extends LinearOpMode {
 
     @Override
     public void runOpMode() {
+        FtcDashboard dashboard = FtcDashboard.getInstance();
+        telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
+
         state = State.INTAKE;
 
         drivetrain = new Drivetrain(hardwareMap); // wheels
@@ -41,6 +47,12 @@ public class MainTeleop extends LinearOpMode {
 
         gamepad1Last = new Gamepad();
         gamepad2Last = new Gamepad();
+
+        boolean pauseIntake = false;
+
+        ElapsedTime spitTimer = new ElapsedTime();
+        double spitTime = 0.5;
+        hasSpit = true;
 
 //        //random ahh imu stuff dw
 //        IMU imu = hardwareMap.get(IMU.class, "imu");
@@ -99,14 +111,32 @@ public class MainTeleop extends LinearOpMode {
 //                spindex.setDrumState("intake", 0);
 //            }
 
+            if (!hasSpit && !(spindex.switchCooldownTimer.seconds() < spindex.switchCooldown + 0.3)) {
+                spitTimer.reset();
+                hasSpit = true;
+            }
+
             if (gamepad2.left_trigger > 0.2) { // backspin intake
                 spindex.intakeMotor.setPower(-gamepad2.left_trigger);
 
-            } else if ((gamepad2.right_trigger > 0.5)) { // spin intake
+            } else if ((gamepad2.right_trigger > 0.2)) { // spin intake
                 spindex.intakeMotor.setPower(gamepad2.right_trigger);
 
             } else {
-                spindex.intakeMotor.setPower(0.5);
+                if (!pauseIntake) {
+                    if (spitTimer.seconds() < spitTime) {
+                        spindex.intakeMotor.setPower(-1);
+                    } else {
+                        spindex.intakeMotor.setPower(0.5);
+                    }
+
+                } else {
+                    spindex.intakeMotor.setPower(0);
+                }
+            }
+
+            if (gamepad2.leftStickButtonWasPressed()) {
+                pauseIntake = !pauseIntake;
             }
 
             // state specific code goes in these methods
@@ -137,7 +167,7 @@ public class MainTeleop extends LinearOpMode {
 
             //drivetrain.printTelemetry(telemetry);
             spindex.printTelemetry(telemetry);
-//            outtake.printTelemetry(telemetry);
+            outtake.printTelemetry(telemetry);
             vision.printTelemetry(telemetry);
 //            if (state == State.INTAKE) {
 //                telemetry.addLine("state: intake");
@@ -159,6 +189,7 @@ public class MainTeleop extends LinearOpMode {
     public void intakeMode() {
         if ((gamepad2.dpad_up && !gamepad2Last.dpad_up) || spindex.shouldSwitchToOuttake) {
             state = State.OUTTAKE;
+            hasSpit = false;
 
         } else if (gamepad2.dpad_down && !gamepad2Last.dpad_down) {
             spindex.recheckDrum();

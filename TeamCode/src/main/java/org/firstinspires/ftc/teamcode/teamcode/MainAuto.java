@@ -97,7 +97,7 @@ public class MainAuto extends LinearOpMode {
             launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-58, 58 * flipConstant));
             launchPose = new Pose2d(launchPosition, launchToGoalAngle);
 
-            classifierPose = new Pose2d(14,59 * flipConstant, 5*pi/8 * flipConstant);
+            classifierPose = new Pose2d(15,59 * flipConstant, 11*pi/16 * flipConstant);
         }
 
         public Action startToMiddleBalls() {
@@ -181,6 +181,14 @@ public class MainAuto extends LinearOpMode {
             return drive.actionBuilder(launchPose)
                     .setTangent((pi/4) * flipConstant)
                     .splineToSplineHeading(classifierPose, (pi/2) * flipConstant)
+
+                    .build();
+        }
+
+        public Action backAwayFromClassifier() {
+            return drive.actionBuilder(classifierPose)
+                    .setTangent(0)
+                    .splineToSplineHeading(new Pose2d(19,59 * flipConstant, 6*pi/8 * flipConstant), 0)
 
                     .build();
         }
@@ -620,7 +628,7 @@ public class MainAuto extends LinearOpMode {
                     outtake.setOuttakeVelocityAndHoodAngle(launchDistance);
                 }
 
-                if (!hasSpit && !spindex.drumIsSwitching()) {
+                if (!hasSpit && !(spindex.switchCooldownTimer.seconds() < spindex.switchCooldown + 0.5)) {
                     spitTimer.reset();
                     hasSpit = true;
                 }

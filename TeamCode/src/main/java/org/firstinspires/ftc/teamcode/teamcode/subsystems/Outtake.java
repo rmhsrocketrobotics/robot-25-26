@@ -44,7 +44,7 @@ public class Outtake {
         outtake1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         outtake2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        veloController = new VelocityPIDFController(0.006, 0, 0.00065, 0, 0);
+        veloController = new VelocityPIDFController(0.008, 0, 0.00065, 0, 0);
 
         setLUTValues();
 
