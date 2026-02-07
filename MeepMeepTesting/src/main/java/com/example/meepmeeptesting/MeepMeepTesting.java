@@ -30,7 +30,7 @@ public class MeepMeepTesting {
     public static void main(String[] args) {
         MeepMeep meepMeep = new MeepMeep(700);
 
-        RoadRunnerBotEntity myBot = testPathClose(meepMeep);
+        RoadRunnerBotEntity myBot = testPathFar(meepMeep);
 
         Image img = null;
         try { img = ImageIO.read(new File("MeepMeepTesting/src/main/java/com/example/meepmeeptesting/decode webfield.png")); }
@@ -158,8 +158,9 @@ public class MeepMeepTesting {
                         .waitSeconds(0.5)
 //                        launchZoneToThirdBalls
                         .setReversed(false)
-                        .splineTo(new Vector2d(13, 28), pi/2)
-                        .splineTo(new Vector2d(13, 45), pi/2) // slow mode
+                        .splineTo(new Vector2d(12, 28), pi/2)
+                        .splineTo(new Vector2d(12, 50), pi/2) // slow mode
+                        .splineToConstantHeading(new Vector2d(4, 55), pi/2)
                         //thirdBallsToLaunchZone
                         .setReversed(true)
                         .splineTo(launchPosition, launchToGoalAngle - pi)

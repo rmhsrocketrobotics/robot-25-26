@@ -97,7 +97,7 @@ public class MainAuto extends LinearOpMode {
             launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-58, 58 * flipConstant));
             launchPose = new Pose2d(launchPosition, launchToGoalAngle);
 
-            classifierPose = new Pose2d(15,59 * flipConstant, 11*pi/16 * flipConstant);
+            classifierPose = new Pose2d(15,61 * flipConstant, 11*pi/16 * flipConstant);
         }
 
         public Action startToMiddleBalls() {
@@ -298,8 +298,17 @@ public class MainAuto extends LinearOpMode {
         public Action launchZoneToMiddleBalls() {
             return drive.actionBuilder(launchPose)
                     .setReversed(false)
-                    .splineTo(new Vector2d(13, 28 * flipConstant), (pi/2) * flipConstant)
-                    .splineTo(new Vector2d(13, 61 * flipConstant), (pi/2) * flipConstant, lowVelocity) // slowed
+                    .splineTo(new Vector2d(12, 28 * flipConstant), (pi/2) * flipConstant)
+
+                    // og y value: 61, new value: 50 todo switch this around
+                    .splineTo(new Vector2d(12, 61 * flipConstant), (pi/2) * flipConstant, lowVelocity) // slowed
+
+                    .build();
+        }
+
+        public Action middleBallsToClearClassifier() {
+            return drive.actionBuilder(new Pose2d(12, 50 * flipConstant, pi/2 * flipConstant))
+                    .splineToConstantHeading(new Vector2d(4, 55), pi/2)
 
                     .build();
         }
@@ -336,7 +345,7 @@ public class MainAuto extends LinearOpMode {
         public Action launchZoneToHumanBalls() {
             return drive.actionBuilder(launchPose)
                     .setTangent(pi/2 * flipConstant)
-                    .splineToSplineHeading(new Pose2d(53,60 * flipConstant, 3*pi/8 * flipConstant), pi/2 * flipConstant, lowVelocity) // slowed
+                    .splineToSplineHeading(new Pose2d(53,60 * flipConstant, 3*pi/8 * flipConstant), pi/2 * flipConstant) // TODO slowed
 
                     .setTangent(0)
                     .splineToConstantHeading(new Vector2d(59, 60 * flipConstant), 0, lowVelocity)
@@ -669,6 +678,19 @@ public class MainAuto extends LinearOpMode {
         public Action drumIsEmpty() {
             return new DrumIsEmpty();
         }
+
+        public class StopIntake implements Action {
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                spindex.intakeMotor.setPower(0);
+                return false;
+            }
+        }
+
+        /// stops the intake (stops after one loop)
+        public Action stopIntake() {
+            return new StopIntake();
+        }
     }
 
     public double angleBetweenPoints(Vector2d point1, Vector2d point2) {
@@ -724,7 +746,7 @@ public class MainAuto extends LinearOpMode {
         Action humanBalls = new SequentialAction(
                 // get human balls
                 new RaceAction(
-                        new SequentialAction(path.launchZoneToHumanBalls(), new SleepAction(0.5)),
+                        new SequentialAction(path.launchZoneToHumanBalls(), new SleepAction(1)),
                         ballHandler.runActiveIntake(true)
                 ),
 
@@ -754,6 +776,9 @@ public class MainAuto extends LinearOpMode {
                 // get middle balls
                 new RaceAction(path.launchZoneToMiddleBalls(), ballHandler.runActiveIntake(true)),
 
+//                // clear classifier todo possibly comment out?
+//                ballHandler.stopIntake(), path.middleBallsToClearClassifier(),
+
                 // go back to launch zone
                 new RaceAction(path.toLaunchZone(), ballHandler.readyOuttake(3.2, true)),
 
@@ -781,6 +806,20 @@ public class MainAuto extends LinearOpMode {
                 new RaceAction(ballHandler.launchAllBalls(3.2, true), path.updateLocalizer())
         );
 
+        Action sweep2 = new SequentialAction(
+                // sweep while running intake
+                new RaceAction(path.launchZoneToSweepTwoPart(), ballHandler.runActiveIntake(true)),
+
+                // robot waits until it has at least 1 ball
+                new RaceAction(ballHandler.runActiveIntake(false), ballHandler.drumIsEmpty(), path.updateLocalizer()),
+
+                // go back to launch zone
+                new RaceAction(path.toLaunchZoneStraight(), ballHandler.readyOuttake(3.2, true)),
+
+                // launch swept balls
+                new RaceAction(ballHandler.launchAllBalls(3.2, true), path.updateLocalizer())
+        );
+
         /// IMPORTANT!! main auto plan:
         Action autonomous = new SequentialAction(
                 preload,
@@ -789,9 +828,9 @@ public class MainAuto extends LinearOpMode {
                 middleBalls
         );
 
-        /// once 28.5 seconds have passed, stop everything and park
+        /// once 29 seconds have passed, stop everything and park
         autonomous = new SequentialAction(
-                new RaceAction(autonomous, new SleepAction(28.5)),
+                new RaceAction(autonomous, new SleepAction(29)),
                 park
         );
 
@@ -815,10 +854,7 @@ public class MainAuto extends LinearOpMode {
     public void runCloseAutoBlocking() {
         ClosePathGenerator path = new ClosePathGenerator();
 
-        Action autonomous = new SequentialAction(
-
-                /// -------------------------------- SHOOT PRELOAD + MIDDLE BALLS --------------------------------
-
+        Action preloadAndMiddleBalls = new SequentialAction(
                 // shoot preload while moving, then intake middle balls
                 new RaceAction(
                         new SequentialAction(ballHandler.launchAllBalls(0, false), ballHandler.runActiveIntake(true)),
@@ -829,10 +865,10 @@ public class MainAuto extends LinearOpMode {
                 new RaceAction(ballHandler.readyOuttake(1.5, false), path.toLaunchZone()),
 
                 // shoot middle balls
-                new RaceAction(ballHandler.launchAllBalls(1.5, false), path.updateLocalizer()),
+                new RaceAction(ballHandler.launchAllBalls(1.5, false), path.updateLocalizer())
+        );
 
-                /// -------------------------------- CLEAR CLASSIFIER --------------------------------
-
+        Action clearClassifier = new SequentialAction(
                 // go to classifier and intake (max 8 seconds)
                 new RaceAction(
                         ballHandler.runActiveIntake(true),
@@ -844,10 +880,34 @@ public class MainAuto extends LinearOpMode {
                 new RaceAction(ballHandler.readyOuttake(1.5), path.classifierToLaunchZone()),
 
                 // shoot classifier balls
-                new RaceAction(ballHandler.launchAllBalls(1.5), path.updateLocalizer()),
+                new RaceAction(ballHandler.launchAllBalls(1.5), path.updateLocalizer())
+        );
 
-                /// -------------------------------- CLOSE BALLS --------------------------------
+        Action clearClassifierV2 = new SequentialAction(
+                // empty classifier, but only intake for 1 second
+                new ParallelAction(
+                        path.launchZoneToClassifier(),
+                        new SequentialAction(
+                                new RaceAction(ballHandler.runActiveIntake(true), new SleepAction(1)),
+                                ballHandler.stopIntake()
+                        )
+                ),
 
+                // pick up from classifier (max 5 seconds)
+                new RaceAction(
+                        ballHandler.runActiveIntake(true),
+                        new SequentialAction(path.backAwayFromClassifier(), path.updateLocalizer()),
+                        new SleepAction(5)
+                ),
+
+                // go to launch zone
+                new RaceAction(ballHandler.readyOuttake(1.5), path.classifierToLaunchZone()),
+
+                // shoot classifier balls
+                new RaceAction(ballHandler.launchAllBalls(1.5), path.updateLocalizer())
+        );
+
+        Action closeBalls = new SequentialAction(
                 // intake close balls
                 new RaceAction(ballHandler.runActiveIntake(true), path.launchZoneToCloseBalls()),
 
@@ -856,6 +916,12 @@ public class MainAuto extends LinearOpMode {
 
                 // launch close balls
                 ballHandler.launchAllBalls(0.7)
+        );
+
+        Action autonomous = new SequentialAction(
+                preloadAndMiddleBalls,
+                clearClassifier,
+                closeBalls
         );
 
         autonomous = new RaceAction(
