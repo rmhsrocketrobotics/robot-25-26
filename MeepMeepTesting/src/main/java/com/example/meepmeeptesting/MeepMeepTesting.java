@@ -159,8 +159,10 @@ public class MeepMeepTesting {
 //                        launchZoneToThirdBalls
                         .setReversed(false)
                         .splineTo(new Vector2d(12, 28), pi/2)
-                        .splineTo(new Vector2d(12, 50), pi/2) // slow mode
-                        .splineToConstantHeading(new Vector2d(4, 55), pi/2)
+                        .splineTo(new Vector2d(12, 61), pi/2) // slow mode
+
+                        .setTangent(3*pi/2).splineToConstantHeading(new Vector2d(12, 40), 3*pi/2)
+                        .setTangent(pi).splineToConstantHeading(new Vector2d(4, 50), pi/2)
                         //thirdBallsToLaunchZone
                         .setReversed(true)
                         .splineTo(launchPosition, launchToGoalAngle - pi)

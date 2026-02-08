@@ -8,9 +8,7 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.Drawing;
-import org.firstinspires.ftc.teamcode.teamcode.subsystems.LoopTimer;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.State;
-import org.firstinspires.ftc.teamcode.teamcode.subsystems.Velocity;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Vision;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Spindex;
 import org.firstinspires.ftc.teamcode.teamcode.subsystems.Outtake;
@@ -26,6 +24,8 @@ public class MainTeleop extends LinearOpMode {
     Gamepad gamepad2Last;
 
     boolean hasSpit;
+
+    boolean pause;
 //    LoopTimer loopTimer = new LoopTimer();
 
     public boolean allianceIsRed() {
@@ -48,7 +48,7 @@ public class MainTeleop extends LinearOpMode {
         gamepad1Last = new Gamepad();
         gamepad2Last = new Gamepad();
 
-        boolean pauseIntake = false;
+        pause = false;
 
         ElapsedTime spitTimer = new ElapsedTime();
         double spitTime = 0.5;
@@ -123,7 +123,7 @@ public class MainTeleop extends LinearOpMode {
                 spindex.intakeMotor.setPower(gamepad2.right_trigger);
 
             } else {
-                if (!pauseIntake) {
+                if (!pause) {
                     if (spitTimer.seconds() < spitTime) {
                         spindex.intakeMotor.setPower(-1);
                     } else {
@@ -136,7 +136,7 @@ public class MainTeleop extends LinearOpMode {
             }
 
             if (gamepad2.leftStickButtonWasPressed()) {
-                pauseIntake = !pauseIntake;
+                pause = !pause;
             }
 
             // state specific code goes in these methods
@@ -166,9 +166,9 @@ public class MainTeleop extends LinearOpMode {
             vision.update();
 
             //drivetrain.printTelemetry(telemetry);
-            spindex.printTelemetry(telemetry);
-            outtake.printTelemetry(telemetry);
-            vision.printTelemetry(telemetry);
+//            spindex.printTelemetry(telemetry);
+//            outtake.printTelemetry(telemetry);
+//            vision.printTelemetry(telemetry);
 //            if (state == State.INTAKE) {
 //                telemetry.addLine("state: intake");
 //            } else {
@@ -204,7 +204,12 @@ public class MainTeleop extends LinearOpMode {
             return;
         }
 
-        outtake.setOuttakeVelocityAndHoodAngle(vision.goalDistance);
+        if (pause) {
+            outtake.targetTicksPerSecond = 0;
+        } else {
+            outtake.setOuttakeVelocityAndHoodAngle(vision.goalDistance);
+        }
+
 
         if (gamepad2.left_bumper && !gamepad2Last.left_bumper) {
             spindex.queueBall("purple");

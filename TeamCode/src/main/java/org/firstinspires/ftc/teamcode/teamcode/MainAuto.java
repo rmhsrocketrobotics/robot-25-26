@@ -97,7 +97,7 @@ public class MainAuto extends LinearOpMode {
             launchToGoalAngle = angleBetweenPoints(launchPosition, new Vector2d(-58, 58 * flipConstant));
             launchPose = new Pose2d(launchPosition, launchToGoalAngle);
 
-            classifierPose = new Pose2d(15,61 * flipConstant, 11*pi/16 * flipConstant);
+            classifierPose = new Pose2d(14,61 * flipConstant, 11*pi/16 * flipConstant);
         }
 
         public Action startToMiddleBalls() {
@@ -290,7 +290,7 @@ public class MainAuto extends LinearOpMode {
             return drive.actionBuilder(launchPose)
                     .setReversed(false)
                     .splineTo(new Vector2d(36, 28 * flipConstant), (pi/2) * flipConstant)
-                    .splineTo(new Vector2d(36, 61 * flipConstant), (pi/2) * flipConstant, lowVelocity) // slowed
+                    .splineTo(new Vector2d(36, 59 * flipConstant), (pi/2) * flipConstant, lowVelocity) // slowed
 
                     .build();
         }
@@ -300,17 +300,42 @@ public class MainAuto extends LinearOpMode {
                     .setReversed(false)
                     .splineTo(new Vector2d(12, 28 * flipConstant), (pi/2) * flipConstant)
 
-                    // og y value: 61, new value: 50 todo switch this around
-                    .splineTo(new Vector2d(12, 61 * flipConstant), (pi/2) * flipConstant, lowVelocity) // slowed
+                    .splineTo(new Vector2d(12, 59 * flipConstant), (pi/2) * flipConstant, lowVelocity) // slowed
+
+                    .build();
+        }
+
+        public Action launchZoneToMiddleBallsShort() {
+            return drive.actionBuilder(launchPose)
+                    .setReversed(false)
+                    .splineTo(new Vector2d(12, 28 * flipConstant), (pi/2) * flipConstant)
+
+                    .splineTo(new Vector2d(12, 50 * flipConstant), (pi/2) * flipConstant, lowVelocity) // slowed
 
                     .build();
         }
 
         public Action middleBallsToClearClassifier() {
-            return drive.actionBuilder(new Pose2d(12, 50 * flipConstant, pi/2 * flipConstant))
-                    .splineToConstantHeading(new Vector2d(4, 55), pi/2)
+            return drive.actionBuilder(new Pose2d(12, 59 * flipConstant, pi/2 * flipConstant))
+                    .setTangent(3*pi/2).splineToConstantHeading(new Vector2d(12, 40 * flipConstant), 3*pi/2 * flipConstant)
+                    .setTangent(pi).splineToConstantHeading(new Vector2d(4, 50 * flipConstant), pi/2 * flipConstant, lowVelocity)
 
                     .build();
+        }
+
+        public class ToClearClassifier extends DynamicTrajectoryAction {
+            @Override
+            public Action createPath() {
+                return drive.actionBuilder(drive.localizer.getPose())
+                        .setTangent(3*pi/2 * flipConstant).splineToConstantHeading(new Vector2d(12, 40 * flipConstant), 3*pi/2 * flipConstant)
+                        .setTangent(pi).splineToConstantHeading(new Vector2d(4, 50 * flipConstant), pi/2 * flipConstant, lowVelocity)
+
+                        .build();
+            }
+        }
+
+        public Action toClearClassifier() {
+            return new ToClearClassifier();
         }
 
         public Action launchZoneToPark() {
@@ -746,7 +771,7 @@ public class MainAuto extends LinearOpMode {
         Action humanBalls = new SequentialAction(
                 // get human balls
                 new RaceAction(
-                        new SequentialAction(path.launchZoneToHumanBalls(), new SleepAction(1)),
+                        new SequentialAction(path.launchZoneToHumanBalls(), new SleepAction(0.4)),
                         ballHandler.runActiveIntake(true)
                 ),
 
@@ -776,8 +801,20 @@ public class MainAuto extends LinearOpMode {
                 // get middle balls
                 new RaceAction(path.launchZoneToMiddleBalls(), ballHandler.runActiveIntake(true)),
 
-//                // clear classifier todo possibly comment out?
-//                ballHandler.stopIntake(), path.middleBallsToClearClassifier(),
+                // go back to launch zone
+                new RaceAction(path.toLaunchZone(), ballHandler.readyOuttake(3.2, true)),
+
+                // fire middle balls
+                new RaceAction(ballHandler.launchAllBalls(3.2, true), path.updateLocalizer())
+        );
+
+        /// -------------------------------- MIDDLE BALLS --------------------------------
+        Action middleBallsAndClassifier = new SequentialAction(
+                // get middle balls
+                new RaceAction(path.launchZoneToMiddleBalls(), ballHandler.runActiveIntake(true)),
+
+                // clear classifier
+                ballHandler.stopIntake(), path.toClearClassifier(),
 
                 // go back to launch zone
                 new RaceAction(path.toLaunchZone(), ballHandler.readyOuttake(3.2, true)),
@@ -823,9 +860,9 @@ public class MainAuto extends LinearOpMode {
         /// IMPORTANT!! main auto plan:
         Action autonomous = new SequentialAction(
                 preload,
-                humanBalls,
                 farBalls,
-                middleBalls
+                humanBalls,
+                sweep
         );
 
         /// once 29 seconds have passed, stop everything and park
