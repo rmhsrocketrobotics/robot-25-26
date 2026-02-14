@@ -1,6 +1,6 @@
-## Rocket Robotics 25-26 Code
+## Rocket Robotics 2025-2026 Codebase
 
-This codebase is for Rocket Robotics' robot for the 2025-2026 season of FTC, Artemis.
+This codebase is for Rocket Robotics' robot, Artemis, built for the 2025-2026 season of the FIRST Tech Challenge.
 
 ![ArtemisFullShot](https://github.com/user-attachments/assets/cb251940-fdb0-42fb-b06a-3dec90daa892)
 
