@@ -431,7 +431,7 @@ public class MainAuto extends LinearOpMode {
                     .setTangent(pi/2 * flipConstant)
                     .splineToSplineHeading(new Pose2d(56, 30 * flipConstant, pi/2 * flipConstant), pi/2 * flipConstant)
                     .splineToConstantHeading(new Vector2d(61, 45 * flipConstant), pi/2 * flipConstant)
-                    .splineToConstantHeading(new Vector2d(61, 60 * flipConstant), pi/2 * flipConstant)
+                    .splineToConstantHeading(new Vector2d(61, 56 * flipConstant), pi/2 * flipConstant)
 
                     // going back
                     .setTangent(3*pi/2 * flipConstant)
