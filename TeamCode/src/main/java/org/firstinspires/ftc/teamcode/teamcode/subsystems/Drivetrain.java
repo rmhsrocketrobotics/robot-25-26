@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.teamcode.subsystems;
 
+import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -57,7 +58,7 @@ public class Drivetrain {
         double blPower = yPower - xPower + rPower;
         double brPower = yPower + xPower - rPower;
 
-        //set power to zero if the power is low enough to activate braking
+        //set power to zero if the power is low enough in order to activate braking
         if (Math.abs(flPower) < zeroPowerTolerance) {
             flPower = 0;
         }
@@ -77,9 +78,26 @@ public class Drivetrain {
         brMotor.setPower(brPower);
     }
 
-    public void setDrivetrainPower(double yPower, double xPower, double rPower, double yPowerMultiplier, double xPowerMultiplier, double rPowerMultiplier) {
+    public void setDrivetrainPower(
+            double yPower, double xPower, double rPower,
+            double yPowerMultiplier, double xPowerMultiplier, double rPowerMultiplier
+    ) {
         yPower = yPower * yPowerMultiplier;
         xPower = xPower * xPowerMultiplier;
+        rPower = rPower * rPowerMultiplier;
+
+        setDrivetrainPower(yPower, xPower, rPower);
+    }
+
+    public void setDrivetrainPowerFieldCentric(
+            double yPower, double xPower, double rPower,
+            double yPowerMultiplier, double xPowerMultiplier, double rPowerMultiplier,
+            double robotRotation
+    ) {
+        Vector2d xyPowers = CustomMath.rotatePointAroundOrigin(new Vector2d(xPower, yPower), -robotRotation);
+
+        yPower = xyPowers.y * yPowerMultiplier;
+        xPower = xyPowers.x * xPowerMultiplier;
         rPower = rPower * rPowerMultiplier;
 
         setDrivetrainPower(yPower, xPower, rPower);

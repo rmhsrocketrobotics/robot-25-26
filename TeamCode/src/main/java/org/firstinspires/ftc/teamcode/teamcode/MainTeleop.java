@@ -84,14 +84,22 @@ public class MainTeleop extends LinearOpMode {
                 if (gamepad1.left_bumper) {
                     // speed mode
                     drivetrain.setDrivetrainPower(-gamepad1.right_stick_y, gamepad1.right_stick_x, gamepad1.left_stick_x);
+
                 } else if (gamepad1.right_bumper) {
                     // slow mode
                     drivetrain.setDrivetrainPower(-gamepad1.right_stick_y, gamepad1.right_stick_x, gamepad1.left_stick_x,
                             0.2, 0.2, 0.2);
+
                 } else {
                     // normal mode
                     drivetrain.setDrivetrainPower(-gamepad1.right_stick_y, gamepad1.right_stick_x, gamepad1.left_stick_x,
                             0.7, 0.7, 0.7);
+
+//                    drivetrain.setDrivetrainPowerFieldCentric(
+//                            -gamepad1.right_stick_y, gamepad1.right_stick_x, gamepad1.left_stick_x,
+//                            0.7, 0.8, 0.7,
+//                            vision.localizer.getPose().heading.toDouble()
+//                    );
                 }
             }
 
