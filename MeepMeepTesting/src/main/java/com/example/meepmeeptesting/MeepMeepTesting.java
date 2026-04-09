@@ -37,18 +37,36 @@ public class MeepMeepTesting {
         catch(IOException e) {}
 
         meepMeep.setBackground(img)
-                .setDarkMode(true)
-                .setBackgroundAlpha(0.95f)
+                .setDarkMode(false)
+                .setBackgroundAlpha(0f)
                 .addEntity(myBot)
                 .start();
     }
 
     public static RoadRunnerBotEntity clusterNightPath(MeepMeep meepMeep) {
+        double scrollConstant = 120 * 2;
+
         return new DefaultBotBuilder(meepMeep)
+
                 // Set bot constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
                 .setConstraints(40, 50, Math.toRadians(180), Math.toRadians(180), 14.5)
-                .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(-48, 52, Math.toRadians(130)))
-                        .splineTo(new Vector2d(0, 0), 0)
+                .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(0, 60 + scrollConstant, Math.toRadians(90)))
+                        .setTangent(3*pi/2)
+                        .splineToConstantHeading(new Vector2d(0, 0 + scrollConstant), 3*pi/2)
+
+                        .splineTo(new Vector2d(15, -30 + scrollConstant), 3*pi/2)
+                        .splineTo(new Vector2d(0, -60 + scrollConstant), 5*pi/4)
+                        .splineTo(new Vector2d(-15, -90 + scrollConstant), 3*pi/2)
+                        .splineTo(new Vector2d(0, -120 + scrollConstant), 7*pi/4)
+
+                        .splineTo(new Vector2d(15, -150 + scrollConstant), 3*pi/2)
+                        .splineTo(new Vector2d(0, -180 + scrollConstant), 5*pi/4)
+                        .splineTo(new Vector2d(-15, -210 + scrollConstant), 3*pi/2)
+                        .splineTo(new Vector2d(0, -240 + scrollConstant), 7*pi/4)
+
+                        .splineToSplineHeading(new Pose2d(0, -260 + scrollConstant, 3*pi/2), 3*pi/2)
+
+                        .splineToConstantHeading(new Vector2d(0, -280 + scrollConstant), 3*pi/2)
 
 
                         .build());
