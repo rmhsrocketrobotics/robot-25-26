@@ -30,7 +30,7 @@ public class MeepMeepTesting {
     public static void main(String[] args) {
         MeepMeep meepMeep = new MeepMeep(700);
 
-        RoadRunnerBotEntity myBot = testPathFar(meepMeep);
+        RoadRunnerBotEntity myBot = clusterNightPath(meepMeep);
 
         Image img = null;
         try { img = ImageIO.read(new File("MeepMeepTesting/src/main/java/com/example/meepmeeptesting/decode webfield.png")); }
@@ -41,6 +41,17 @@ public class MeepMeepTesting {
                 .setBackgroundAlpha(0.95f)
                 .addEntity(myBot)
                 .start();
+    }
+
+    public static RoadRunnerBotEntity clusterNightPath(MeepMeep meepMeep) {
+        return new DefaultBotBuilder(meepMeep)
+                // Set bot constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
+                .setConstraints(40, 50, Math.toRadians(180), Math.toRadians(180), 14.5)
+                .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(-48, 52, Math.toRadians(130)))
+                        .splineTo(new Vector2d(0, 0), 0)
+
+
+                        .build());
     }
 
     //transfered competition near code
