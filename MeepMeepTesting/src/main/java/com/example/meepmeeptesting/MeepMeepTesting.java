@@ -62,11 +62,34 @@ public class MeepMeepTesting {
                         .splineTo(new Vector2d(15, -150 + scrollConstant), 3*pi/2)
                         .splineTo(new Vector2d(0, -180 + scrollConstant), 5*pi/4)
                         .splineTo(new Vector2d(-15, -210 + scrollConstant), 3*pi/2)
-                        .splineTo(new Vector2d(0, -240 + scrollConstant), 7*pi/4)
+                        .splineTo(new Vector2d(0, -240 + scrollConstant), 3*pi/2)
 
                         .splineToSplineHeading(new Pose2d(0, -260 + scrollConstant, 3*pi/2), 3*pi/2)
 
                         .splineToConstantHeading(new Vector2d(0, -280 + scrollConstant), 3*pi/2)
+
+                        .setTangent(-3*pi/2)
+                        //invert
+                        .splineToSplineHeading(new Pose2d(0, -260 + scrollConstant, -3*pi/2), -3*pi/2)
+                        .splineTo(new Vector2d(0, -240 + scrollConstant), pi/2)
+                        .splineTo(new Vector2d(15, -210 + scrollConstant), pi/2)
+
+
+                        //inverse stuff below
+                        .splineTo(new Vector2d(0, -180 + scrollConstant), 3*pi/4)
+                        .splineTo(new Vector2d(-15, -150 + scrollConstant), pi/2)
+
+
+                        .splineTo(new Vector2d(0, -120 + scrollConstant), pi/4)
+                        .splineTo(new Vector2d(15, -90 + scrollConstant), pi/2)
+
+
+                        .splineTo(new Vector2d(0, -60 + scrollConstant), 3*pi/4)
+                        .splineTo(new Vector2d(-15, -30 + scrollConstant), pi/2)
+
+
+                        .splineToConstantHeading(new Vector2d(0, 0 + scrollConstant), pi/2)
+                        .splineTo(new Vector2d(0, 20 + scrollConstant), pi/2)
 
 
                         .build());

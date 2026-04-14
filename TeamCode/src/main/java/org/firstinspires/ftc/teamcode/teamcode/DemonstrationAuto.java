@@ -74,16 +74,19 @@ public class DemonstrationAuto extends LinearOpMode {
         /// the only reason this is a thing is bc of limitations in meepmeep
         /// just dw
         private final double scrollConstant = 0;
+        private final Pose2d beginPose;
+        private final Pose2d ballPose;
 
         PathGenerator() {
             beginPose = new Pose2d(0, 60 + scrollConstant, Math.toRadians(90));
+            ballPose = new Pose2d(0, -300, 3*pi/2);
             drive = new MecanumDrive(hardwareMap, beginPose);
         }
 
         public Action startToBalls() {
             return drive.actionBuilder(beginPose)
                     .setTangent(3*pi/2)
-                    .splineToConstantHeading(new Vector2d(0, 0 + scrollConstant), 3*pi/2)
+                    .splineToConstantHeading(new Vector2d(0, 0 + scrollConstant), 3*pi/2, lowVelocity)
 
                     .splineTo(new Vector2d(15, -30 + scrollConstant), 3*pi/2)
                     .splineTo(new Vector2d(0, -60 + scrollConstant), 5*pi/4)
@@ -93,18 +96,35 @@ public class DemonstrationAuto extends LinearOpMode {
                     .splineTo(new Vector2d(15, -150 + scrollConstant), 3*pi/2)
                     .splineTo(new Vector2d(0, -180 + scrollConstant), 5*pi/4)
                     .splineTo(new Vector2d(-15, -210 + scrollConstant), 3*pi/2)
-                    .splineTo(new Vector2d(0, -240 + scrollConstant), 7*pi/4)
+                    .splineTo(new Vector2d(0, -240 + scrollConstant), 3*pi/2)
 
                     .splineToSplineHeading(new Pose2d(0, -260 + scrollConstant, 3*pi/2), 3*pi/2)
 
-                    .splineToConstantHeading(new Vector2d(0, -280 + scrollConstant), 3*pi/2)
+                    .splineToConstantHeading(new Vector2d(0, -300 + scrollConstant), 3*pi/2, lowVelocity)
 
                     .build();
         }
 
         public Action ballsToLaunch() {
-            return drive.actionBuilder(beginPose)
-                    // TODO code here
+            return drive.actionBuilder(ballPose)
+                    .setTangent(-3*pi/2)
+                    //invert
+                    .splineToSplineHeading(new Pose2d(0, -260 + scrollConstant, -3*pi/2), -3*pi/2)
+                    .splineTo(new Vector2d(0, -240 + scrollConstant), pi/2)
+                    .splineTo(new Vector2d(15, -210 + scrollConstant), pi/2)
+
+                    //inverse stuff below
+                    .splineTo(new Vector2d(0, -180 + scrollConstant), 3*pi/4)
+                    .splineTo(new Vector2d(-15, -150 + scrollConstant), pi/2)
+
+                    .splineTo(new Vector2d(0, -120 + scrollConstant), pi/4)
+                    .splineTo(new Vector2d(15, -90 + scrollConstant), pi/2)
+
+                    .splineTo(new Vector2d(0, -60 + scrollConstant), 3*pi/4)
+                    .splineTo(new Vector2d(-15, -30 + scrollConstant), pi/2)
+
+                    .splineToConstantHeading(new Vector2d(0, 0 + scrollConstant), pi/2)
+                    .splineTo(new Vector2d(0, 20 + scrollConstant), pi/2)
 
                     .build();
         }
@@ -379,9 +399,23 @@ public class DemonstrationAuto extends LinearOpMode {
             }
         }
 
-        /// stops the intake (immediately returns false)
+        /// stops the outtake (immediately returns false)
         public Action stopIntake() {
             return new StopIntake();
+        }
+
+        public class StopOuttake implements Action {
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                outtake.targetTicksPerSecond = 0;
+                outtake.update();
+                return false;
+            }
+        }
+
+        /// stops the outtake (immediately returns false)
+        public Action stopOuttake() {
+            return new StopOuttake();
         }
     }
 
@@ -427,7 +461,7 @@ public class DemonstrationAuto extends LinearOpMode {
         PathGenerator path = new PathGenerator();
 
         // TODO: add time it takes to go through the path so the intake only activates right before getting to the balls
-        double intakeActivationDelay = 10;
+        double intakeActivationDelay = 9;
 
         /// action to launch preload, go through the obstacle course, then pick up the balls
         Action startToBalls = new SequentialAction(
@@ -436,6 +470,7 @@ public class DemonstrationAuto extends LinearOpMode {
 
                         new SequentialAction(
                                 ballHandler.launchAllBalls(0, false),
+                                ballHandler.stopOuttake(),
                                 new SleepAction(intakeActivationDelay),
                                 ballHandler.runActiveIntake(true)
                         )
@@ -448,6 +483,7 @@ public class DemonstrationAuto extends LinearOpMode {
                 ballHandler.stopIntake(),
                 path.ballsToLaunch(),
                 ballHandler.launchAllBalls(0, false),
+                ballHandler.stopOuttake(),
 
                 new RaceAction(
                         path.launchToBalls(),
@@ -463,13 +499,12 @@ public class DemonstrationAuto extends LinearOpMode {
         Action ballsToLaunchLoopEnd = new SequentialAction(
                 ballHandler.stopIntake(),
                 path.ballsToLaunch(),
-                ballHandler.launchAllBalls(0, false)
+                ballHandler.launchAllBalls(0, false),
+                ballHandler.stopOuttake()
         );
 
         Action autonomous = new SequentialAction(
-                startToBalls,
-                ballsToLaunchLoop,
-                ballsToLaunchLoopEnd
+                startToBalls
         );
 
         ballHandler.init();
