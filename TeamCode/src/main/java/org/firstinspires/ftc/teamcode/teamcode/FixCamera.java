@@ -36,7 +36,7 @@ public class FixCamera extends LinearOpMode {
         while (opModeIsActive()) {
             vision.update();
 
-            telemetry.addData("pitch error", vision.findPitchError());
+            telemetry.addData("pitch error", "this doesn't apply anymore cause limelight");
             telemetry.addData("color sensor distance", ((DistanceSensor) intakeColorSensor).getDistance(DistanceUnit.CM));
             vision.printTelemetry(telemetry);
 

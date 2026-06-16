@@ -1,53 +1,30 @@
 package org.firstinspires.ftc.teamcode.teamcode.subsystems;
 
-import static java.lang.Math.atan;
-import static java.lang.Math.cos;
-import static java.lang.Math.sin;
-import static java.lang.Math.sqrt;
-import static java.lang.Math.tan;
-import static java.lang.Math.toDegrees;
-import static java.lang.Math.toRadians;
-
-import android.util.Size;
-
-import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.arcrobotics.ftclib.controller.PDController;
+import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.LLStatus;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
-import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
-import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.Position;
-import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
-import org.firstinspires.ftc.teamcode.Drawing;
-import org.firstinspires.ftc.teamcode.Localizer;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.teamcode.PinpointLocalizer;
 import org.firstinspires.ftc.teamcode.teamcode.PoseStorage;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
-import org.firstinspires.ftc.vision.apriltag.AprilTagGameDatabase;
-import org.firstinspires.ftc.vision.apriltag.AprilTagLibrary;
-import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
-
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public class Vision {
     private boolean initialized = false;
-    private AprilTagProcessor aprilTag;
-    private VisionPortal visionPortal;
+    private Limelight3A limelight;
+
     public PinpointLocalizer localizer;
     private final Vector2d goalPosition;
-    private AprilTagDetection latestDetection;
     private Pose2d lastPose;
     private boolean faceGoalCalledThisLoop = false;
     private boolean faceGoalCalledLastLoop = false;
@@ -59,34 +36,23 @@ public class Vision {
 
     public int obeliskId = 22; // guess that the obelisk is 22 if we aren't able to detect it
     public double goalDistance = 0;
+
+    /// can you see the april tag RIGHT NOW
     public boolean canSeeGoalAprilTag = false;
+
+    /// have we EVER seen the april tag
     public boolean seenGoalAprilTag = false;
 
     public Servo cameraServo;
-
-    private double cameraPitch = 10;
-    private Position cameraPosition = new Position(DistanceUnit.INCH,
-            0, 7, 12, 0);
-    private YawPitchRollAngles cameraOrientation = new YawPitchRollAngles(AngleUnit.DEGREES,
-            0, -90 + cameraPitch, 0, 0);
 
     private boolean isRedAlliance;
 
     public Vision(HardwareMap hardwareMap, boolean isRedAlliance) {
         this.isRedAlliance = isRedAlliance;
 
-        /// see ConceptAprilTagLocalization.java
-        aprilTag = new AprilTagProcessor.Builder()
-                .setCameraPose(cameraPosition, cameraOrientation)
-//                .setLensIntrinsics(1393.09, 1393.09, 974.952, 551.167)
-                .build();
-
-        visionPortal = new VisionPortal.Builder()
-                .setCamera(hardwareMap.get(WebcamName.class, "camera"))
-//                .setCameraResolution(new Size(1920, 1080))
-                .addProcessor(aprilTag)
-                .build();
-        visionPortal.setProcessorEnabled(aprilTag, true);
+        limelight = hardwareMap.get(Limelight3A.class, "limelight");
+        limelight.pipelineSwitch(0);
+        limelight.start();
 
         localizer = new PinpointLocalizer(hardwareMap, new Pose2d(PoseStorage.currentPose.component1(), PoseStorage.currentPose.component2()));
         if (PoseStorage.currentPose.component1().x != 0) { // TODO see if ts works
@@ -115,48 +81,23 @@ public class Vision {
         cameraServo.setPosition(0.5);
     }
 
-    private void initCamera() {
-//        ExposureControl exposureControl = visionPortal.getCameraControl(ExposureControl.class);
-//        exposureControl.setMode(ExposureControl.Mode.Manual);
-//        exposureControl.setExposure(5, TimeUnit.MILLISECONDS);
-//
-//        GainControl gainControl = visionPortal.getCameraControl(GainControl.class);
-//        gainControl.setGain(100);
-    }
-
-    public void detectGoalAprilTag() {
+    public void detectAprilTag() {
         canSeeGoalAprilTag = false;
 
-        for (AprilTagDetection detection : aprilTag.getDetections()) {
+        LLResult result = limelight.getLatestResult();
+        if (result != null && result.isValid()) {
+            Pose3D robotPose = result.getBotpose();
 
-            if ( ((detection.id == 24) || (detection.id == 20)) && detection.metadata != null ) {
-                latestDetection = detection;
-                double xPos = detection.robotPose.getPosition().x;
-                double yPos = detection.robotPose.getPosition().y;
-                double heading = detection.robotPose.getOrientation().getYaw(AngleUnit.RADIANS) + (Math.PI / 2);
-                localizer.setPose(new Pose2d(xPos, yPos, heading));
+            double xPos = robotPose.getPosition().x;
+            double yPos = robotPose.getPosition().y;
+            double heading = robotPose.getOrientation().getYaw(AngleUnit.RADIANS) + (Math.PI / 2);
 
-                canSeeGoalAprilTag = true;
-                seenGoalAprilTag = true;
-            }
+            localizer.setPose(new Pose2d(xPos, yPos, heading));
+
+            canSeeGoalAprilTag = true;
+            seenGoalAprilTag = true;
         }
     }
-
-    public double findPitchError() {
-        double cameraPitchError = 0;
-
-        for (AprilTagDetection detection : aprilTag.getDetections()) {
-            if ( ((detection.id == 24) || (detection.id == 20)) && detection.metadata != null ) {
-                cameraPitchError = detection.robotPose.getOrientation().getPitch(AngleUnit.DEGREES);
-            }
-        }
-
-        return cameraPitchError;
-    }
-
-//    private double getTargetRelativeBearing(double currentBearing) {
-//        return targetAbsoluteBearing - currentBearing;
-//    }
 
     /**
      * sets drivetrain powers to try to face the goal
@@ -245,25 +186,22 @@ public class Vision {
 
         telemetry.addData("can see goal april tag", canSeeGoalAprilTag);
 
-        telemetry.addData("camera pitch", cameraPitch);
-
         telemetry.addData("odo pose", "x: " + localizer.getPose().position.x + " y: " + localizer.getPose().position.y + " heading: " + localizer.getPose().heading.toDouble());
-        if (canSeeGoalAprilTag) {
-            telemetry.addData("april tag pose", "x: " + latestDetection.robotPose.getPosition().x + " y: " + latestDetection.robotPose.getPosition().y + " heading: " + latestDetection.robotPose.getOrientation().getYaw(AngleUnit.RADIANS));
-        }
+
+        // limelight telemetry data below: VVVVVVVVVVVVVV
+
+        LLStatus status = limelight.getStatus();
+        telemetry.addData("Name", "%s",
+                status.getName());
+        telemetry.addData("LL", "Temp: %.1fC, CPU: %.1f%%, FPS: %d",
+                status.getTemp(), status.getCpu(),(int)status.getFps());
+        telemetry.addData("Pipeline", "Index: %d, Type: %s",
+                status.getPipelineIndex(), status.getPipelineType());
     }
 
     public void update() {
         localizer.update();
-
-        if (visionPortal.getCameraState() == VisionPortal.CameraState.STREAMING && !initialized) {
-            initCamera();
-            initialized = true;
-        }
-
-        if (initialized) {
-            detectGoalAprilTag();
-        }
+        detectAprilTag();
 
         goalDistance = CustomMath.distanceBetweenPoints(localizer.getPose().component1(), goalPosition) / 39.37;
 
