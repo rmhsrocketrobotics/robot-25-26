@@ -51,7 +51,7 @@ public class Vision {
         this.isRedAlliance = isRedAlliance;
 
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
-        limelight.pipelineSwitch(0);
+        limelight.pipelineSwitch(1);
         limelight.start();
 
         localizer = new PinpointLocalizer(hardwareMap, new Pose2d(PoseStorage.currentPose.component1(), PoseStorage.currentPose.component2()));
@@ -88,9 +88,9 @@ public class Vision {
         if (result != null && result.isValid()) {
             Pose3D robotPose = result.getBotpose();
 
-            double xPos = robotPose.getPosition().x;
-            double yPos = robotPose.getPosition().y;
-            double heading = robotPose.getOrientation().getYaw(AngleUnit.RADIANS) + (Math.PI / 2);
+            double xPos = robotPose.getPosition().toUnit(DistanceUnit.INCH).x;
+            double yPos = robotPose.getPosition().toUnit(DistanceUnit.INCH).y;
+            double heading = robotPose.getOrientation().getYaw(AngleUnit.RADIANS);
 
             localizer.setPose(new Pose2d(xPos, yPos, heading));
 
